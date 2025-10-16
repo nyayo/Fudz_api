@@ -12,6 +12,15 @@ channels-redis = "*"
 daphne = "*"
 google-api-python-client = "*"
 drf-spectacular = "*"
+django-cors-headers = "*"
+djangorestframework = "*"
+psycopg2-binary = "*"
+dj-database-url = "*"
+python-decouple = "*"
+django-filter = "*"
+django = "*"
+redis = "*"
+djangorestframework-simplejwt = "*"
 
 [dev-packages]
 
