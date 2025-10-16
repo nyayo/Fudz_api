@@ -1,0 +1,194 @@
+from rest_framework import status, generics
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework.generics import GenericAPIView
+from rest_framework.views import APIView
+
+from django.utils import timezone
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
+from .helpers import get_tokens_for_user, register_social_user
+from .models import EmailVerification, User
+from .serializers import (
+    GoogleSignInSerializer,
+    RegistrationSerializer, 
+    LoginSerializer,
+    SetNewPasswordSerializer, 
+    UserProfileSerializer,
+    RequestOTPSerializer, 
+    VerifyOTPSerializer, 
+    LogoutUserSerializer,
+    PasswordResetRequestSerializer,
+    )
+from .services import OTPService
+
+
+class RequestOTPView(GenericAPIView):
+    serializer_class = RequestOTPSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from .services import send_normal_email
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data.get('email')
+        
+        try:
+            otp_obj, created = EmailVerification.objects.get_or_create(
+                email=email,
+                is_verified=False,
+                defaults={'expires_at': timezone.now() + timezone.timedelta(minutes=10)}
+            )
+            
+            if not created:
+                otp_obj.is_verified = False
+                otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+            
+            otp_obj.generate_otp()
+
+            email_body=f"Your verification code is: {otp_obj.otp}. Valid for 10 minutes."
+            data={
+                'email_body':email_body, 
+                'email_subject':"Registration OTP", 
+                'to_email':email
+                }
+
+            OTPService.send_otp(email, otp_obj.otp)
+            send_normal_email(data)
+
+            return Response({
+                'message': 'OTP sent successfully to your email'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'message': 'Failed to generate OTP',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyOTPView(generics.CreateAPIView):
+    serializer_class = VerifyOTPSerializer
+    permission_classes = [AllowAny]
+
+
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegistrationSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        tokens = get_tokens_for_user(user)
+        return Response(
+            {
+                "message": "Registration successful.",
+                "user": UserProfileSerializer(user).data,
+                "tokens": tokens,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        tokens = get_tokens_for_user(user)
+        return Response(
+            {
+                "message": "Login successful.",
+                "user": UserProfileSerializer(user).data, 
+                "tokens": tokens
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class GoogleOauthSignInview(generics.GenericAPIView):
+    serializer_class = GoogleSignInSerializer
+    
+    def post(self, request):
+        print(request.data)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        google_data = serializer.validated_data['_google_data']
+
+        response = register_social_user(
+            provider=google_data['provider'],
+            email=google_data['email'],
+            first_name=google_data['first_name'],
+            last_name=google_data['last_name'],
+            user_type=google_data['user_type'],
+            profile_data=google_data['profile_data']
+        )
+        
+        return Response(response.data, status=response.status_code)
+
+
+class LogoutApiView(GenericAPIView):
+    serializer_class=LogoutUserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class PasswordResetRequestView(GenericAPIView):
+    serializer_class=PasswordResetRequestSerializer
+
+    def post(self, request):
+        serializer=self.serializer_class(data=request.data, context={'request':request})
+        serializer.is_valid(raise_exception=True)
+        return Response({'message':'we have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+        # return Response({'message':'user with that email does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class PasswordResetConfirm(GenericAPIView):
+
+    def get(self, request, uidb64, token):
+        try:
+            user_id=smart_str(urlsafe_base64_decode(uidb64))
+            user=User.objects.get(id=user_id)
+
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response({'message':'token is invalid or has expired'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'success':True, 'message':'credentials is valid', 'uidb64':uidb64, 'token':token}, status=status.HTTP_200_OK)
+
+        except DjangoUnicodeDecodeError as identifier:
+            return Response({'message':'token is invalid or has expired'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+
+class SetNewPasswordView(GenericAPIView):
+    serializer_class=SetNewPasswordSerializer
+
+    def patch(self, request):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response({'success':True, 'message':"password reset is succesful"}, status=status.HTTP_200_OK)
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserProfileSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
