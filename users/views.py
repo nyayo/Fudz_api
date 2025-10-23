@@ -1,4 +1,4 @@
-from rest_framework import status, generics
+from rest_framework import status, generics, viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -9,8 +9,10 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
+from users.permissions import IsRestaurantOwner
+
 from .helpers import get_tokens_for_user, register_social_user
-from .models import EmailVerification, User
+from .models import EmailVerification, RestaurantStaffProfile, User
 from .serializers import (
     GoogleSignInSerializer,
     RegistrationSerializer, 
@@ -21,6 +23,7 @@ from .serializers import (
     VerifyOTPSerializer, 
     LogoutUserSerializer,
     PasswordResetRequestSerializer,
+    RestaurantStaffSerializer
     )
 from .services import OTPService
 
@@ -185,10 +188,35 @@ class UserProfileView(APIView):
     def get(self, request):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
     def put(self, request):
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        user = request.user
+        serializer = UserProfileSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+
+            if user.user_type == "restaurant" and "profile" in request.data:
+                profile_data = request.data.get("profile", {})
+                restaurant_profile = user.restaurant_profile
+                for key, value in profile_data.items():
+                    setattr(restaurant_profile, key, value)
+                restaurant_profile.save()
+
+            return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class RestaurantStaffViewSet(viewsets.ModelViewSet):
+    queryset = RestaurantStaffProfile.objects.all()
+    serializer_class = RestaurantStaffSerializer
+    permission_classes = [IsAuthenticated, IsRestaurantOwner]
+
+    def get_queryset(self):
+        print(f"User: {self.request.user}")
+        restaurant = self.request.user.restaurant_profile
+        return RestaurantStaffProfile.objects.filter(restaurant=restaurant)
+
+    def perform_create(self, serializer):
+        restaurant = self.request.user.restaurant_profile
+        serializer.save(restaurant=restaurant)    
+    
+    
+    

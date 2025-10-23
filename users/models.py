@@ -19,6 +19,7 @@ class User(AbstractUser, PermissionsMixin):
         ("customer", "Customer"),
         ("courier", "Courier"),
         ("restaurant", "Restaurant"),
+        ("restaurant_staff", "Restaurant Staff"),
     )
 
     phone_regex = RegexValidator(
@@ -157,6 +158,27 @@ class RestaurantProfile(models.Model):
     
     def __str__(self):
         return f"{self.restaurant_name}"
+
+class RestaurantStaffProfile(models.Model):
+    ROLE_CHOICES = (
+        ("manager", "Manager"),
+        ("waiter", "Waiter"),
+        ("cashier", "Cashier"),
+    )
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="restaurant_staff_profile"
+    )
+    restaurant = models.ForeignKey(
+        RestaurantProfile, on_delete=models.CASCADE, related_name="staff"
+    )
+    role = models.CharField(max_length=50, choices=ROLE_CHOICES)
+    is_active = models.BooleanField(default=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.first_name} - {self.role} @ {self.restaurant.restaurant_name}"
+
 
 
 class Address(models.Model):

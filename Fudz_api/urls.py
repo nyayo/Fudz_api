@@ -27,8 +27,10 @@ urlpatterns = [
     path("api/v1/restaurants/", include("restaurants.urls")),
     path("api/v1/orders/", include("orders.urls")),
     path("api/v1/delivery/", include("delivery.urls")),
-    path('api/v1/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path("api/v1/reviews/", include("reviews.urls")),
+    path("api/v1/wishlists/", include("wishlist.urls")),
 
+    path('api/v1/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/v1/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/v1/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]

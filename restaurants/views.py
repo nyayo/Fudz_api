@@ -7,6 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 
 from users.models import RestaurantProfile
+from users.permissions import IsManagerOrReadOnly
 from .models import MenuCategoryImage, MenuItem, MenuCategory, MenuItemImage
 from .serializers import (
     MenuCategoryImageSerializer, MenuCategorySerializer, MenuCategoryListSerializer, MenuItemImageSerializer, 
@@ -18,7 +19,7 @@ from .permissions import IsAdminOrRestaurantOwner, IsOwnerOrReadOnly
 class MenuItemListCreateView(generics.ListCreateAPIView):
     queryset = MenuItem.objects.select_related('restaurant', 'category', 'images').all()
     serializer_class = MenuItemSerializer
-    permission_classes = [IsAdminOrRestaurantOwner]
+    permission_classes = [IsAdminOrRestaurantOwner, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['restaurant', 'category', 'is_available', 'is_featured']
     search_fields = ['title', 'description']
@@ -59,7 +60,7 @@ class MenuItemListCreateView(generics.ListCreateAPIView):
 class MenuItemRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MenuItem.objects.select_related('restaurant', 'category', 'images').all()
     serializer_class = MenuItemSerializer
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly, IsManagerOrReadOnly]
     
     def get_queryset(self):
         queryset = super().get_queryset()

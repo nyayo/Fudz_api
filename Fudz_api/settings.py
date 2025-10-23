@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     "restaurants",
     "orders",
     "delivery",
+    "reviews",
+    "wishlist",
 ]
 
 MIDDLEWARE = [
@@ -184,12 +186,17 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
     # "DEFAULT_PERMISSION_CLASSES": [
     #     "rest_framework.permissions.IsAuthenticated",
     # ],
 }
 
-CELERY_BROKER_URL = "redis://localhost:6379/1"
+REDIS_URL = "redis://localhost:6379/1"
+
+CELERY_BROKER_URL = REDIS_URL
 
 
 ASGI_APPLICATION = "Fudz_api.asgi.application"

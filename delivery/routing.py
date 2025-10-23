@@ -3,4 +3,5 @@ from . import consumers
 
 websocket_urlpatterns = [
     path('ws/courier/location/<int:courier_id>/', consumers.CourierLocationConsumer.as_asgi()),
+    path('ws/delivery/track/<int:delivery_id>/', consumers.DeliveryTrackingConsumer.as_asgi()),
 ]

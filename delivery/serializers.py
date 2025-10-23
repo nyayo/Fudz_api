@@ -1,6 +1,8 @@
 from rest_framework import serializers
+
 from django.contrib.gis.geos import Point
-from .models import DeliveryRequest
+
+from .models import DeliveryRequest, CourierEarnings
 from users.serializers import UserProfileSerializer
 from orders.serializers import OrderSerializer 
 
@@ -62,3 +64,13 @@ class DeliveryStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryRequest
         fields = ["status"]
+
+
+class CourierEarningsSerializer(serializers.ModelSerializer):
+    order_id = serializers.IntegerField(source="order.id", read_only=True)
+    restaurant_name = serializers.CharField(source="order.restaurant.name", read_only=True)
+    date = serializers.DateTimeField(source="created_at", read_only=True)
+
+    class Meta:
+        model = CourierEarnings
+        fields = ["order_id", "restaurant_name", "amount", "commission_rate", "date"]

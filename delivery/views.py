@@ -1,12 +1,14 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
+from django.db.models import Sum
+from django.utils import timezone
 
-from .models import DeliveryRequest
-from .serializers import DeliveryRequestSerializer, DeliveryStatusUpdateSerializer
+from .models import DeliveryRequest, CourierEarnings
+from .serializers import DeliveryRequestSerializer, DeliveryStatusUpdateSerializer, CourierEarningsSerializer
 from users.models import CourierProfile
 
 class DeliveryRequestViewSet(viewsets.ModelViewSet):
@@ -109,5 +111,30 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=400)
     
     
-    
+class CourierEarningsListView(generics.ListAPIView):
+    serializer_class = CourierEarningsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CourierEarnings.objects.filter(
+            courier=self.request.user.courierprofile
+        ).order_by("-created_at")
+
+class CourierEarningsSummaryView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        courier = request.user.courierprofile
+        total_earnings = CourierEarnings.objects.filter(courier=courier).aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+        today_earnings = CourierEarnings.objects.filter(
+            courier=courier, created_at__date__exact=timezone.now().date()
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        return Response({
+            "total_earnings": total_earnings,
+            "today_earnings": today_earnings,
+        })    
 

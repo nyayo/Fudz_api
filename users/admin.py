@@ -81,4 +81,17 @@ class EmailVerificationAdmin(admin.ModelAdmin):
     list_filter = ["is_verified"]
     list_per_page = 10
 
+@admin.register(models.RestaurantStaffProfile)
+class RestaurantStaffAdmin(GISModelAdmin):
+    list_display = ["user", "restaurant", "role", "is_active"]
+    ordering = ["user__first_name", "user__last_name"]
+    list_editable = ["is_active"]
+    list_per_page = 10
+    search_fields = ["restaurant", "address", "is_verified"]
 
+    default_lon = 0
+    default_lat = 0
+    default_zoom = 2
+
+    def restaurant_owner(self, restaurant):
+        return restaurant.user.first_name + " " + restaurant.user.last_name

@@ -7,12 +7,13 @@ from django.utils.encoding import smart_str, force_str, smart_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
+from django.contrib.auth.models import Group
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
 
-from .models import CourierProfile, CustomerProfile, User, RestaurantProfile, EmailVerification
+from .models import CourierProfile, CustomerProfile, User, RestaurantProfile, EmailVerification, RestaurantStaffProfile
 from .services import send_normal_email
 
 
@@ -20,7 +21,7 @@ class RequestOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, email):
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email=email).exists() and EmailVerification.objects.filter(email=email, is_verified=True).exists():
             raise serializers.ValidationError("User already exists. Please log in.")
         return email
 
@@ -343,5 +344,49 @@ class UserProfileSerializer(serializers.ModelSerializer):
                     'is_approved': profile.is_approved,
                     'is_available': profile.is_available
                 }
+        elif obj.user_type == 'restaurant_staff':
+            profile = getattr(obj, 'restaurant_staff_profile', None)
+            if profile:
+                return {
+                    'restaurant': profile.restaurant.restaurant_name,
+                    'role': profile.role,
+                    'is_verified': profile.is_verified
+                }
         return None
+
+class RestaurantStaffSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(write_only=True, required=False)
+    password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True, required=False)
+    last_name = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = RestaurantStaffProfile
+        fields = ["id", "email", "password", "first_name", "last_name", "role", "restaurant", "is_active"]
+        
+    # def validate(self, attrs):
+    #     if User.objects.filter(email=attrs['email']).exists():
+    #         raise serializers.ValidationError("Email already registered.")
+    #     return attrs
+
+    def create(self, validated_data):
+        email = validated_data.pop("email", "")
+        password = validated_data.pop("password")
+        first_name = validated_data.pop("first_name", "")
+        last_name = validated_data.pop("last_name", "")
+        role = validated_data["role"]
+        user_type = "restaurant_staff"
+
+        user = User.objects.create_user(email=email, password=password, first_name=first_name, last_name=last_name, user_type=user_type)
+
+        auth_group = Group.objects.all()
+        print(f"{auth_group} -  role: {role}")
+        group = Group.objects.get(name=role)
+        user.groups.add(group)
+
+        staff_profile = RestaurantStaffProfile.objects.create(user=user, **validated_data)
+        return staff_profile
+
+
+
 

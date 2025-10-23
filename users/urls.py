@@ -1,5 +1,6 @@
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.urls import path
+from rest_framework_nested import routers
 
 from .views import (
     GoogleOauthSignInview,
@@ -11,7 +12,11 @@ from .views import (
     RegisterView,
     LoginView,
     UserProfileView,
+    RestaurantStaffViewSet,
 )
+
+routers = routers.DefaultRouter()
+routers.register("auth/staff", RestaurantStaffViewSet, basename="restaurant-staff")
 
 app_name = 'users'
 
@@ -27,4 +32,4 @@ urlpatterns = [
     path('auth/set-new-password/', SetNewPasswordView.as_view(), name='set-new-password'),
 
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-]
+] + routers.urls

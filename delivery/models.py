@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.gis.db import models as gis_models
 from django.utils import timezone
@@ -41,14 +42,25 @@ class DeliveryRequest(models.Model):
     
     
 class DeliveryTracking(models.Model):
-    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='tracking')
+    delivery = models.ForeignKey(DeliveryRequest, on_delete=models.CASCADE, related_name="tracking")
     courier = models.ForeignKey(CourierProfile, on_delete=models.CASCADE)
     current_location = gis_models.PointField(geography=True)
     last_updated = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-last_updated']
+
 
 
 class CourierEarnings(models.Model):
     courier = models.ForeignKey(CourierProfile, on_delete=models.CASCADE, related_name='earnings')
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=10.00)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    
+    def calculate_amount(self, order_total):
+        """Calculate earnings after platform commission."""
+        commission = (Decimal(self.commission_rate) / 100) * order_total
+        return order_total - commission
