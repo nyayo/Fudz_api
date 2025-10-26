@@ -1,4 +1,3 @@
-# wishlist/models.py
 from django.db import models
 from users.models import CustomerProfile
 from restaurants.models import MenuItem

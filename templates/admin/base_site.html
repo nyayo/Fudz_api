@@ -1,0 +1,238 @@
+{% extends "admin/base.html" %}
+{% block extrahead %}
+{{ block.super }}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const bell = document.getElementById("notification-bell");
+    const badge = document.getElementById("notif-count");
+    const dropdown = document.getElementById("notif-dropdown");
+    const list = document.getElementById("notif-list");
+    const markBtn = document.getElementById("mark-read-btn");
+    let count = 0;
+
+    function addNotification(data) {
+        console.log("Adding notification:", data);
+        const item = document.createElement("div");
+        item.className = "dropdown-item unread";
+        item.dataset.id = data.id;
+        item.innerHTML = `
+            <strong>${data.type === "new_order" ? "New Order" : "Order Update"}</strong><br>
+            ${data.message}
+        `;
+
+        item.addEventListener("click", () => {
+            fetch(`/admin/orders/notification/mark-read/${data.notification_id}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            })
+            .then(() => {
+                item.classList.remove("unread");
+                window.location.href = data.redirect_url || "#";
+            });
+        });
+
+        list.prepend(item);
+    }
+
+    function updateBadge() {
+        badge.textContent = count;
+        if (count > 0) {
+            badge.classList.remove("hidden");
+        } else {
+            badge.classList.add("hidden");
+        }
+    }
+
+    function loadUnreadNotifications() {
+        fetch("/admin/orders/notification/unread/", {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to load notifications");
+            return response.json();
+        })
+        .then(data => {
+            if (data.notifications && data.notifications.length > 0) {
+                data.notifications.forEach(notif => {
+                    addNotification(notif, false);
+                });
+                count = data.notifications.length;
+                updateBadge();
+            }
+        })
+        .catch(err => console.error("Error loading notifications:", err));
+    }
+
+    loadUnreadNotifications();
+
+
+    const socket = new WebSocket("ws://" + window.location.host + "/ws/admin-notifications/");
+    socket.onmessage = e => {
+        const data = JSON.parse(e.data);
+        console.log("Received notification:", data);
+        addNotification(data);
+        count++;
+        badge.textContent = count;
+        updateBadge();
+        if (Notification.permission !== "granted") Notification.requestPermission();
+        new Notification("🍽 Restaurant Update", { body: data.message });
+    };
+
+    bell.addEventListener("click", () => {
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        if (dropdown.style.display === "block") {
+            count = 0;
+            badge.classList.add("hidden");
+        }
+    });
+
+    markBtn.addEventListener("click", () => {
+        fetch("/admin/orders/notification/mark-all-read/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to mark as read");
+            document.querySelectorAll(".dropdown-item").forEach(el => el.classList.remove("unread"));
+        })
+        .catch(err => console.error(err));
+    });
+
+});
+</script>
+
+<style>
+#notification-bell {
+    position: absolute;
+    top: 9px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--header-link-color, #fff);
+}
+
+#notification-bell:hover {
+    color: var(--header-branding-color, #ffc);
+}
+
+.badge {
+    background-color: var(--error-fg, #ba2121);
+    color: var(--button-fg, #fff);
+    border-radius: 10px;
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    font-size: 11px;
+    min-width: 11px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    line-height: 1;
+}
+
+
+.dropdown {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--border-color, #ccc);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    width: 350px;
+    display: none;
+    z-index: 9999;
+    font-size: 14px;
+    overflow: hidden;
+}
+
+.dropdown-header {
+    padding: 10px;
+    background: var(--darkened-bg, #f8f9fa);
+    font-weight: bold;
+    border-bottom: 1px solid var(--border-color, #ccc);
+    color: var(--body-fg, #333);
+}
+
+.dropdown-body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--hairline-color, #e1e1e1);
+    color: var(--body-fg, #333);
+}
+
+.dropdown-item.unread {
+    background-color: var(--selected-bg, #e4e4e4);
+}
+
+.dropdown-footer {
+    text-align: center;
+    padding: 10px;
+    background: var(--darkened-bg, #f8f9fa);
+    border-top: 1px solid var(--border-color, #ccc);
+}
+
+.dropdown-footer button {
+    background: var(--primary, #417690);
+    color: var(--button-fg, #fff);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.dropdown-footer button:hover {
+    background: var(--primary-hover, #205067);
+}
+
+.dropdown-footer button:active {
+    background: var(--primary-active, #164b66);
+}
+</style>
+{% endblock %}
+
+{% block branding %}
+{{ block.super }}
+<div id="notification-bell">
+    🔔<span id="notif-count" class="badge hidden">0</span>
+    <div id="notif-dropdown" class="dropdown">
+        <div class="dropdown-header">Notifications</div>
+        <div class="dropdown-body" id="notif-list"></div>
+        <div class="dropdown-footer">
+            <button id="mark-read-btn">Mark all as read</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.gis.db import models as gis_models
 from uuid import uuid4
 
+from django.urls import reverse
+
 from restaurants.models import MenuItem
 from users.models import CustomerProfile, CourierProfile, RestaurantProfile
 
@@ -47,3 +49,31 @@ class OrderItem(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.PROTECT, related_name="orderitems")
     qty = models.PositiveSmallIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+
+class Notification(models.Model):
+    EVENT_CHOICES = [
+        ("new_order", "New Order"),
+        ("order_update", "Order Update"),
+    ]
+
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES)
+    message = models.TextField()
+    order_id = models.PositiveIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    def get_redirect_url(self):
+        if self.order_id:
+            return reverse("admin:orders_order_change", args=[self.order_id])
+        return "#"
+    
+    def mark_as_read(self):
+        self.is_read = True
+        self.save(update_fields=["is_read"])
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} - Order #{self.order_id}"
+
+    class Meta:
+        ordering = ['-created_at']
