@@ -98,6 +98,48 @@ class MenuItemImageViewSet(ModelViewSet):
         print(f"Menu Item pk {self.kwargs['pk']}")
         return MenuItemImage.objects.filter(menu_item_id=self.kwargs['pk'])
 
+class MenuCategoryListView(generics.ListAPIView):
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['restaurant', 'is_active']
+    search_fields = ['name', 'description']
+    ordering_fields = ['position', 'name', 'created_at']
+    ordering = ['position', 'name']
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        queryset = MenuCategory.objects.annotate(
+            items_count=Count('items', filter=Q(items__is_available=True))
+        )
+            
+        return queryset
+    
+    def get_serializer_class(self):
+        if self.request.query_params.get('detailed') == 'true':
+            return MenuCategorySerializer
+        return MenuCategoryListSerializer
+    
+    def get_serializer_context(self):
+        """Pass request context to serializer"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+class MenuCategoryDetailView(generics.RetrieveAPIView):
+    serializer_class = MenuCategorySerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        queryset = MenuCategory.objects.annotate(
+            items_count=Count('items', filter=Q(items__is_available=True))
+        )
+            
+        return queryset
+    
+    def get_serializer_context(self):
+        """Pass request context to serializer"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 class MenuCategoryListCreateView(generics.ListCreateAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

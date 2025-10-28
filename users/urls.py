@@ -10,7 +10,6 @@ from .views import (
     SetNewPasswordView,
     VerifyOTPView,
     RegisterView,
-    LoginView,
     UserProfileView,
     RestaurantStaffViewSet,
 )
@@ -24,7 +23,6 @@ urlpatterns = [
     path("auth/request-otp/", RequestOTPView.as_view(), name="request-otp"),
     path("auth/verify-otp/", VerifyOTPView.as_view(), name="verify-otp"),
     path("auth/register/", RegisterView.as_view(), name="register"),
-    path("auth/login/", LoginView.as_view(), name="login"),
     path("auth/google/", GoogleOauthSignInview.as_view(), name="google"),
     path('auth/profile/', UserProfileView.as_view(), name='profile'),
     path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),

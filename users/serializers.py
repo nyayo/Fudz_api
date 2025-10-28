@@ -20,16 +20,12 @@ from .services import send_normal_email
 class RequestOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-    def validate_email(self, email):
-        if User.objects.filter(email=email).exists() and EmailVerification.objects.filter(email=email, is_verified=True).exists():
-            raise serializers.ValidationError("User already exists. Please log in.")
-        return email
-
 
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6, write_only=True)
-    verified = serializers.BooleanField(read_only=True)
+    user_exists = serializers.BooleanField(read_only=True)
+    requires_registration = serializers.BooleanField(read_only=True)
 
     def validate(self, data):
         try:
@@ -39,6 +35,10 @@ class VerifyOTPSerializer(serializers.Serializer):
         
         if record.is_expired():
             raise serializers.ValidationError("OTP expired.")
+        
+        user_exists = User.objects.filter(email=data["email"]).exists()
+        data['user_exists'] = user_exists
+        data['requires_registration'] = not user_exists
         
         return data
 
@@ -50,7 +50,14 @@ class VerifyOTPSerializer(serializers.Serializer):
         record.is_verified = True
         record.save()
         
-        return {"email": validated_data["email"], "verified": True}
+        user_exists = User.objects.filter(email=validated_data["email"]).exists()
+        
+        return {
+            "email": validated_data["email"], 
+            "verified": True,
+            "user_exists": user_exists,
+            "requires_registration": not user_exists
+        }
 
 
 class RegistrationSerializer(serializers.Serializer):
@@ -73,8 +80,6 @@ class RegistrationSerializer(serializers.Serializer):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError("Passwords do not match")
 
-        if User.objects.filter(email=attrs['email']).exists():
-            raise serializers.ValidationError("Email already registered.")
         if not EmailVerification.objects.filter(email=attrs['email'], is_verified=True).exists():
             raise serializers.ValidationError("Email not verified.")
         

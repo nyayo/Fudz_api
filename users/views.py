@@ -15,8 +15,7 @@ from .helpers import get_tokens_for_user, register_social_user
 from .models import EmailVerification, RestaurantStaffProfile, User
 from .serializers import (
     GoogleSignInSerializer,
-    RegistrationSerializer, 
-    LoginSerializer,
+    RegistrationSerializer,
     SetNewPasswordSerializer, 
     UserProfileSerializer,
     RequestOTPSerializer, 
@@ -77,6 +76,31 @@ class VerifyOTPView(generics.CreateAPIView):
     serializer_class = VerifyOTPSerializer
     permission_classes = [AllowAny]
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+
+        if result['user_exists']:
+            user = User.objects.get(email=result['email'])
+            tokens = get_tokens_for_user(user)
+            return Response({
+                'message': 'Login successful',
+                'verified': True,
+                'user_exists': True,
+                'requires_registration': False,
+                'user': UserProfileSerializer(user).data,
+                'tokens': tokens
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            'message': 'Email verified. Please complete registration.',
+            'verified': True,
+            'user_exists': False,
+            'requires_registration': True,
+            'email': result['email']
+        }, status=status.HTTP_200_OK)
+
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
@@ -94,25 +118,6 @@ class RegisterView(generics.CreateAPIView):
                 "tokens": tokens,
             },
             status=status.HTTP_201_CREATED,
-        )
-
-
-class LoginView(generics.GenericAPIView):
-    serializer_class = LoginSerializer
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data["user"]
-        tokens = get_tokens_for_user(user)
-        return Response(
-            {
-                "message": "Login successful.",
-                "user": UserProfileSerializer(user).data, 
-                "tokens": tokens
-            },
-            status=status.HTTP_200_OK,
         )
 
 

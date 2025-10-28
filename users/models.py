@@ -149,6 +149,12 @@ class RestaurantProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="restaurant_profile")
     restaurant_name = models.CharField(max_length=100)
     business_license = models.CharField(max_length=100, unique=True)
+    image = models.ImageField(
+        upload_to='images/restaurant_images/', 
+        null=True, 
+        blank=True,
+        help_text="Restaurant profile image"
+    )
     address = models.TextField()
     location = gis_models.PointField(geography=True, null=True, blank=True, default=Point(0, 0))
     opening_hours = models.JSONField(default=dict)

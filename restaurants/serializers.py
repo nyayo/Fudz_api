@@ -93,7 +93,7 @@ class MenuCategoryImageSerializer(serializers.ModelSerializer):
 
 class MenuCategorySerializer(serializers.ModelSerializer):
     items_count = serializers.IntegerField(read_only=True)
-    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    restaurant_name = serializers.CharField(source='restaurant.restaurant_name', read_only=True)
     menu_items = MenuItemSerializer(source='items', many=True, read_only=True)
     
     restaurant = serializers.PrimaryKeyRelatedField(
@@ -144,19 +144,20 @@ class MenuCategorySerializer(serializers.ModelSerializer):
 class MenuCategoryListSerializer(serializers.ModelSerializer):
     """Simplified serializer for listing categories without menu items"""
     items_count = serializers.IntegerField(read_only=True)
-    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    restaurant_name = serializers.CharField(source='restaurant.restaurant_name', read_only=True)
     restaurant = serializers.PrimaryKeyRelatedField(
         queryset=None, 
         required=False, 
         allow_null=True,
         read_only=True
     )
+    category_image = MenuCategoryImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = MenuCategory
         fields = [
             'id', 'name', 'description', 'restaurant', 'restaurant_name',
-            'position', 'is_active', 'items_count'
+            'position', 'is_active', 'items_count', 'category_image'
         ]
 
     def __init__(self, *args, **kwargs):
