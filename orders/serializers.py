@@ -56,19 +56,19 @@ class AddCartItemSerializer(serializers.ModelSerializer):
         menu_item_id = attrs['menu_item_id']
         
         try:
-            new_menu_item = MenuItem.objects.select_related('restaurant').get(pk=menu_item_id)
+            MenuItem.objects.select_related('restaurant').get(pk=menu_item_id)
         except MenuItem.DoesNotExist:
             raise serializers.ValidationError("Menu item not found.")
 
-        existing_items = CartItem.objects.filter(cart_id=cart_id).select_related('menu_item__restaurant')
-        if existing_items.exists():
-            first_item = existing_items.first()
-            if first_item.menu_item.restaurant_id != new_menu_item.restaurant_id:
-                raise serializers.ValidationError(
-                    f"Cannot add items from different restaurants. "
-                    f"This cart contains items from {first_item.menu_item.restaurant.name}. "
-                    f"Please create a new cart or clear the existing one."
-                )
+        # existing_items = CartItem.objects.filter(cart_id=cart_id).select_related('menu_item__restaurant')
+        # if existing_items.exists():
+        #     first_item = existing_items.first()
+        #     if first_item.menu_item.restaurant_id != new_menu_item.restaurant_id:
+        #         raise serializers.ValidationError(
+        #             f"Cannot add items from different restaurants. "
+        #             f"This cart contains items from {first_item.menu_item.restaurant.restaurant_name}. "
+        #             f"Please create a new cart or clear the existing one."
+        #         )
         
         return attrs
     
@@ -144,14 +144,15 @@ class CreateOrderSerializer(serializers.Serializer):
  
             restaurant = cart_items[0].menu_item.restaurant
 
-            for item in cart_items:
-                if item.menu_item.restaurant_id != restaurant.id:
-                    raise serializers.ValidationError(
-                        "All items in the cart must be from the same restaurant."
-                    )
+            # for item in cart_items:
+            #     if item.menu_item.restaurant_id != restaurant.id:
+            #         raise serializers.ValidationError(
+            #             "All items in the cart must be from the same restaurant."
+            #         )
 
             order = Order.objects.create(
                 customer=customer,
+                dropoff_location=customer.current_location,
                 restaurant=restaurant,
                 pickup_location=restaurant.location if hasattr(restaurant, 'location') else None
             )

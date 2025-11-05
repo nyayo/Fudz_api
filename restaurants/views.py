@@ -17,7 +17,7 @@ from .permissions import IsAdminOrRestaurantOwner, IsOwnerOrReadOnly
 
 
 class MenuItemListCreateView(generics.ListCreateAPIView):
-    queryset = MenuItem.objects.select_related('restaurant', 'category', 'images').all()
+    queryset = MenuItem.objects.select_related('restaurant', 'category').all()
     serializer_class = MenuItemSerializer
     permission_classes = [IsAdminOrRestaurantOwner, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -58,7 +58,7 @@ class MenuItemListCreateView(generics.ListCreateAPIView):
 
 
 class MenuItemRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = MenuItem.objects.select_related('restaurant', 'category', 'images').all()
+    queryset = MenuItem.objects.select_related('restaurant', 'category').all()
     serializer_class = MenuItemSerializer
     permission_classes = [IsOwnerOrReadOnly, IsManagerOrReadOnly]
     

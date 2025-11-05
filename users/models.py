@@ -106,6 +106,9 @@ class CustomerProfile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="customer_profile"
     )
+    current_location = gis_models.PointField(
+        geography=True, null=True, blank=True
+    )
     date_of_birth = models.DateField(blank=True, null=True)
     address = models.ForeignKey(
         "Address", on_delete=models.SET_NULL, null=True, blank=True

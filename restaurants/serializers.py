@@ -22,7 +22,7 @@ class MenuItemImageSerializer(serializers.ModelSerializer):
         
 
 class MenuItemSerializer(serializers.ModelSerializer):
-    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    restaurant_name = serializers.CharField(source='restaurant.restaurant_name', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     promotions = PromotionSerializer(many=True, read_only=True)
     

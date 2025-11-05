@@ -68,7 +68,7 @@ class DeliveryStatusUpdateSerializer(serializers.ModelSerializer):
 
 class CourierEarningsSerializer(serializers.ModelSerializer):
     order_id = serializers.IntegerField(source="order.id", read_only=True)
-    restaurant_name = serializers.CharField(source="order.restaurant.name", read_only=True)
+    restaurant_name = serializers.CharField(source="order.restaurant.restaurant_name", read_only=True)
     date = serializers.DateTimeField(source="created_at", read_only=True)
 
     class Meta:

@@ -58,5 +58,5 @@ class WishlistItemAdmin(admin.ModelAdmin):
     get_customer_username.admin_order_field = 'wishlist__customer__user__username'
     
     def get_menu_item_restaurant(self, obj):
-        return obj.menu_item.restaurant.name if hasattr(obj.menu_item, 'restaurant') else '-'
+        return obj.menu_item.restaurant.restaurant_name if hasattr(obj.menu_item, 'restaurant') else '-'
     get_menu_item_restaurant.short_description = 'Restaurant'
