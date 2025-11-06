@@ -107,10 +107,10 @@ DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": "food_delivery",
-        "USER": "postgres",
-        "PASSWORD": "",
-        "HOST": "localhost",
-        "PORT": "",
+        "USER": "neondb_owner",
+        "PASSWORD": "npg_5Ok1uzovVgbZ",
+        "HOST": "ep-withered-surf-a4thi8j0-pooler.us-east-1.aws.neon.tech",
+        "PORT": 5432,
     }
 }
 

@@ -155,6 +155,8 @@ class LogoutApiView(GenericAPIView):
 
 class PasswordResetRequestView(GenericAPIView):
     serializer_class=PasswordResetRequestSerializer
+    queryset = User.objects.none()
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer=self.serializer_class(data=request.data, context={'request':request})
@@ -163,7 +165,8 @@ class PasswordResetRequestView(GenericAPIView):
         # return Response({'message':'user with that email does not exist'}, status=status.HTTP_400_BAD_REQUEST)
     
 
-class PasswordResetConfirm(GenericAPIView):
+class PasswordResetConfirm(APIView):
+    queryset = User.objects.none()
 
     def get(self, request, uidb64, token):
         try:
@@ -178,8 +181,10 @@ class PasswordResetConfirm(GenericAPIView):
             return Response({'message':'token is invalid or has expired'}, status=status.HTTP_401_UNAUTHORIZED)
         
 
-class SetNewPasswordView(GenericAPIView):
+class SetNewPasswordView(APIView):
     serializer_class=SetNewPasswordSerializer
+    queryset = User.objects.none()
+    permission_classes = [AllowAny]
 
     def patch(self, request):
         serializer=self.serializer_class(data=request.data)

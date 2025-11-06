@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.contrib.gis.geos import Point
+
 from rest_framework import serializers
 
 from restaurants.models import MenuItem
@@ -110,7 +112,7 @@ class OrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'restaurant', 'placed_at', 'status', 'payment_status', 'items']
+        fields = ['id', 'customer', 'restaurant', 'pickup_location', 'dropoff_location', 'placed_at', 'status', 'payment_status', 'items']
  
 
 class UpdateOrderSerializer(serializers.ModelSerializer):
@@ -121,6 +123,7 @@ class UpdateOrderSerializer(serializers.ModelSerializer):
         
 class CreateOrderSerializer(serializers.Serializer):
     cart_id = serializers.UUIDField()
+    dropoff_location = serializers.JSONField(required=False)
     
     def validate_cart_id(self, cart_id):
         if not Cart.objects.filter(pk=cart_id).exists():
@@ -132,6 +135,7 @@ class CreateOrderSerializer(serializers.Serializer):
     def save(self, **kwargs):
         with transaction.atomic():
             cart_id = self.validated_data['cart_id']
+            dropoff_location = self.validated_data.get('dropoff_location')
             
             customer, created = CustomerProfile.objects.get_or_create(
                 user_id=self.context['user_id']
@@ -143,6 +147,13 @@ class CreateOrderSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Cart is empty.")
  
             restaurant = cart_items[0].menu_item.restaurant
+            
+            if dropoff_location:
+                lat = float(dropoff_location['latitude'])
+                lng = float(dropoff_location['longitude'])
+                address = dropoff_location['address']
+                
+                point = Point(lng, lat)
 
             # for item in cart_items:
             #     if item.menu_item.restaurant_id != restaurant.id:
@@ -152,7 +163,7 @@ class CreateOrderSerializer(serializers.Serializer):
 
             order = Order.objects.create(
                 customer=customer,
-                dropoff_location=customer.current_location,
+                dropoff_location=point if dropoff_location else customer.current_location,
                 restaurant=restaurant,
                 pickup_location=restaurant.location if hasattr(restaurant, 'location') else None
             )
