@@ -8,6 +8,7 @@ from channels.layers import get_channel_layer
 from .models import Notification, Order
 from users.models import User
 from users.services import send_normal_email
+from users.helpers import send_order_notification
 
 # User = get_user_model()
 
@@ -62,4 +63,53 @@ def order_notification(sender, instance, created, **kwargs):
             "message": body,
             "redirect_url": notification.get_redirect_url(),
         },
+    )
+
+
+@receiver(post_save, sender=Order)
+def customer_order_notification(sender, instance, created, **kwargs):
+    """Notify Customers when order is updated"""
+    customer = instance.customer.user
+
+    if created:
+        title = "Placed"
+        subject = f"🆕 New Order #{instance.id}"
+        body = f"Your order has been placed."
+        event_type = "new_order"
+    else:
+        if instance.status == "accepted":
+            title = "Accepted"
+            subject = f"🔄 Order #{instance.id} Status Updated"
+            body = f"Your order #{instance.id} has been {instance.status.capitalize()}."
+            event_type = "order_update"
+        elif instance.status == "delivered":
+            title = "Delivered"
+            subject = f"✅ Order #{instance.id} Delivered"
+            body = f"Your order #{instance.id} has been {instance.status.capitalize()}."
+            event_type = "order_update"
+        else:
+            return None
+
+    Notification.objects.create(
+        event_type=event_type,
+        message=body,
+        order_id=instance.id
+    )
+
+    send_order_notification(customer, title, instance)
+
+    # data={
+    #     'email_body':body, 
+    #     'email_subject':subject, 
+    #     'to_email':[a.email for a in admins],
+    # }
+    
+    # send_normal_email(data)
+
+    send_mail(
+        subject,
+        body,
+        "no-reply@foodapp.com",
+        [customer.email],
+        fail_silently=True,
     )

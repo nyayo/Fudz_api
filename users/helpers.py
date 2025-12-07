@@ -1,7 +1,9 @@
 import requests
+from datetime import timedelta
 
 from django.contrib.auth import authenticate
 from django.conf import settings
+from django.utils import timezone
 
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
@@ -89,3 +91,26 @@ def register_social_user(provider, email, first_name, last_name, user_type, prof
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     return {"refresh": str(refresh), "access": str(refresh.access_token)}
+
+def send_order_notification(user, title, order):
+    from .tasks import send_push_notification_to_user
+    
+    send_push_notification_to_user.delay(
+        user.id,
+        f"Order {title}",
+        f"Your order #{order.id} has been {title.lower()}!",
+        {'order_id': order.id, 'type': 'order_update'}
+    )
+    
+def notify_new_promotion(promotion, user_ids):
+    from .tasks import send_fcm_to_multiple_users
+    
+    send_fcm_to_multiple_users.delay(
+        user_ids,
+        "New Promotion!",
+        f"{promotion.title} - {promotion.discount}% off",
+        {
+            'promotion_id': str(promotion.id),
+            'type': 'promotion'
+        }
+    )

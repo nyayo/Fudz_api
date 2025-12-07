@@ -10,9 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+import firebase_admin
+from firebase_admin import credentials
 from datetime import timedelta
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     "rest_framework_nested",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "push_notifications",
     "users",
     "restaurants",
     "orders",
@@ -163,8 +166,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",  # Default
+    "django.contrib.auth.backends.ModelBackend", 
 ]
+
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'fudz-91926-firebase-adminsdk-fbsvc-d6913fd42a.json')
+if not firebase_admin._apps:
+    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+    firebase_admin.initialize_app(cred)
+
+PUSH_NOTIFICATIONS_SETTINGS = {
+    "APNS_CERTIFICATE": "/path/to/apns/certificate.pem",
+    "APNS_TOPIC": "com.yourapp.bundle", 
+    
+    "WP_PRIVATE_KEY": "your-vapid-private-key",
+    "WP_CLAIMS": {
+        "sub": "mailto:your-email@example.com"
+    }
+}
 
 
 SIMPLE_JWT = {
@@ -232,9 +250,11 @@ EMAIL_HOST_PASSWORD=''
 DEFAULT_FROM_EMAIL='info@henryjwtauth.com'
 # EMAIL_USE_TLS=True
 EMAIL_PORT = 2525
-
-GOOGLE_CLIENT_ID = "1018640269789-45khc7o0nmmnul76v4kt54tvvc9bq714.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
+ 
+GOOGLE_CLIENT_ID = "55727848133-6tp3tfrqc9bkjski9mk0v6309egomf6o.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+# GOOGLE_CLIENT_ID = "1018640269789-45khc7o0nmmnul76v4kt54tvvc9bq714.apps.googleusercontent.com"
+# GOOGLE_CLIENT_SECRET = "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"
 SOCIAL_AUTH_PASSWORD = "Fudz@12345"
 
                                                                                                                                                                                                                                                                                                                                

@@ -12,6 +12,9 @@ from .views import (
     RegisterView,
     UserProfileView,
     RestaurantStaffViewSet,
+    register_device,
+    unregister_device,
+    send_test_notification,
 )
 
 routers = routers.DefaultRouter()
@@ -28,6 +31,10 @@ urlpatterns = [
     path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
     path('auth/password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirm.as_view(), name='reset-password-confirm'),
     path('auth/set-new-password/', SetNewPasswordView.as_view(), name='set-new-password'),
+    
+    path('auth/device/register/', register_device, name='register_device'),
+    path('auth/device/unregister/', unregister_device, name='unregister_device'),
+    path('auth/notification/test/', send_test_notification, name='test_notification'),
 
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ] + routers.urls

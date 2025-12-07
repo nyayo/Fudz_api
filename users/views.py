@@ -1,8 +1,11 @@
 from rest_framework import status, generics, viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.views import APIView
+
+from push_notifications.models import GCMDevice, APNSDevice, WebPushDevice
 
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode
@@ -25,6 +28,7 @@ from .serializers import (
     RestaurantStaffSerializer
     )
 from .services import OTPService
+from .tasks import send_push_notification_to_user
 
 
 class RequestOTPView(GenericAPIView):
@@ -123,6 +127,8 @@ class RegisterView(generics.CreateAPIView):
 
 class GoogleOauthSignInview(generics.GenericAPIView):
     serializer_class = GoogleSignInSerializer
+    queryset = User.objects.none()
+    permission_classes = [AllowAny]
     
     def post(self, request):
         print(request.data)
@@ -229,4 +235,106 @@ class RestaurantStaffViewSet(viewsets.ModelViewSet):
         serializer.save(restaurant=restaurant)    
     
     
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def register_device(request):
+    """
+    Register a device for push notifications
     
+    POST data:
+    {
+        "registration_id": "device-token",
+        "type": "android|ios|web",
+        "name": "optional-device-name"
+    }
+    """
+    device_type = request.data.get('type')
+    registration_id = request.data.get('registration_id')
+    name = request.data.get('name', '')
+    
+    if not registration_id or not device_type:
+        return Response({'error': 'registration_id and type are required'}, status=400)
+    
+    try:
+        if device_type == 'android':
+            device, created = GCMDevice.objects.get_or_create(
+                registration_id=registration_id,
+                defaults={'user': request.user, 'name': name}
+            )
+        elif device_type == 'ios':
+            device, created = APNSDevice.objects.get_or_create(
+                registration_id=registration_id,
+                defaults={'user': request.user, 'name': name}
+            )
+        elif device_type == 'web':
+            device, created = WebPushDevice.objects.get_or_create(
+                registration_id=registration_id,
+                defaults={'user': request.user, 'name': name}
+            )
+        else:
+            return Response({'error': 'Invalid device type'}, status=400)
+
+        if not created:
+            device.user = request.user
+            device.active = True
+            device.save()
+        
+        return Response({
+            'success': True,
+            'created': created,
+            'device_id': device.id
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)   
+    
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_test_notification(request):
+    """
+    Send a test notification to the current user
+    """
+    title = request.data.get('title', 'Test Notification')
+    message = request.data.get('message', 'This is a test message')
+    data = request.data.get('data', {})
+    
+    send_push_notification_to_user.delay(
+        request.user.id,
+        title,
+        message,
+        data
+    )
+    
+    return Response({'success': True, 'message': 'Notification queued'})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def unregister_device(request):
+    """
+    Unregister a device
+    
+    POST data:
+    {
+        "registration_id": "device-token"
+    }
+    """
+    registration_id = request.data.get('registration_id')
+    
+    if not registration_id:
+        return Response({'error': 'registration_id required'}, status=400)
+  
+    for model in [GCMDevice, APNSDevice, WebPushDevice]:
+        try:
+            device = model.objects.get(
+                registration_id=registration_id,
+                user=request.user
+            )
+            device.active = False
+            device.save()
+            return Response({'success': True, 'message': 'Device unregistered'})
+        except model.DoesNotExist:
+            continue
+    
+    return Response({'error': 'Device not found'}, status=404)
