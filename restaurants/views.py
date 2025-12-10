@@ -1,19 +1,64 @@
 from django.db.models import Count, Q, Avg
+from django.utils import timezone
 
 from rest_framework import status, generics, filters
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import viewsets
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 
 from users.models import RestaurantProfile
+from rest_framework.decorators import action
 from users.permissions import IsManagerOrReadOnly
-from .models import MenuCategoryImage, MenuItem, MenuCategory, MenuItemImage
+from .models import MenuCategoryImage, MenuItem, MenuCategory, MenuItemImage, Promotion
 from .serializers import (
     MenuCategoryImageSerializer, MenuCategorySerializer, MenuCategoryListSerializer, MenuItemImageSerializer, 
-    MenuItemSerializer, RestaurantProfileSerializer
+    MenuItemSerializer, RestaurantProfileSerializer, PromotionSerializer
 )
 from .permissions import IsAdminOrRestaurantOwner, IsOwnerOrReadOnly
+
+class PromotionViewSet(viewsets.ModelViewSet):
+    queryset = Promotion.objects.select_related('restaurant').all()
+    serializer_class = PromotionSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter promotions by restaurant if user is restaurant owner"""
+        queryset = super().get_queryset() 
+        if hasattr(self.request.user, 'restaurant_profile'):
+            print(f"Filtering promotions for {self.request.user.restaurant_profile.id}")
+            return queryset.filter(restaurant=self.request.user.restaurant_profile)
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Get only currently active promotions"""
+        now = timezone.now()
+        queryset = self.get_queryset().filter(
+            is_active=True,
+            start_date__lte=now,
+            end_date__gte=now
+        )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        """Toggle promotion active status"""
+        promotion = self.get_object()
+        promotion.is_active = not promotion.is_active
+        promotion.save()
+        serializer = self.get_serializer(promotion)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def menu_items(self, request, pk=None):
+        """Get all menu items with this promotion"""
+        promotion = self.get_object()
+        menu_items = promotion.menuitem_set.all()
+        serializer = MenuItemSerializer(menu_items, many=True)
+        return Response(serializer.data)
 
 
 class MenuItemListCreateView(generics.ListCreateAPIView):
@@ -55,6 +100,55 @@ class MenuItemListCreateView(generics.ListCreateAPIView):
             )
         
         return super().destroy(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['post'])
+    def add_promotion(self, request, pk=None):
+        """Add a promotion to menu item"""
+        menu_item = self.get_object()
+        promotion_id = request.data.get('promotion_id')
+        
+        try:
+            promotion = Promotion.objects.get(
+                id=promotion_id,
+                restaurant=menu_item.restaurant
+            )
+            menu_item.promotions.add(promotion)
+            serializer = self.get_serializer(menu_item)
+            return Response(serializer.data)
+        except Promotion.DoesNotExist:
+            return Response(
+                {'error': 'Promotion not found or does not belong to this restaurant'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=True, methods=['post'])
+    def remove_promotion(self, request, pk=None):
+        """Remove a promotion from menu item"""
+        menu_item = self.get_object()
+        promotion_id = request.data.get('promotion_id')
+        
+        try:
+            promotion = Promotion.objects.get(id=promotion_id)
+            menu_item.promotions.remove(promotion)
+            serializer = self.get_serializer(menu_item)
+            return Response(serializer.data)
+        except Promotion.DoesNotExist:
+            return Response(
+                {'error': 'Promotion not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+    @action(detail=False, methods=['get'])
+    def on_promotion(self, request):
+        """Get all menu items with active promotions"""
+        now = timezone.now()
+        queryset = self.get_queryset().filter(
+            promotions__is_active=True,
+            promotions__start_date__lte=now,
+            promotions__end_date__gte=now
+        ).distinct()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class MenuItemRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):

@@ -108,7 +108,7 @@ def notify_new_promotion(promotion, user_ids):
     send_fcm_to_multiple_users.delay(
         user_ids,
         "New Promotion!",
-        f"{promotion.title} - {promotion.discount}% off",
+        f"{promotion.name} - {promotion.discount}% off",
         {
             'promotion_id': str(promotion.id),
             'type': 'promotion'

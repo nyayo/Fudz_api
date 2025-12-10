@@ -11,10 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-import firebase_admin
-from firebase_admin import credentials
 from datetime import timedelta
 from pathlib import Path
+
+import firebase_admin
+from firebase_admin import credentials
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    "django-insecure-kg!c-z-901tmp@)+aw^z!q$(=!@m$m2vp3@_dsl93mh%x6%bqf"
-)
+SECRET_KEY = "django-insecure-kg!c-z-901tmp@)+aw^z!q$(=!@m$m2vp3@_dsl93mh%x6%bqf"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -53,6 +52,8 @@ INSTALLED_APPS = [
     "rest_framework_nested",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "django_celery_beat",
+    "django_celery_results",
     "push_notifications",
     "users",
     "restaurants",
@@ -75,7 +76,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "Fudz_api.urls"
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
@@ -88,7 +89,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR/'templates'],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -155,7 +156,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 # Default primary key field type
@@ -166,47 +167,42 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend", 
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
-FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'fudz-91926-firebase-adminsdk-fbsvc-d6913fd42a.json')
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, "fudz-91926-firebase-adminsdk-fbsvc-d6913fd42a.json")
 if not firebase_admin._apps:
     cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
     firebase_admin.initialize_app(cred)
 
 PUSH_NOTIFICATIONS_SETTINGS = {
     "APNS_CERTIFICATE": "/path/to/apns/certificate.pem",
-    "APNS_TOPIC": "com.yourapp.bundle", 
-    
+    "APNS_TOPIC": "com.yourapp.bundle",
     "WP_PRIVATE_KEY": "your-vapid-private-key",
-    "WP_CLAIMS": {
-        "sub": "mailto:your-email@example.com"
-    }
+    "WP_CLAIMS": {"sub": "mailto:your-email@example.com"},
 }
 
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7), 
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
 }
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication', 
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"],
     # "DEFAULT_PERMISSION_CLASSES": [
     #     "rest_framework.permissions.IsAuthenticated",
     # ],
@@ -215,6 +211,9 @@ REST_FRAMEWORK = {
 REDIS_URL = "redis://localhost:6379/1"
 
 CELERY_BROKER_URL = REDIS_URL
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_TIMEZONE = "UTC"
+CELERY_ENABLE_UTC = True
 
 
 ASGI_APPLICATION = "Fudz_api.asgi.application"
@@ -236,25 +235,23 @@ CACHES = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Fudz Project API',
-    'DESCRIPTION': 'E-commerce API food delivery project',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "Fudz Project API",
+    "DESCRIPTION": "E-commerce API food delivery project",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 # DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST='localhost'
-EMAIL_HOST_USER=''
-EMAIL_HOST_PASSWORD=''
-DEFAULT_FROM_EMAIL='info@henryjwtauth.com'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "localhost"
+EMAIL_HOST_USER = ""
+EMAIL_HOST_PASSWORD = ""
+DEFAULT_FROM_EMAIL = "info@henryjwtauth.com"
 # EMAIL_USE_TLS=True
 EMAIL_PORT = 2525
- 
+
 GOOGLE_CLIENT_ID = "55727848133-6tp3tfrqc9bkjski9mk0v6309egomf6o.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
 # GOOGLE_CLIENT_ID = "1018640269789-45khc7o0nmmnul76v4kt54tvvc9bq714.apps.googleusercontent.com"
 # GOOGLE_CLIENT_SECRET = "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"
 SOCIAL_AUTH_PASSWORD = "Fudz@12345"
-
-                                                                                                                                                                                                                                                                                                                               

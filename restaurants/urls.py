@@ -5,6 +5,7 @@ from . import views
 
 router = routers.DefaultRouter()
 router.register('images', views.MenuItemImageViewSet, basename='menuitem-image')
+router.register('promotions', views.PromotionViewSet, basename='promotion')
 
 urlpatterns = [
     path('restaurants/', views.RestaurantListView.as_view(), name='restaurant-list'),
