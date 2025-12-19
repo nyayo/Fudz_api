@@ -101,18 +101,66 @@ class UpdateCartItemSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     menu_item = SimpleMenuSerializer()
+    promotion = serializers.SerializerMethodField()
     
     class Meta:
         model = OrderItem
-        fields = ['id', 'menu_item', 'qty', 'unit_price']
+        fields = [
+            'id', 
+            'menu_item', 
+            'qty', 
+            'unit_price',
+            'original_price',
+            'unit_price', 
+            'discount_amount',
+            'promotion',
+        ]
+        
+    def get_promotion(self, obj):
+        """Get promotion details if applied"""
+        if obj.applied_promotion:
+            return {
+                'id': obj.applied_promotion.id,
+                'name': obj.applied_promotion.name,
+                'discount': obj.applied_promotion.discount
+            }
+        return None
 
 
 class OrderSerializer(serializers.ModelSerializer): 
     items = OrderItemSerializer(many=True)
+    total_discount = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
     
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'restaurant', 'pickup_location', 'dropoff_location', 'placed_at', 'status', 'payment_status', 'items']
+        fields = [
+            'id', 
+            'customer', 
+            'restaurant', 
+            'pickup_location', 
+            'dropoff_location', 
+            'placed_at', 
+            'status', 
+            'payment_status', 
+            'items',
+            'total_discount',
+            'total_amount'
+            ]
+        
+    def get_total_discount(self, obj):
+        """Calculate total discount applied to order"""
+        return float(sum(
+            item.discount_amount * item.qty 
+            for item in obj.items.all()
+        ))
+    
+    def get_total_amount(self, obj):
+        """Calculate final amount to pay (after discounts)"""
+        return float(sum(
+            item.unit_price * item.qty 
+            for item in obj.items.all()
+        ))
  
 
 class UpdateOrderSerializer(serializers.ModelSerializer):
@@ -168,14 +216,30 @@ class CreateOrderSerializer(serializers.Serializer):
                 pickup_location=restaurant.location if hasattr(restaurant, 'location') else None
             )
             
-            order_items = [
-                OrderItem(
+            order_items = []
+            for item in cart_items:
+                menu_item = item.menu_item
+                
+                offer_price = menu_item.get_offer_price()
+                original_price = menu_item.price
+                discount = original_price - offer_price
+                
+                active_promotion = menu_item.get_active_promotion()
+                
+                order_item = OrderItem(
                     order=order,
-                    menu_item=item.menu_item,
+                    menu_item=menu_item,
                     qty=item.qty,
-                    unit_price=item.menu_item.price
-                ) for item in cart_items
-            ]
+                    unit_price=offer_price, 
+                    original_price=original_price,
+                    applied_promotion=active_promotion,
+                    discount_amount=discount
+                )
+                order_items.append(order_item)
+                
+                if active_promotion:
+                    print(f"✅ Applied {active_promotion.discount}% discount to {menu_item.title}")
+                    print(f"   Original: ${original_price}, Now: ${offer_price}")
             
             OrderItem.objects.bulk_create(order_items)
 
