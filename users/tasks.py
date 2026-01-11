@@ -3,6 +3,7 @@ from celery import shared_task
 from firebase_admin import messaging
 from push_notifications.models import APNSDevice, GCMDevice, WebPushDevice
 from .models import User
+from .helpers import convert_data_to_strings
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,8 @@ def send_fcm_notification_admin(user_id, title, body, data=None):
         success_count = 0
         failed_tokens = []
         
+        string_data = convert_data_to_strings(data) if data else {}
+        
         for device in fcm_devices:
             try:
                 message = messaging.Message(
@@ -27,7 +30,7 @@ def send_fcm_notification_admin(user_id, title, body, data=None):
                         title=title,
                         body=body,
                     ),
-                    data=data or {},
+                    data=string_data or {},
                     token=device.registration_id,
                     android=messaging.AndroidConfig(
                         priority='high',
@@ -72,6 +75,8 @@ def send_push_notification_to_user(user_id, title, body, data=None):
         user = User.objects.get(id=user_id)
         results = {}
         
+        string_data = convert_data_to_strings(data) if data else {}
+        
         fcm_result = send_fcm_notification_admin(user_id, title, body, data)
         results['fcm'] = fcm_result
         
@@ -81,7 +86,7 @@ def send_push_notification_to_user(user_id, title, body, data=None):
                 apns_devices.send_message(
                     message=body,
                     title=title,
-                    extra=data or {},
+                    extra=string_data or {},
                     sound='default'
                 )
                 results['apns'] = {'success': True, 'count': apns_devices.count()}
@@ -115,6 +120,7 @@ def send_fcm_to_multiple_users(user_ids, title, body, data=None):
     """
     try:
         all_tokens = []
+        string_data = convert_data_to_strings(data) if data else {}
         user_device_map = {}
         
         for user_id in user_ids:
@@ -133,19 +139,20 @@ def send_fcm_to_multiple_users(user_ids, title, body, data=None):
         for i in range(0, len(all_tokens), batch_size):
             batch_tokens = all_tokens[i:i + batch_size]
             
+            
             message = messaging.MulticastMessage(
                 notification=messaging.Notification(
                     title=title,
                     body=body,
                 ),
-                data=data or {},
+                data=string_data or {},
                 tokens=batch_tokens,
                 android=messaging.AndroidConfig(
                     priority='high',
                 ),
             )
             
-            response = messaging.send_multicast(message)
+            response = messaging.send_each_for_multicast(message)
             total_success += response.success_count
             total_failed += response.failure_count
             

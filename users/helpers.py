@@ -114,3 +114,23 @@ def notify_new_promotion(promotion, user_ids):
             'type': 'promotion'
         }
     )
+    
+def convert_data_to_strings(data):
+    if not data:
+        return {}
+    
+    converted = {}
+    for key, value in data.items():
+        if value is None:
+            converted[key] = ""
+        elif isinstance(value, bool):
+            converted[key] = "true" if value else "false"
+        elif isinstance(value, (int, float)):
+            converted[key] = str(value)
+        elif isinstance(value, (dict, list)):
+            import json
+            converted[key] = json.dumps(value)
+        else:
+            converted[key] = str(value)
+    
+    return converted
