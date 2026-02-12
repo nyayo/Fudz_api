@@ -8,6 +8,43 @@ from restaurants.models import MenuItem
 from users.models import CourierProfile, CustomerProfile, RestaurantProfile
 
 
+class OrderStatus:
+    """Constants for order status values"""
+    PLACED = "placed"
+    ACCEPTED = "accepted"
+    READY = "ready"
+    PICKED_UP = "picked_up"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+    
+    CHOICES = [
+        (PLACED, "Placed"),
+        (ACCEPTED, "Accepted"),
+        (READY, "Ready for pickup"),
+        (PICKED_UP, "Picked up"),
+        (DELIVERED, "Delivered"),
+        (CANCELLED, "Cancelled"),
+    ]
+    
+    COMPLETED_STATUSES = [DELIVERED, CANCELLED]
+    ACTIVE_STATUSES = [PLACED, ACCEPTED, READY, PICKED_UP]
+
+
+class PaymentStatus:
+    """Constants for payment status values"""
+    PENDING = "pending"
+    PAID = "paid"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+    
+    CHOICES = [
+        (PENDING, "Pending"),
+        (PAID, "Paid"),
+        (FAILED, "Failed"),
+        (REFUNDED, "Refunded"),
+    ]
+
+
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -23,14 +60,9 @@ class CartItem(models.Model):
 
 
 class Order(models.Model):
-    STATUS_CHOICES = [
-        ("placed", "Placed"),
-        ("accepted", "Accepted"),
-        ("ready", "Ready for pickup"),
-        ("picked_up", "Picked up"),
-        ("delivered", "Delivered"),
-        ("cancelled", "Cancelled"),
-    ]
+    STATUS_CHOICES = OrderStatus.CHOICES
+    PAYMENT_STATUS_CHOICES = PaymentStatus.CHOICES
+    
     customer = models.ForeignKey(
         CustomerProfile, on_delete=models.CASCADE, related_name="orders"
     )
@@ -46,13 +78,24 @@ class Order(models.Model):
     )
     pickup_location = gis_models.PointField(geography=True, null=True, blank=True)
     dropoff_location = gis_models.PointField(geography=True, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="placed")
-    payment_status = models.CharField(max_length=20, default="pending")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=OrderStatus.PLACED)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default=PaymentStatus.PENDING)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    tax = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     placed_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Order {self.id} - {self.status}"
+
+    class Meta:
+        ordering = ["-placed_at"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["payment_status"]),
+            models.Index(fields=["placed_at"]),
+        ]
 
 
 class OrderItem(models.Model):

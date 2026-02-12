@@ -2,6 +2,8 @@ from django.db import transaction
 from django.contrib.gis.geos import Point
 
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 
 from restaurants.models import MenuItem
 from .models import Cart, CartItem, Order, OrderItem
@@ -17,6 +19,7 @@ class CartItemSerializer(serializers.ModelSerializer):
     menu_item = SimpleMenuSerializer()
     total_price = serializers.SerializerMethodField()
     
+    @extend_schema_field(OpenApiTypes.DECIMAL)
     def get_total_price(self, cart_item: CartItem):
         return cart_item.qty * cart_item.menu_item.price
     
@@ -31,9 +34,11 @@ class CartSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
     restaurant_id = serializers.SerializerMethodField()
     
+    @extend_schema_field(OpenApiTypes.DECIMAL)
     def get_total_price(self, cart: Cart):
         return sum([item.qty * item.menu_item.price for item in cart.items.all()])
     
+    @extend_schema_field(OpenApiTypes.INT)
     def get_restaurant_id(self, cart: Cart):
         first_item = cart.items.first()
         if first_item and first_item.menu_item:
@@ -116,6 +121,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'promotion',
         ]
         
+    @extend_schema_field({
+        'type': 'object',
+        'properties': {
+            'id': {'type': 'integer'},
+            'name': {'type': 'string'},
+            'discount': {'type': 'number'}
+        },
+        'nullable': True
+    })
     def get_promotion(self, obj):
         """Get promotion details if applied"""
         if obj.applied_promotion:
@@ -142,12 +156,16 @@ class OrderSerializer(serializers.ModelSerializer):
             'dropoff_location', 
             'placed_at', 
             'status', 
-            'payment_status', 
+            'payment_status',
+            'total_price',
+            'delivery_fee',
+            'tax',
             'items',
             'total_discount',
             'total_amount'
             ]
         
+    @extend_schema_field(OpenApiTypes.FLOAT)
     def get_total_discount(self, obj):
         """Calculate total discount applied to order"""
         return float(sum(
@@ -155,6 +173,7 @@ class OrderSerializer(serializers.ModelSerializer):
             for item in obj.items.all()
         ))
     
+    @extend_schema_field(OpenApiTypes.FLOAT)
     def get_total_amount(self, obj):
         """Calculate final amount to pay (after discounts)"""
         return float(sum(
@@ -166,12 +185,19 @@ class OrderSerializer(serializers.ModelSerializer):
 class UpdateOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['status', 'payment_status'] 
+        fields = ['status', 'payment_status']
+        extra_kwargs = {
+            'status': {'help_text': 'Order status: placed, accepted, ready, picked_up, delivered, cancelled'},
+            'payment_status': {'help_text': 'Payment status: pending, paid, failed, refunded'},
+        }
        
         
 class CreateOrderSerializer(serializers.Serializer):
-    cart_id = serializers.UUIDField()
-    dropoff_location = serializers.JSONField(required=False)
+    cart_id = serializers.UUIDField(help_text="UUID of the cart to convert to order")
+    dropoff_location = serializers.JSONField(
+        required=False,
+        help_text="Delivery location with latitude, longitude, and address fields"
+    )
     
     def validate_cart_id(self, cart_id):
         if not Cart.objects.filter(pk=cart_id).exists():
@@ -217,6 +243,7 @@ class CreateOrderSerializer(serializers.Serializer):
             )
             
             order_items = []
+            total_price = 0
             for item in cart_items:
                 menu_item = item.menu_item
                 
@@ -236,12 +263,13 @@ class CreateOrderSerializer(serializers.Serializer):
                     discount_amount=discount
                 )
                 order_items.append(order_item)
-                
-                if active_promotion:
-                    print(f"✅ Applied {active_promotion.discount}% discount to {menu_item.title}")
-                    print(f"   Original: ${original_price}, Now: ${offer_price}")
+                total_price += offer_price * item.qty
             
             OrderItem.objects.bulk_create(order_items)
+            
+            # Update order total price
+            order.total_price = total_price
+            order.save(update_fields=['total_price'])
 
             Cart.objects.filter(id=cart_id).delete()
             

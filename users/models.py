@@ -168,6 +168,12 @@ class RestaurantProfile(models.Model):
         blank=True,
         help_text="Restaurant profile image",
     )
+    logo = models.ImageField(
+        upload_to="images/restaurant_logos/",
+        null=True,
+        blank=True,
+        help_text="Restaurant logo",
+    )
     address = models.TextField()
     location = gis_models.PointField(
         geography=True, null=True, blank=True, default=Point(0, 0)
@@ -219,10 +225,26 @@ class Address(models.Model):
 
 
 class NotificationPreference(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="notification_preferences"
+    )
+    # Channel preferences
     receive_push = models.BooleanField(default=True)
     receive_email = models.BooleanField(default=True)
+    # Category preferences
+    promotions_and_offers = models.BooleanField(
+        default=True, help_text="Receive promotional offers and discounts"
+    )
+    new_restaurants = models.BooleanField(
+        default=True, help_text="Notifications about new restaurants and menu items"
+    )
+    review_reminders = models.BooleanField(
+        default=True, help_text="Reminders to review completed orders"
+    )
 
     class Meta:
         db_table = "notification_preferences"
+
+    def __str__(self):
+        return f"Notification preferences for {self.user.email}"
 

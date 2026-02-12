@@ -1,27 +1,27 @@
 from django.shortcuts import render
-
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from django.db import transaction
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from delivery.models import DeliveryRequest
 from delivery.tasks import auto_assign_courier
-from .models import Cart, CartItem, Order
+from .models import Cart, CartItem, Order, OrderStatus
 from .serializers import CartSerializer, CartItemSerializer, AddCartItemSerializer, OrderSerializer, UpdateCartItemSerializer, CreateOrderSerializer, UpdateOrderSerializer
 
 
 class CartViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
     queryset = Cart.objects.prefetch_related('items__menu_item').all()
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     serializer_class = CartSerializer
 
 
 class CartItemViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -46,6 +46,7 @@ class OrderViewSet(ModelViewSet):
             return [IsAdminUser()]
         return [IsAuthenticated()]
     
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = CreateOrderSerializer(data=request.data, context={'user_id': self.request.user.id})
         serializer.is_valid(raise_exception=True)
@@ -75,10 +76,11 @@ class OrderViewSet(ModelViewSet):
         return Order.objects.none()
     
     
+    @transaction.atomic
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
         order = self.get_object()
-        order.status = "accepted"
+        order.status = OrderStatus.ACCEPTED
         order.save()
 
         delivery = DeliveryRequest.objects.create(
@@ -86,8 +88,6 @@ class OrderViewSet(ModelViewSet):
             pickup_location=order.restaurant.location,
             dropoff_location=order.dropoff_location,
         )
-        
-        print("Order accepted by restaurant, delivery request created.")
 
         auto_assign_courier.delay(delivery.id)
 

@@ -103,8 +103,9 @@ def send_order_notification(user, title, order):
     )
     
 def notify_new_promotion(promotion, user_ids):
-    from .tasks import send_fcm_to_multiple_users
+    from .tasks import send_fcm_to_multiple_users, send_promotion_email
     
+    # Send FCM notifications
     send_fcm_to_multiple_users.delay(
         user_ids,
         "New Promotion!",
@@ -114,6 +115,9 @@ def notify_new_promotion(promotion, user_ids):
             'type': 'promotion'
         }
     )
+    
+    # Send promotion emails to all customers
+    send_promotion_email.delay(promotion.id, user_ids)
     
 def convert_data_to_strings(data):
     if not data:

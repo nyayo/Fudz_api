@@ -32,7 +32,6 @@ class PromotionViewSet(viewsets.ModelViewSet):
         """Filter promotions by restaurant if user is restaurant owner"""
         queryset = super().get_queryset()
         if hasattr(self.request.user, "restaurant_profile"):
-            print(f"Filtering promotions for {self.request.user.restaurant_profile.id}")
             return queryset.filter(restaurant=self.request.user.restaurant_profile)
         return queryset
 
@@ -80,12 +79,16 @@ class MenuItemListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-
+        
+        # Filter by user's restaurant if not staff
         if (
             hasattr(self.request.user, "restaurant_profile")
             and not self.request.user.is_staff
         ):
             queryset = queryset.filter(restaurant=self.request.user.restaurant_profile)
+        else:
+            # For public access, only show items from approved restaurants
+            queryset = queryset.filter(restaurant__is_approved=True, restaurant__is_active=True)
 
         restaurant_id = self.request.query_params.get("restaurant_id")
         if restaurant_id:
@@ -203,7 +206,6 @@ class MenuItemImageViewSet(ModelViewSet):
         return {"menu_item_id": self.kwargs["pk"]}
 
     def get_queryset(self):
-        print(f"Menu Item pk {self.kwargs['pk']}")
         return MenuItemImage.objects.filter(menu_item_id=self.kwargs["pk"])
 
 
@@ -339,7 +341,6 @@ class MenuCategoryImageViewSet(ModelViewSet):
         return {"category_id": self.kwargs["category_id"]}
 
     def get_queryset(self):
-        print(f"Menu Category pk {self.kwargs['category_id']}")
         return MenuCategoryImage.objects.filter(category_id=self.kwargs["category_id"])
 
 

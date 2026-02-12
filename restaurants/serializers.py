@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 
 from users.models import RestaurantProfile
 
@@ -32,6 +34,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at"]
 
+    @extend_schema_field(OpenApiTypes.BOOL)
     def get_is_currently_active(self, obj):
         """Check if promotion is active and within date range"""
         from django.utils import timezone
@@ -108,6 +111,7 @@ class MenuItemSerializer(serializers.ModelSerializer):
 
                 self.fields["restaurant"].queryset = RestaurantProfile.objects.all()
 
+    @extend_schema_field(OpenApiTypes.FLOAT)
     def get_discounted_price(self, obj):
         """Calculate price after applying active promotions"""
         from django.utils import timezone
@@ -276,6 +280,8 @@ class RestaurantProfileSerializer(serializers.ModelSerializer):
             "restaurant_name",
             "business_license",
             "address",
+            "image",
+            "logo",
             "opening_hours",
             "rating",
             "avg_rating",
@@ -303,6 +309,8 @@ class RestaurantListSerializer(serializers.ModelSerializer):
             "id",
             "restaurant_name",
             "address",
+            "image",
+            "logo",
             "rating",
             "avg_rating",
             "menu_items_count",
