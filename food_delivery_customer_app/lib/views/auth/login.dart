@@ -18,17 +18,13 @@ class LoginScreen extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 20),
-          
+
           // App Logo
           Hero(
             tag: 'app_logo',
-            child: Image.asset(
-              "assets/logo.png",
-              height: 100,
-              width: 100,
-            ),
+            child: Image.asset("assets/logo.png", height: 100, width: 100),
           ),
-          
+
           const SizedBox(height: 30),
 
           // Main Login Content in Glass Card
@@ -38,15 +34,21 @@ class LoginScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "WELCOME TO FUDGON",
-                  style: ResponsiveText.heading2(context, color: TColor.primary),
+                  "WELCOME TO FUDGO",
+                  style: ResponsiveText.heading2(
+                    context,
+                    color: TColor.primary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "Get your favorite meals delivered fast – start with your phone number!",
-                  style: ResponsiveText.bodySmall(context, color: Colors.black54),
+                  style: ResponsiveText.bodySmall(
+                    context,
+                    color: Colors.black54,
+                  ),
                 ),
-                
+
                 const SizedBox(height: 30),
 
                 // Phone input section (Improved)
@@ -62,10 +64,17 @@ class LoginScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           "+256",
-                          style: ResponsiveText.body(context, fontWeight: FontWeight.bold),
+                          style: ResponsiveText.body(
+                            context,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      Container(width: 1, height: 24, color: Colors.grey.withOpacity(0.3)),
+                      Container(
+                        width: 1,
+                        height: 24,
+                        color: Colors.grey.withOpacity(0.3),
+                      ),
                       Expanded(
                         child: TextField(
                           keyboardType: TextInputType.phone,
@@ -110,7 +119,9 @@ class LoginScreen extends StatelessWidget {
           // Social Dividers and Buttons
           Row(
             children: [
-              const Expanded(child: Divider(thickness: 1, color: Colors.white24)),
+              const Expanded(
+                child: Divider(thickness: 1, color: Colors.white24),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -118,7 +129,9 @@ class LoginScreen extends StatelessWidget {
                   style: ResponsiveText.caption(context, color: Colors.white70),
                 ),
               ),
-              const Expanded(child: Divider(thickness: 1, color: Colors.white24)),
+              const Expanded(
+                child: Divider(thickness: 1, color: Colors.white24),
+              ),
             ],
           ),
 

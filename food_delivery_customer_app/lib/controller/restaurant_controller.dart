@@ -82,12 +82,12 @@ class RestaurantController extends GetxController {
         getFeaturedItemsWithPromotions(showLoading: shouldShowLoading),
       ]);
 
-      // Preload data in background
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await preloadPopularRestaurantsDetails();
-        await preloadPopularMenuItems();
+      // Preload data in background (fire-and-forget, non-blocking)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        preloadPopularRestaurantsDetails();
+        preloadPopularMenuItems();
         final categoryController = Get.find<CategoryController>();
-        await categoryController.preloadPopularCategories();
+        categoryController.preloadPopularCategories();
       });
 
       if (shouldShowLoading) {
@@ -159,7 +159,10 @@ class RestaurantController extends GetxController {
     }
   }
 
-  Future<void> getRestaurants({bool showLoading = false, bool loadMore = false}) async {
+  Future<void> getRestaurants({
+    bool showLoading = false,
+    bool loadMore = false,
+  }) async {
     try {
       if (loadMore) {
         if (isLoadingMoreRestaurants.value || !hasMoreRestaurants.value) return;
@@ -169,12 +172,14 @@ class RestaurantController extends GetxController {
         currentRestaurantPage.value = 1;
         hasMoreRestaurants.value = true;
       }
-      
+
       error.value = '';
 
       final page = currentRestaurantPage.value;
-      final response = await _apiService.get('restaurants/restaurants/?page=$page');
-      
+      final response = await _apiService.get(
+        'restaurants/restaurants/?page=$page',
+      );
+
       List<dynamic> restaurantsList = [];
 
       if (response is List) {
@@ -309,7 +314,10 @@ class RestaurantController extends GetxController {
     }
   }
 
-  Future<void> getMenuItems({bool showLoading = false, bool loadMore = false}) async {
+  Future<void> getMenuItems({
+    bool showLoading = false,
+    bool loadMore = false,
+  }) async {
     try {
       if (loadMore) {
         if (isLoadingMoreMenuItems.value || !hasMoreMenuItems.value) return;
@@ -322,12 +330,12 @@ class RestaurantController extends GetxController {
         currentMenuItemsPage.value = 1;
         hasMoreMenuItems.value = true;
       }
-      
+
       error.value = '';
 
       final page = currentMenuItemsPage.value;
       final response = await _apiService.get('restaurants/items/?page=$page');
-      
+
       List<dynamic> menuItemsList = [];
 
       if (response is List) {
