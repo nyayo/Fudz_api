@@ -110,7 +110,7 @@ class _GetStartedState extends State<GetStarted> {
 
           // Optional Footer Text
           Text(
-            "Powered by FUDZ",
+            "Powered by Fudgon",
             style: ResponsiveText.tiny(context, color: Colors.white70),
           ),
 

@@ -25,7 +25,7 @@ class ProfilePage extends StatelessWidget {
             children: [
               // Header
               FadeSlideIn(
-                duration: const Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 500),
                 child: _buildHeader(),
               ),
               const SizedBox(height: 32),
@@ -39,8 +39,8 @@ class ProfilePage extends StatelessWidget {
                   children: [
                     // Profile Card
                     FadeSlideIn(
-                      duration: const Duration(milliseconds: 300),
-                      delay: const Duration(milliseconds: 50),
+                      duration: const Duration(milliseconds: 500),
+                      delay: const Duration(milliseconds: 100),
                       child: _buildProfileCard(user, isLoggedIn),
                     ),
                     const SizedBox(height: 24),
@@ -48,8 +48,8 @@ class ProfilePage extends StatelessWidget {
                     // Personal Information Section
                     if (isLoggedIn)
                       FadeSlideIn(
-                        duration: const Duration(milliseconds: 300),
-                        delay: const Duration(milliseconds: 100),
+                        duration: const Duration(milliseconds: 500),
+                        delay: const Duration(milliseconds: 200),
                         child: _buildPersonalInfoSection(user),
                       ),
                     if (isLoggedIn) const SizedBox(height: 24),
@@ -57,8 +57,8 @@ class ProfilePage extends StatelessWidget {
                     // Account Information Section
                     if (isLoggedIn)
                       FadeSlideIn(
-                        duration: const Duration(milliseconds: 300),
-                        delay: const Duration(milliseconds: 150),
+                        duration: const Duration(milliseconds: 500),
+                        delay: const Duration(milliseconds: 300),
                         child: _buildAccountInfoSection(user),
                       ),
                     if (isLoggedIn) const SizedBox(height: 24),
@@ -66,8 +66,8 @@ class ProfilePage extends StatelessWidget {
                     // Notification Preferences
                     if (isLoggedIn)
                       FadeSlideIn(
-                        duration: const Duration(milliseconds: 300),
-                        delay: const Duration(milliseconds: 200),
+                        duration: const Duration(milliseconds: 500),
+                        delay: const Duration(milliseconds: 400),
                         child: _buildNotificationPreferencesButton(),
                       ),
                     if (isLoggedIn) const SizedBox(height: 32),
@@ -75,15 +75,15 @@ class ProfilePage extends StatelessWidget {
                     // Logout Button
                     if (isLoggedIn)
                       FadeSlideIn(
-                        duration: const Duration(milliseconds: 300),
-                        delay: const Duration(milliseconds: 250),
+                        duration: const Duration(milliseconds: 500),
+                        delay: const Duration(milliseconds: 500),
                         child: _buildLogoutButton(userController),
                       ),
 
                     // Show login prompt if not logged in
                     if (!isLoggedIn)
                       FadeSlideIn(
-                        duration: const Duration(milliseconds: 300),
+                        duration: const Duration(milliseconds: 500),
                         child: _buildLoginPrompt(),
                       ),
                   ],

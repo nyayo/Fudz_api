@@ -63,7 +63,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final String title =
         data['title']?.toString() ??
         data['name']?.toString() ??
-        'Food Delivery';
+        'Fudgon';
     final String body =
         data['body']?.toString() ??
         data['description']?.toString() ??
@@ -145,7 +145,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _initializeNotificationService() async {
     // Small delay to ensure all bindings are loaded
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 100));
     final notificationService = Get.find<NotificationService>();
     await notificationService.initialize();
   }
@@ -154,7 +154,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Food Delivery',
+      title: 'Fudgon',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,

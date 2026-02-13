@@ -100,7 +100,7 @@ class _CartPageState extends State<CartPage> {
               if (!_cartController.hasItems) return const SizedBox();
 
               return FadeSlideIn(
-                duration: const Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 500),
                 child: _buildOrderSummary(),
               );
             }),

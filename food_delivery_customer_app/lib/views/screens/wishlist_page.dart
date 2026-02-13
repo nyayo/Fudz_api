@@ -238,7 +238,7 @@ class WishlistPage extends StatelessWidget {
         if (index >= items.length) return const SizedBox.shrink();
 
         return FadeSlideIn(
-          duration: Duration(milliseconds: 250 + (index * 30).clamp(0, 150)),
+          duration: Duration(milliseconds: 400 + (index * 50).clamp(0, 200)),
           child: _buildWishlistItemCard(items[index]),
         );
       },
