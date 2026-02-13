@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
@@ -19,9 +20,10 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   int _selectedCategory = 0;
   final CategoryController categoryController = Get.find();
   late AnimationController _entranceController;
-  late AnimationController _selectionController;
   late AnimationController _bounceController;
   late ScrollController _scrollController;
+  Timer? _autoRotateTimer;
+  bool _userInteracted = false; // pause auto-rotate after tap
 
   @override
   void initState() {
@@ -31,12 +33,8 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _selectionController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
     _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _entranceController.forward();
@@ -44,34 +42,36 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
 
   @override
   void dispose() {
+    _autoRotateTimer?.cancel();
     _entranceController.dispose();
-    _selectionController.dispose();
     _bounceController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  /// Start auto-rotation once categories are loaded
+  void _startAutoRotate(int categoryCount) {
+    if (_autoRotateTimer != null || categoryCount <= 1) return;
+    _autoRotateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted || _userInteracted) return;
+      setState(() {
+        _selectedCategory = (_selectedCategory + 1) % categoryCount;
+      });
+      _bounceController.forward(from: 0.0);
+      _scrollToCenter(_selectedCategory);
+    });
+  }
+
   void _onCategoryTap(int index, int categoryId, String categoryName) {
-    if (_selectedCategory == index) {
-      // Navigate on re-tap of the already selected category
-      categoryController.getCategoryDetail(categoryId);
-      Get.to(
-        () => CategoryPage(
-          categoryId: categoryId,
-          categoryName: categoryName,
-        ),
-      );
-      return;
-    }
+    // Stop auto-rotation permanently after a user tap
+    _userInteracted = true;
+    _autoRotateTimer?.cancel();
+    _autoRotateTimer = null;
 
     setState(() {
       _selectedCategory = index;
     });
-
-    // Bounce animation
     _bounceController.forward(from: 0.0);
-
-    // Scroll to center the selected item
     _scrollToCenter(index);
 
     // Navigate
@@ -85,14 +85,18 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   }
 
   void _scrollToCenter(int index) {
+    if (!_scrollController.hasClients) return;
     final screenWidth = MediaQuery.of(context).size.width;
-    final itemWidth = 88.0;
-    final spacing = 12.0;
+    const itemWidth = 88.0;
+    const spacing = 12.0;
     final targetOffset =
-        (index * (itemWidth + spacing)) - (screenWidth / 2) + (itemWidth / 2) + 20;
+        (index * (itemWidth + spacing)) -
+            (screenWidth / 2) +
+            (itemWidth / 2) +
+            20;
     _scrollController.animateTo(
       targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 450),
       curve: Curves.easeOutCubic,
     );
   }
@@ -106,17 +110,32 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
         return _buildLoadingCategories();
       }
 
+      // Start auto-rotate once we have data
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startAutoRotate(categories.length);
+      });
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Container(
+                width: 4,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: TColor.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(
                 "Categories",
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
                   color: TColor.primaryText,
+                  letterSpacing: -0.5,
                 ),
               ),
               const Spacer(),
@@ -132,7 +151,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
           const SizedBox(height: 16),
 
           // Curved shelf background + categories
-          Container(
+          SizedBox(
             height: 150,
             child: Stack(
               children: [
@@ -211,9 +230,9 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   }) {
     final isSelected = _selectedCategory == index;
 
-    // Circle sizes
-    final double circleSize = isSelected ? 78 : 68;
-    final double imageSize = isSelected ? 50 : 42;
+    // Circle sizes — bigger pop on selected
+    final double circleSize = isSelected ? 80 : 66;
+    final double imageSize = isSelected ? 52 : 40;
 
     return GestureDetector(
       onTap: () => _onCategoryTap(index, categoryId, categoryName),
@@ -223,44 +242,49 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Animated circle with image
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 350),
+            // Animated circle with image — bounce scale on selection
+            AnimatedScale(
+              scale: isSelected ? 1.0 : 0.88,
+              duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutBack,
-              width: circleSize,
-              height: circleSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutBack,
+                width: circleSize,
+                height: circleSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? TColor.primary.withValues(alpha: 0.30)
+                          : Colors.black.withValues(alpha: 0.06),
+                      blurRadius: isSelected ? 18 : 10,
+                      spreadRadius: isSelected ? 3 : 0,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(
                     color: isSelected
-                        ? TColor.primary.withValues(alpha: 0.25)
-                        : Colors.black.withValues(alpha: 0.06),
-                    blurRadius: isSelected ? 16 : 10,
-                    spreadRadius: isSelected ? 2 : 0,
-                    offset: const Offset(0, 4),
+                        ? TColor.primary.withValues(alpha: 0.5)
+                        : Colors.grey.withValues(alpha: 0.12),
+                    width: isSelected ? 3 : 1.5,
                   ),
-                ],
-                border: Border.all(
-                  color: isSelected
-                      ? TColor.primary.withValues(alpha: 0.3)
-                      : Colors.grey.withValues(alpha: 0.12),
-                  width: isSelected ? 2.5 : 1.5,
                 ),
-              ),
-              child: Center(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: imageSize,
-                  height: imageSize,
-                  child: ClipOval(
-                    child: CachedImage(
-                      imageUrl: imageUrl,
-                      width: imageSize,
-                      height: imageSize,
-                      borderRadius: imageSize / 2,
-                      placeholderIcon: Icons.category,
+                child: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: imageSize,
+                    height: imageSize,
+                    child: ClipOval(
+                      child: CachedImage(
+                        imageUrl: imageUrl,
+                        width: imageSize,
+                        height: imageSize,
+                        borderRadius: imageSize / 2,
+                        placeholderIcon: Icons.category,
+                      ),
                     ),
                   ),
                 ),
@@ -275,7 +299,8 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
               style: TextStyle(
                 fontSize: isSelected ? 13 : 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? TColor.primaryText : TColor.secondaryText,
+                color:
+                    isSelected ? TColor.primaryText : TColor.secondaryText,
                 letterSpacing: isSelected ? 0.2 : 0,
               ),
               child: Text(
@@ -295,7 +320,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
               width: isSelected ? 28 : 0,
               height: 4,
               decoration: BoxDecoration(
-                color: TColor.primaryText,
+                color: TColor.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -311,13 +336,26 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Categories",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: TColor.primaryText,
-          ),
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 100,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -342,8 +380,8 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Container(
-                        width: 68,
-                        height: 68,
+                        width: 66,
+                        height: 66,
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           shape: BoxShape.circle,
@@ -358,9 +396,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      const SizedBox(height: 4),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),
