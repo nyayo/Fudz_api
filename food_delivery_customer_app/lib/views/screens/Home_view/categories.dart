@@ -15,25 +15,86 @@ class CategoriesWidget extends StatefulWidget {
 }
 
 class _CategoriesWidgetState extends State<CategoriesWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   int _selectedCategory = 0;
   final CategoryController categoryController = Get.find();
-  late AnimationController _animationController;
+  late AnimationController _entranceController;
+  late AnimationController _selectionController;
+  late AnimationController _bounceController;
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+    _scrollController = ScrollController();
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _animationController.forward();
+    _selectionController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _entranceController.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _entranceController.dispose();
+    _selectionController.dispose();
+    _bounceController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onCategoryTap(int index, int categoryId, String categoryName) {
+    if (_selectedCategory == index) {
+      // Navigate on re-tap of the already selected category
+      categoryController.getCategoryDetail(categoryId);
+      Get.to(
+        () => CategoryPage(
+          categoryId: categoryId,
+          categoryName: categoryName,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedCategory = index;
+    });
+
+    // Bounce animation
+    _bounceController.forward(from: 0.0);
+
+    // Scroll to center the selected item
+    _scrollToCenter(index);
+
+    // Navigate
+    categoryController.getCategoryDetail(categoryId);
+    Get.to(
+      () => CategoryPage(
+        categoryId: categoryId,
+        categoryName: categoryName,
+      ),
+    );
+  }
+
+  void _scrollToCenter(int index) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final itemWidth = 88.0;
+    final spacing = 12.0;
+    final targetOffset =
+        (index * (itemWidth + spacing)) - (screenWidth / 2) + (itemWidth / 2) + 20;
+    _scrollController.animateTo(
+      targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -59,7 +120,6 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                 ),
               ),
               const Spacer(),
-              // Debug button - remove in production
               if (kDebugMode)
                 IconButton(
                   onPressed: () {
@@ -69,57 +129,72 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                 ),
             ],
           ),
-          const SizedBox(height: 18),
-          SizedBox(
-            height: 120,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final categoryId = category.id;
-                final categoryName = category.name;
+          const SizedBox(height: 16),
 
-                // Get image URL with fallback
-                final imageUrl = category.mapImageUrl();
-
-                // Stagger animation for entrance effect
-                final Animation<double> animation = Tween<double>(
-                  begin: 0.0,
-                  end: 1.0,
-                ).animate(
-                  CurvedAnimation(
-                    parent: _animationController,
-                    curve: Interval(
-                      (index / categories.length) * 0.5,
-                      0.5 + (index / categories.length) * 0.5,
-                      curve: Curves.easeOutBack,
-                    ),
+          // Curved shelf background + categories
+          Container(
+            height: 150,
+            child: Stack(
+              children: [
+                // Curved shelf background
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: CustomPaint(
+                    size: Size(MediaQuery.of(context).size.width, 100),
+                    painter: _ShelfPainter(),
                   ),
-                );
+                ),
 
-                return AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: animation.value,
-                      child: Opacity(
-                        opacity: animation.value,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: _buildCategoryCard(
-                    context: context,
-                    index: index,
-                    categoryId: categoryId,
-                    categoryName: categoryName,
-                    imageUrl: imageUrl ?? '',
-                    isLast: index == categories.length - 1,
+                // Category items
+                Positioned.fill(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      final categoryId = category.id;
+                      final categoryName = category.name;
+                      final imageUrl = category.mapImageUrl();
+
+                      // Staggered entrance animation
+                      final entrance = Tween<double>(begin: 0.0, end: 1.0)
+                          .animate(CurvedAnimation(
+                        parent: _entranceController,
+                        curve: Interval(
+                          (index / categories.length) * 0.4,
+                          0.4 + (index / categories.length) * 0.6,
+                          curve: Curves.easeOutBack,
+                        ),
+                      ));
+
+                      return AnimatedBuilder(
+                        animation: entrance,
+                        builder: (context, child) {
+                          return Transform.translate(
+                            offset: Offset(0, 30 * (1 - entrance.value)),
+                            child: Opacity(
+                              opacity: entrance.value.clamp(0.0, 1.0),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: _buildCategoryItem(
+                          index: index,
+                          categoryId: categoryId,
+                          categoryName: categoryName,
+                          imageUrl: imageUrl ?? '',
+                          isLast: index == categories.length - 1,
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
         ],
@@ -127,8 +202,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     });
   }
 
-  Widget _buildCategoryCard({
-    required BuildContext context,
+  Widget _buildCategoryItem({
     required int index,
     required int categoryId,
     required String categoryName,
@@ -137,98 +211,96 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   }) {
     final isSelected = _selectedCategory == index;
 
+    // Circle sizes
+    final double circleSize = isSelected ? 78 : 68;
+    final double imageSize = isSelected ? 50 : 42;
+
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedCategory = index;
-        });
-
-        // Preload category details when tapped
-        categoryController.getCategoryDetail(categoryId);
-
-        Get.to(
-          () => CategoryPage(
-            categoryId: categoryId,
-            categoryName: categoryName,
-          ),
-        );
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        width: 90,
-        margin: EdgeInsets.only(
-          right: isLast ? 0 : 14,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? TColor.primary
-              : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? TColor.primary.withOpacity(0.4)
-                  : Colors.grey.withOpacity(0.15),
-              spreadRadius: isSelected ? 2 : 1,
-              blurRadius: isSelected ? 12 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      onTap: () => _onCategoryTap(index, categoryId, categoryName),
+      child: Container(
+        width: 88,
+        margin: EdgeInsets.only(right: isLast ? 0 : 12),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Circular image container with white background
+            // Animated circle with image
             AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 56,
-              height: 56,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutBack,
+              width: circleSize,
+              height: circleSize,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white
-                    : Colors.grey[100],
                 shape: BoxShape.circle,
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected
+                        ? TColor.primary.withValues(alpha: 0.25)
+                        : Colors.black.withValues(alpha: 0.06),
+                    blurRadius: isSelected ? 16 : 10,
+                    spreadRadius: isSelected ? 2 : 0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(
+                  color: isSelected
+                      ? TColor.primary.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.12),
+                  width: isSelected ? 2.5 : 1.5,
+                ),
               ),
               child: Center(
-                child: ClipOval(
-                  child: CachedImage(
-                    imageUrl: imageUrl ?? '',
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    placeholderIcon: Icons.category,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: imageSize,
+                  height: imageSize,
+                  child: ClipOval(
+                    child: CachedImage(
+                      imageUrl: imageUrl,
+                      width: imageSize,
+                      height: imageSize,
+                      borderRadius: imageSize / 2,
+                      placeholderIcon: Icons.category,
+                    ),
                   ),
                 ),
               ),
             ),
+
             const SizedBox(height: 8),
-            // Category name only
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+
+            // Category name
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 250),
+              style: TextStyle(
+                fontSize: isSelected ? 13 : 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? TColor.primaryText : TColor.secondaryText,
+                letterSpacing: isSelected ? 0.2 : 0,
+              ),
               child: Text(
                 categoryName,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : TColor.primaryText,
-                ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+
+            const SizedBox(height: 6),
+
+            // Selection indicator pill
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: isSelected ? 28 : 0,
+              height: 4,
+              decoration: BoxDecoration(
+                color: TColor.primaryText,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            const SizedBox(height: 4),
           ],
         ),
       ),
@@ -247,49 +319,50 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
             color: TColor.primaryText,
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         SizedBox(
-          height: 120,
+          height: 150,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: 5,
             itemBuilder: (context, index) {
-              return Container(
-                width: 90,
-                margin: EdgeInsets.only(right: index == 4 ? 0 : 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        shape: BoxShape.circle,
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.4, end: 1.0),
+                duration: Duration(milliseconds: 800 + (index * 150)),
+                curve: Curves.easeInOut,
+                builder: (context, value, child) {
+                  return Opacity(opacity: value, child: child);
+                },
+                child: Container(
+                  width: 88,
+                  margin: EdgeInsets.only(right: index == 4 ? 0 : 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        width: 68,
+                        height: 68,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: 60,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(6),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 56,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
                 ),
               );
             },
@@ -298,4 +371,39 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
       ],
     );
   }
+}
+
+/// Paints a subtle curved shelf behind the category items
+class _ShelfPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.grey.withValues(alpha: 0.04),
+          Colors.grey.withValues(alpha: 0.08),
+          Colors.grey.withValues(alpha: 0.03),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.45);
+    path.quadraticBezierTo(
+      size.width * 0.5,
+      0,
+      size.width,
+      size.height * 0.45,
+    );
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
