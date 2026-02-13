@@ -1,5 +1,4 @@
 // views/widgets/popular_restaurants_widget.dart
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';

@@ -465,7 +465,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 15),
 
                   // Popular Restaurants Widget
-                  PopularRestaurantsWidget(),
+                  const PopularRestaurantsWidget(),
 
                   const SizedBox(height: 15),
 
