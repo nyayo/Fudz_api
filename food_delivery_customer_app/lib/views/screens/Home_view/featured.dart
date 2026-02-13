@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
@@ -7,6 +8,7 @@ import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:get/get.dart';
+import 'package:palette_generator/palette_generator.dart';
 
 class MenuItemsWidget extends StatefulWidget {
   const MenuItemsWidget({super.key});
@@ -21,8 +23,11 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
   late AnimationController _titleController;
   late ScrollController _scrollController;
 
-  // Pastel accent colors for each card background
-  static const List<Color> _cardAccents = [
+  /// Cache of dominant colors extracted from menu item images, keyed by image URL.
+  final Map<String, Color> _dominantColors = {};
+
+  // Fallback pastel accents used while (or if) extraction fails
+  static const List<Color> _fallbackAccents = [
     Color(0xFFFFF3E0), // warm peach
     Color(0xFFE8F5E9), // mint green
     Color(0xFFE3F2FD), // sky blue
@@ -55,6 +60,46 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     super.dispose();
   }
 
+  /// Extract dominant color from a network image and cache it.
+  Future<void> _extractDominantColor(String imageUrl) async {
+    if (imageUrl.isEmpty || _dominantColors.containsKey(imageUrl)) return;
+
+    try {
+      final paletteGenerator = await PaletteGenerator.fromImageProvider(
+        NetworkImage(imageUrl),
+        size: const Size(100, 100), // small size for speed
+        maximumColorCount: 6,
+      );
+
+      Color dominant = paletteGenerator.dominantColor?.color ??
+          paletteGenerator.vibrantColor?.color ??
+          paletteGenerator.lightVibrantColor?.color ??
+          _fallbackAccents[imageUrl.hashCode % _fallbackAccents.length];
+
+      // Make a very light pastel version of the dominant color for the card bg
+      final hsl = HSLColor.fromColor(dominant);
+      final pastel = hsl
+          .withSaturation((hsl.saturation * 0.45).clamp(0.0, 1.0))
+          .withLightness(0.92)
+          .toColor();
+
+      if (mounted) {
+        setState(() {
+          _dominantColors[imageUrl] = pastel;
+        });
+      }
+    } catch (_) {
+      // Silently fall back
+    }
+  }
+
+  Color _getAccentColor(int index, String imageUrl) {
+    if (imageUrl.isNotEmpty && _dominantColors.containsKey(imageUrl)) {
+      return _dominantColors[imageUrl]!;
+    }
+    return _fallbackAccents[index % _fallbackAccents.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     final RestaurantController restaurantController = Get.find();
@@ -67,16 +112,13 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
       children: [
         // Animated title
         SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(-0.3, 0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(
-                  parent: _titleController,
-                  curve: Curves.easeOutCubic,
-                ),
-              ),
+          position: Tween<Offset>(
+            begin: const Offset(-0.3, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: _titleController,
+            curve: Curves.easeOutCubic,
+          )),
           child: FadeTransition(
             opacity: _titleController,
             child: Padding(
@@ -117,9 +159,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                     onTap: () => Get.to(() => AllMenuItemsPage()),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
+                          horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
                         color: TColor.primary.withAlpha(20),
                         borderRadius: BorderRadius.circular(20),
@@ -136,11 +176,8 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: TColor.primary,
-                            size: 16,
-                          ),
+                          Icon(Icons.arrow_forward_rounded,
+                              color: TColor.primary, size: 16),
                         ],
                       ),
                     ),
@@ -161,6 +198,14 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
           final displayItems = restaurantController.menuItems.take(8).toList();
           if (displayItems.isEmpty) {
             return _buildEmptyWidget();
+          }
+
+          // Kick off color extraction for each item
+          for (final item in displayItems) {
+            final url = _resolveImageUrl(item);
+            if (url.isNotEmpty && !_dominantColors.containsKey(url)) {
+              _extractDominantColor(url);
+            }
           }
 
           return SizedBox(
@@ -188,6 +233,15 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     );
   }
 
+  String _resolveImageUrl(dynamic item) {
+    if (item.imageUrl != null && item.imageUrl!.isNotEmpty) return item.imageUrl!;
+    if (item.images != null &&
+        item.images.isNotEmpty &&
+        item.images.first.imageUrl.isNotEmpty) return item.images.first.imageUrl;
+    if (item.image != null && item.image.isNotEmpty) return item.image;
+    return '';
+  }
+
   Widget _buildAnimatedCard(
     int index,
     dynamic item,
@@ -200,11 +254,8 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     final popAnim = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _entranceController,
-        curve: Interval(
-          delay,
-          (delay + 0.5).clamp(0, 1),
-          curve: Curves.elasticOut,
-        ),
+        curve: Interval(delay, (delay + 0.5).clamp(0, 1),
+            curve: Curves.elasticOut),
       ),
     );
 
@@ -214,16 +265,14 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
         final scale = 0.3 + (0.7 * popAnim.value.clamp(0.0, 1.0));
         return Transform.scale(
           scale: scale,
-          child: Opacity(opacity: popAnim.value.clamp(0.0, 1.0), child: child),
+          child: Opacity(
+            opacity: popAnim.value.clamp(0.0, 1.0),
+            child: child,
+          ),
         );
       },
       child: _buildBlobCard(
-        index,
-        item,
-        cartController,
-        userController,
-        wishlistController,
-      ),
+          index, item, cartController, userController, wishlistController),
     );
   }
 
@@ -234,25 +283,14 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     UserController userController,
     WishlistController wishlistController,
   ) {
-    String getImageUrl() {
-      if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
-        return item.imageUrl!;
-      if (item.images != null &&
-          item.images.isNotEmpty &&
-          item.images.first.imageUrl.isNotEmpty)
-        return item.images.first.imageUrl;
-      if (item.image != null && item.image.isNotEmpty) return item.image;
-      return '';
-    }
-
-    final imageUrl = getImageUrl();
+    final imageUrl = _resolveImageUrl(item);
     final String title = item.title?.toString() ?? 'Unknown Item';
     final bool hasPromotion = item.hasActivePromotions;
-    final String priceText = hasPromotion
-        ? item.formattedDiscountedPrice
-        : item.formattedPrice;
-    final String? originalPriceText = hasPromotion ? item.formattedPrice : null;
-    final accentColor = _cardAccents[index % _cardAccents.length];
+    final String priceText =
+        hasPromotion ? item.formattedDiscountedPrice : item.formattedPrice;
+    final String? originalPriceText =
+        hasPromotion ? item.formattedPrice : null;
+    final accentColor = _getAccentColor(index, imageUrl);
 
     return GestureDetector(
       onTap: () => Get.to(() => MenuItemDetailPage(menuItemId: item.id)),
@@ -262,13 +300,15 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Card body with rounded bottom, flat-ish top for protruding image
+            // Card body — color from dominant image color
             Positioned(
               top: 50,
               left: 0,
               right: 0,
               bottom: 0,
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOutCubic,
                 decoration: BoxDecoration(
                   color: accentColor,
                   borderRadius: BorderRadius.circular(24),
@@ -332,22 +372,19 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                       const SizedBox(height: 6),
                       // Add to cart button
                       Obx(() {
-                        final isProcessing = cartController.isItemProcessing(
-                          '${item.id}_add',
-                        );
+                        final isProcessing =
+                            cartController.isItemProcessing('${item.id}_add');
                         final isInCart = cartController.isItemInCart(item.id);
                         return GestureDetector(
                           onTap: (isProcessing || isInCart)
                               ? null
                               : () async {
                                   if (!userController.isLoggedIn) {
-                                    Get.snackbar(
-                                      'Login Required',
-                                      'Please login to add items to cart',
-                                      snackPosition: SnackPosition.TOP,
-                                      backgroundColor: Colors.orange,
-                                      colorText: Colors.white,
-                                    );
+                                    Get.snackbar('Login Required',
+                                        'Please login to add items to cart',
+                                        snackPosition: SnackPosition.TOP,
+                                        backgroundColor: Colors.orange,
+                                        colorText: Colors.white);
                                     return;
                                   }
                                   try {
@@ -385,14 +422,13 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                             ),
                             child: Center(
                               child: isProcessing
-                                  ? SizedBox(
+                                  ? const SizedBox(
                                       width: 14,
                                       height: 14,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                         valueColor: AlwaysStoppedAnimation(
-                                          Colors.white,
-                                        ),
+                                            Colors.white),
                                       ),
                                     )
                                   : Row(
@@ -432,11 +468,13 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
               ),
             ),
 
-            // Floating circular food image — pops on top
+            // Floating circular food image — pops on top, ring color from image
             Positioned(
               top: 0,
               left: 160 / 2 - 48,
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOutCubic,
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
@@ -489,10 +527,8 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                 top: 2,
                 right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFFFF5252), Color(0xFFFF1744)],
@@ -522,24 +558,20 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
               top: 2,
               left: 10,
               child: Obx(() {
-                final isInWishlist = wishlistController.isItemInWishlist(
-                  item.id,
-                );
+                final isInWishlist =
+                    wishlistController.isItemInWishlist(item.id);
                 return GestureDetector(
                   onTap: () {
                     if (userController.isLoggedIn) {
                       wishlistController.toggleWishlist(
-                        menuItem: item,
-                        accessToken: userController.accessToken,
-                      );
+                          menuItem: item,
+                          accessToken: userController.accessToken);
                     } else {
-                      Get.snackbar(
-                        'Login Required',
-                        'Please login to add items to wishlist',
-                        snackPosition: SnackPosition.TOP,
-                        backgroundColor: Colors.orange,
-                        colorText: Colors.white,
-                      );
+                      Get.snackbar('Login Required',
+                          'Please login to add items to wishlist',
+                          snackPosition: SnackPosition.TOP,
+                          backgroundColor: Colors.orange,
+                          colorText: Colors.white);
                     }
                   },
                   child: Container(
@@ -649,20 +681,13 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 36,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline_rounded, size: 36, color: Colors.grey[400]),
             const SizedBox(height: 8),
-            Text(
-              'Failed to load items',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text('Failed to load items',
+                style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -682,14 +707,11 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
           children: [
             Icon(Icons.fastfood_rounded, size: 36, color: Colors.grey[350]),
             const SizedBox(height: 8),
-            Text(
-              'No menu items available',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text('No menu items available',
+                style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500)),
           ],
         ),
       ),
