@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
@@ -22,13 +21,16 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   late AnimationController _entranceController;
   late AnimationController _bounceController;
   late ScrollController _scrollController;
-  Timer? _autoRotateTimer;
-  bool _userInteracted = false; // pause auto-rotate after tap
+  int _lastCategoryCount = 0;
+
+  static const double _itemWidth = 88.0;
+  static const double _itemSpacing = 12.0;
+  static const double _horizontalPadding = 16.0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _scrollController = ScrollController()..addListener(_onScroll);
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -42,32 +44,38 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
 
   @override
   void dispose() {
-    _autoRotateTimer?.cancel();
+    _scrollController.removeListener(_onScroll);
     _entranceController.dispose();
     _bounceController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  /// Start auto-rotation once categories are loaded
-  void _startAutoRotate(int categoryCount) {
-    if (_autoRotateTimer != null || categoryCount <= 1) return;
-    _autoRotateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (!mounted || _userInteracted) return;
+  /// Detect which category is in the center of the viewport while scrolling
+  void _onScroll() {
+    if (!_scrollController.hasClients || _lastCategoryCount == 0) return;
+
+    final viewportWidth = _scrollController.position.viewportDimension;
+    final scrollOffset = _scrollController.offset;
+
+    // The center of the visible area in scroll-content coordinates
+    final centerOfViewport =
+        scrollOffset + (viewportWidth / 2) - _horizontalPadding;
+
+    // Calculate which item index falls at that center point
+    final totalItemWidth = _itemWidth + _itemSpacing;
+    int centerIndex = (centerOfViewport / totalItemWidth).round();
+    centerIndex = centerIndex.clamp(0, _lastCategoryCount - 1);
+
+    if (centerIndex != _selectedCategory) {
       setState(() {
-        _selectedCategory = (_selectedCategory + 1) % categoryCount;
+        _selectedCategory = centerIndex;
       });
       _bounceController.forward(from: 0.0);
-      _scrollToCenter(_selectedCategory);
-    });
+    }
   }
 
   void _onCategoryTap(int index, int categoryId, String categoryName) {
-    // Stop auto-rotation permanently after a user tap
-    _userInteracted = true;
-    _autoRotateTimer?.cancel();
-    _autoRotateTimer = null;
-
     setState(() {
       _selectedCategory = index;
     });
@@ -84,13 +92,11 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   void _scrollToCenter(int index) {
     if (!_scrollController.hasClients) return;
     final screenWidth = MediaQuery.of(context).size.width;
-    const itemWidth = 88.0;
-    const spacing = 12.0;
     final targetOffset =
-        (index * (itemWidth + spacing)) -
+        (index * (_itemWidth + _itemSpacing)) -
         (screenWidth / 2) +
-        (itemWidth / 2) +
-        20;
+        (_itemWidth / 2) +
+        _horizontalPadding;
     _scrollController.animateTo(
       targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
       duration: const Duration(milliseconds: 450),
@@ -107,10 +113,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
         return _buildLoadingCategories();
       }
 
-      // Start auto-rotate once we have data
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _startAutoRotate(categories.length);
-      });
+      _lastCategoryCount = categories.length;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +172,9 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: _horizontalPadding,
+                    ),
                     itemCount: categories.length,
                     itemBuilder: (context, index) {
                       final category = categories[index];
@@ -236,8 +241,8 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     return GestureDetector(
       onTap: () => _onCategoryTap(index, categoryId, categoryName),
       child: Container(
-        width: 88,
-        margin: EdgeInsets.only(right: isLast ? 0 : 12),
+        width: _itemWidth,
+        margin: EdgeInsets.only(right: isLast ? 0 : _itemSpacing),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
