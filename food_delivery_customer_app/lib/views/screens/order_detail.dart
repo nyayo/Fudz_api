@@ -35,9 +35,7 @@ class OrderDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Order Status Card
-            FadeSlideIn(
-              child: _buildStatusCard(),
-            ),
+            FadeSlideIn(child: _buildStatusCard()),
 
             const SizedBox(height: 20),
 
@@ -193,7 +191,7 @@ class OrderDetailPage extends StatelessWidget {
                           child: CircularProgressIndicator(
                             value: loadingProgress.expectedTotalBytes != null
                                 ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
+                                      loadingProgress.expectedTotalBytes!
                                 : null,
                             strokeWidth: 2,
                           ),

@@ -75,22 +75,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _formatPhoneNumber(String phone) {
     // Remove all spaces, parentheses, dashes, etc.
     String cleaned = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-    
+
     // If already starts with +, return as is
     if (cleaned.startsWith('+')) {
       return cleaned;
     }
-    
+
     // If starts with 0 (local Kenyan format), replace with +254
     if (cleaned.startsWith('0')) {
       return '+256${cleaned.substring(1)}';
     }
-    
+
     // If starts with 254, add +
     if (cleaned.startsWith('254')) {
       return '+$cleaned';
     }
-    
+
     // Default: assume Kenyan and add +254
     return '+256$cleaned';
   }
@@ -220,9 +220,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: Column(
               children: [
                 // Profile Picture Section
-                FadeSlideIn(
-                  child: _buildProfilePictureSection(),
-                ),
+                FadeSlideIn(child: _buildProfilePictureSection()),
                 const SizedBox(height: 30),
 
                 // Personal Information Form
@@ -236,37 +234,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 300),
                   child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: TColor.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: TColor.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    ),
-                    onPressed: _isLoading ? null : _updateProfile,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                      onPressed: _isLoading ? null : _updateProfile,
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Text(
+                              'Update Profile',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
-                          )
-                        : const Text(
-                            'Update Profile',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                    ),
                   ),
-                ),
                 ),
               ],
             ),

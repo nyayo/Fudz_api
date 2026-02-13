@@ -99,7 +99,11 @@ class _CartPageState extends State<CartPage> {
             Obx(() {
               if (!_cartController.hasItems) return const SizedBox();
 
-              return _buildOrderSummary();
+              return FadeSlideIn(
+                delay: const Duration(milliseconds: 300),
+                slideOffset: const Offset(0, 0.15),
+                child: _buildOrderSummary(),
+              );
             }),
           ],
         ),
@@ -118,12 +122,19 @@ class _CartPageState extends State<CartPage> {
             ScalePopIn(
               curve: Curves.elasticOut,
               duration: const Duration(milliseconds: 800),
-              child: Icon(Icons.shopping_cart_outlined, size: 80, color: TColor.primary),
+              child: Icon(
+                Icons.shopping_cart_outlined,
+                size: 80,
+                color: TColor.primary,
+              ),
             ),
             const SizedBox(height: 20),
             FadeSlideIn(
               delay: const Duration(milliseconds: 200),
-              child: Text('No items in cart', style: ResponsiveText.heading2(context)),
+              child: Text(
+                'No items in cart',
+                style: ResponsiveText.heading2(context),
+              ),
             ),
             const SizedBox(height: 10),
             FadeSlideIn(

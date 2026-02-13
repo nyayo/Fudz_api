@@ -153,30 +153,30 @@ class _NotificationPreferencesPageState
                 _buildSectionHeader('General', Icons.notifications_outlined),
                 const SizedBox(height: 12),
                 _buildPreferenceCard(
-            children: [
-              _buildSwitchTile(
-                title: 'Push Notifications',
-                subtitle: 'Receive push notifications on your device',
-                icon: Icons.phone_android,
-                value: _receivePush,
-                onChanged: (val) {
-                  setState(() => _receivePush = val);
-                  _savePreferences();
-                },
-              ),
-              const Divider(height: 1),
-              _buildSwitchTile(
-                title: 'Email Notifications',
-                subtitle: 'Receive notifications via email',
-                icon: Icons.email_outlined,
-                value: _receiveEmail,
-                onChanged: (val) {
-                  setState(() => _receiveEmail = val);
-                  _savePreferences();
-                },
-              ),
-            ],
-          ),
+                  children: [
+                    _buildSwitchTile(
+                      title: 'Push Notifications',
+                      subtitle: 'Receive push notifications on your device',
+                      icon: Icons.phone_android,
+                      value: _receivePush,
+                      onChanged: (val) {
+                        setState(() => _receivePush = val);
+                        _savePreferences();
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _buildSwitchTile(
+                      title: 'Email Notifications',
+                      subtitle: 'Receive notifications via email',
+                      icon: Icons.email_outlined,
+                      value: _receiveEmail,
+                      onChanged: (val) {
+                        setState(() => _receiveEmail = val);
+                        _savePreferences();
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -190,43 +190,43 @@ class _NotificationPreferencesPageState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionHeader('Notification Types', Icons.tune),
-          const SizedBox(height: 12),
-          _buildPreferenceCard(
-            children: [
-              _buildSwitchTile(
-                title: 'Promotions & Offers',
-                subtitle: 'Get notified about deals and discounts',
-                icon: Icons.local_offer_outlined,
-                value: _promotionsAndOffers,
-                onChanged: (val) {
-                  setState(() => _promotionsAndOffers = val);
-                  _savePreferences();
-                },
-              ),
-              const Divider(height: 1),
-              _buildSwitchTile(
-                title: 'New Restaurants',
-                subtitle: 'Be the first to know about new restaurants',
-                icon: Icons.restaurant_outlined,
-                value: _newRestaurants,
-                onChanged: (val) {
-                  setState(() => _newRestaurants = val);
-                  _savePreferences();
-                },
-              ),
-              const Divider(height: 1),
-              _buildSwitchTile(
-                title: 'Review Reminders',
-                subtitle: 'Remind me to rate my orders',
-                icon: Icons.rate_review_outlined,
-                value: _reviewReminders,
-                onChanged: (val) {
-                  setState(() => _reviewReminders = val);
-                  _savePreferences();
-                },
-              ),
-            ],
-          ),
+                const SizedBox(height: 12),
+                _buildPreferenceCard(
+                  children: [
+                    _buildSwitchTile(
+                      title: 'Promotions & Offers',
+                      subtitle: 'Get notified about deals and discounts',
+                      icon: Icons.local_offer_outlined,
+                      value: _promotionsAndOffers,
+                      onChanged: (val) {
+                        setState(() => _promotionsAndOffers = val);
+                        _savePreferences();
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _buildSwitchTile(
+                      title: 'New Restaurants',
+                      subtitle: 'Be the first to know about new restaurants',
+                      icon: Icons.restaurant_outlined,
+                      value: _newRestaurants,
+                      onChanged: (val) {
+                        setState(() => _newRestaurants = val);
+                        _savePreferences();
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _buildSwitchTile(
+                      title: 'Review Reminders',
+                      subtitle: 'Remind me to rate my orders',
+                      icon: Icons.rate_review_outlined,
+                      value: _reviewReminders,
+                      onChanged: (val) {
+                        setState(() => _reviewReminders = val);
+                        _savePreferences();
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -237,30 +237,30 @@ class _NotificationPreferencesPageState
           FadeSlideIn(
             delay: const Duration(milliseconds: 300),
             child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.withOpacity(0.1)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue[400], size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Order updates and important account notifications will always be sent regardless of these settings.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue[700],
-                      height: 1.4,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.withOpacity(0.1)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[400], size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Order updates and important account notifications will always be sent regardless of these settings.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue[700],
+                        height: 1.4,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           ),
         ],
       ),

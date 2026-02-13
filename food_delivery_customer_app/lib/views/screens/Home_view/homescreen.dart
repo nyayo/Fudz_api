@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/location_controller.dart';
@@ -440,15 +441,22 @@ class _HomePageState extends State<HomePage> {
                   // SizedBox(height: media.height * 0.001),
 
                   // Location and Profile with enhanced styling
-                  _buildLocationHeader(),
+                  FadeSlideIn(
+                    child: _buildLocationHeader(),
+                  ),
 
                   const SizedBox(height: 15),
                   // Categories Widget
-                  const CategoriesWidget(),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 100),
+                    child: const CategoriesWidget(),
+                  ),
 
                   const SizedBox(height: 15),
 
-                  PromoBannerWidget(
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 200),
+                    child: PromoBannerWidget(
                     featuredItemsWithPromotions:
                         restaurantController.featuredItemsWithPromotions,
                     onBannerTap: () {
@@ -456,16 +464,23 @@ class _HomePageState extends State<HomePage> {
                       // Handle banner tap if needed
                     },
                   ),
+                  ),
 
                   const SizedBox(height: 15),
 
                   // Popular Restaurants Widget
-                  const PopularRestaurantsWidget(),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 300),
+                    child: const PopularRestaurantsWidget(),
+                  ),
 
                   const SizedBox(height: 15),
 
                   // Featured Menu Items
-                  const MenuItemsWidget(),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 400),
+                    child: const MenuItemsWidget(),
+                  ),
 
                   const SizedBox(height: 15),
                 ],

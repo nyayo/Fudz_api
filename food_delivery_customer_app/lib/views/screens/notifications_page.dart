@@ -74,10 +74,7 @@ class _NotificationsPageState extends State<NotificationsPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          OrderNotificationsTab(),
-          PromotionNotificationsTab(),
-        ],
+        children: const [OrderNotificationsTab(), PromotionNotificationsTab()],
       ),
     );
   }
@@ -110,7 +107,21 @@ class OrderNotificationsTab extends StatelessWidget {
         itemCount: recentOrders.length,
         itemBuilder: (context, index) {
           final order = recentOrders[index];
-          return _buildOrderNotificationCard(context, order);
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 400 + index * 80),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: child,
+                ),
+              );
+            },
+            child: _buildOrderNotificationCard(context, order),
+          );
         },
       );
     });
@@ -173,29 +184,19 @@ class OrderNotificationsTab extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     statusMessage,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     _formatTimestamp(order.placedAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
                 ],
               ),
             ),
 
             // Arrow icon
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
         ),
       ),
@@ -326,7 +327,8 @@ class PromotionNotificationsTab extends StatelessWidget {
     final List<Map<String, dynamic>> promotions = [
       {
         'title': '50% Off On Your First Order',
-        'description': 'Use code FIRST50 to get 50% discount on your first order',
+        'description':
+            'Use code FIRST50 to get 50% discount on your first order',
         'validUntil': DateTime.now().add(const Duration(days: 7)),
         'icon': Icons.local_offer,
         'color': Colors.green,
@@ -391,11 +393,7 @@ class PromotionNotificationsTab extends StatelessWidget {
               color: promo['color'].withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              promo['icon'],
-              color: promo['color'],
-              size: 28,
-            ),
+            child: Icon(promo['icon'], color: promo['color'], size: 28),
           ),
           const SizedBox(width: 12),
 
@@ -415,26 +413,16 @@ class PromotionNotificationsTab extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   promo['description'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 14,
-                      color: Colors.grey[500],
-                    ),
+                    Icon(Icons.schedule, size: 14, color: Colors.grey[500]),
                     const SizedBox(width: 4),
                     Text(
                       'Valid until ${DateFormat('MMM dd').format(promo['validUntil'])}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
                 ),

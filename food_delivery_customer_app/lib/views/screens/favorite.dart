@@ -128,11 +128,17 @@ class _OrdersPageState extends State<OrdersPage>
           children: [
             // Ongoing Orders Tab
             ongoingOrders.isEmpty
-                ? _buildEmptyTabState('No ongoing orders', 'All your active orders will appear here')
+                ? _buildEmptyTabState(
+                    'No ongoing orders',
+                    'All your active orders will appear here',
+                  )
                 : _buildOrdersList(ongoingOrders),
             // History Tab
             historyOrders.isEmpty
-                ? _buildEmptyTabState('No order history', 'Your completed orders will appear here')
+                ? _buildEmptyTabState(
+                    'No order history',
+                    'Your completed orders will appear here',
+                  )
                 : _buildOrdersList(historyOrders),
           ],
         );
@@ -148,14 +154,29 @@ class _OrdersPageState extends State<OrdersPage>
         itemCount: orders.length,
         itemBuilder: (context, index) {
           final order = orders[index];
-          return _buildOrderCard(order);
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 400 + index * 80),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: child,
+                ),
+              );
+            },
+            child: _buildOrderCard(order),
+          );
         },
       ),
     );
   }
 
   Widget _buildOrderCard(Order order) {
-    final isCompleted = order.status.toLowerCase() == 'delivered' ||
+    final isCompleted =
+        order.status.toLowerCase() == 'delivered' ||
         order.status.toLowerCase() == 'completed';
 
     // Get first item for display
@@ -192,15 +213,19 @@ class _OrdersPageState extends State<OrdersPage>
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: firstItem != null && firstItem.menuItem.imageUrl != null
+                  child:
+                      firstItem != null && firstItem.menuItem.imageUrl != null
                       ? Image.network(
                           firstItem.menuItem.imageUrl!,
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Icon(Icons.fastfood,
-                                color: Colors.grey[400], size: 32);
+                            return Icon(
+                              Icons.fastfood,
+                              color: Colors.grey[400],
+                              size: 32,
+                            );
                           },
                         )
                       : Icon(Icons.fastfood, color: Colors.grey[400], size: 32),
@@ -312,7 +337,9 @@ class _OrdersPageState extends State<OrdersPage>
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                               ),
                               onPressed: () => _showRatingDialog(order),
                               child: Text(
