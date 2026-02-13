@@ -1,6 +1,5 @@
 // views/screens/wishlist_page.dart
 import 'package:flutter/material.dart';
-import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
