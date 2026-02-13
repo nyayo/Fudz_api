@@ -5,6 +5,7 @@ import 'package:food_delivery_customer_app/controller/location_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/cart.dart';
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
 import 'package:food_delivery_customer_app/views/screens/location_selection.dart';
 import 'package:food_delivery_customer_app/views/screens/payment_selection.dart';
@@ -114,13 +115,23 @@ class _CartPageState extends State<CartPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_outlined, size: 80, color: TColor.primary),
+            ScalePopIn(
+              curve: Curves.elasticOut,
+              duration: const Duration(milliseconds: 800),
+              child: Icon(Icons.shopping_cart_outlined, size: 80, color: TColor.primary),
+            ),
             const SizedBox(height: 20),
-            Text('No items in cart', style: ResponsiveText.heading2(context)),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 200),
+              child: Text('No items in cart', style: ResponsiveText.heading2(context)),
+            ),
             const SizedBox(height: 10),
-            Text(
-              'Your favorite foods are waiting!',
-              style: ResponsiveText.body(context, color: Colors.grey[600]),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 350),
+              child: Text(
+                'Your favorite foods are waiting!',
+                style: ResponsiveText.body(context, color: Colors.grey[600]),
+              ),
             ),
             const SizedBox(height: 30),
             SizedBox(
@@ -167,9 +178,24 @@ class _CartPageState extends State<CartPage> {
           separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final item = sortedItems[index];
-            return KeyedSubtree(
-              key: ValueKey('cart_item_${item.menuItem.id}'),
-              child: _buildCartItemCard(item, media),
+            return TweenAnimationBuilder<double>(
+              key: ValueKey('cart_anim_${item.menuItem.id}'),
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 400 + (index * 80)),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return Opacity(
+                  opacity: value.clamp(0.0, 1.0),
+                  child: Transform.translate(
+                    offset: Offset(0, 20 * (1 - value)),
+                    child: child,
+                  ),
+                );
+              },
+              child: KeyedSubtree(
+                key: ValueKey('cart_item_${item.menuItem.id}'),
+                child: _buildCartItemCard(item, media),
+              ),
             );
           },
         );

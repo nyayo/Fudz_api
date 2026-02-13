@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
@@ -145,9 +146,13 @@ class _NotificationPreferencesPageState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // General Notifications
-          _buildSectionHeader('General', Icons.notifications_outlined),
-          const SizedBox(height: 12),
-          _buildPreferenceCard(
+          FadeSlideIn(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('General', Icons.notifications_outlined),
+                const SizedBox(height: 12),
+                _buildPreferenceCard(
             children: [
               _buildSwitchTile(
                 title: 'Push Notifications',
@@ -172,11 +177,19 @@ class _NotificationPreferencesPageState
               ),
             ],
           ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 24),
 
           // Notification Types
-          _buildSectionHeader('Notification Types', Icons.tune),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 150),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('Notification Types', Icons.tune),
           const SizedBox(height: 12),
           _buildPreferenceCard(
             children: [
@@ -214,11 +227,16 @@ class _NotificationPreferencesPageState
               ),
             ],
           ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 32),
 
           // Info footer
-          Container(
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 300),
+            child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.05),
@@ -242,6 +260,7 @@ class _NotificationPreferencesPageState
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),

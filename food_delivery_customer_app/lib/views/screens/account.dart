@@ -5,6 +5,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/user.dart';
 import 'package:food_delivery_customer_app/views/screens/edit_profile.dart';
 import 'package:food_delivery_customer_app/views/screens/notification_preferences_page.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 
@@ -23,7 +24,7 @@ class ProfilePage extends StatelessWidget {
           child: Column(
             children: [
               // Header
-              _buildHeader(),
+              FadeSlideIn(child: _buildHeader()),
               const SizedBox(height: 32),
 
               // Wrap the main content in Obx to react to user changes
@@ -34,26 +35,45 @@ class ProfilePage extends StatelessWidget {
                 return Column(
                   children: [
                     // Profile Card
-                    _buildProfileCard(user, isLoggedIn),
+                    FadeSlideIn(
+                      delay: const Duration(milliseconds: 100),
+                      child: _buildProfileCard(user, isLoggedIn),
+                    ),
                     const SizedBox(height: 24),
 
                     // Personal Information Section
-                    if (isLoggedIn) _buildPersonalInfoSection(user),
+                    if (isLoggedIn)
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 200),
+                        child: _buildPersonalInfoSection(user),
+                      ),
                     if (isLoggedIn) const SizedBox(height: 24),
 
                     // Account Information Section
-                    if (isLoggedIn) _buildAccountInfoSection(user),
+                    if (isLoggedIn)
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 300),
+                        child: _buildAccountInfoSection(user),
+                      ),
                     if (isLoggedIn) const SizedBox(height: 24),
 
                     // Notification Preferences
-                    if (isLoggedIn) _buildNotificationPreferencesButton(),
+                    if (isLoggedIn)
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 400),
+                        child: _buildNotificationPreferencesButton(),
+                      ),
                     if (isLoggedIn) const SizedBox(height: 32),
 
                     // Logout Button
-                    if (isLoggedIn) _buildLogoutButton(userController),
+                    if (isLoggedIn)
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 500),
+                        child: _buildLogoutButton(userController),
+                      ),
 
                     // Show login prompt if not logged in
-                    if (!isLoggedIn) _buildLoginPrompt(),
+                    if (!isLoggedIn) ScalePopIn(child: _buildLoginPrompt()),
                   ],
                 );
               }),
