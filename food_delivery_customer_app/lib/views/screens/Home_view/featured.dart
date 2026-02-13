@@ -67,13 +67,16 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
       children: [
         // Animated title
         SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(-0.3, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: _titleController,
-            curve: Curves.easeOutCubic,
-          )),
+          position:
+              Tween<Offset>(
+                begin: const Offset(-0.3, 0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(
+                  parent: _titleController,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
           child: FadeTransition(
             opacity: _titleController,
             child: Padding(
@@ -114,7 +117,9 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                     onTap: () => Get.to(() => AllMenuItemsPage()),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: TColor.primary.withAlpha(20),
                         borderRadius: BorderRadius.circular(20),
@@ -131,8 +136,11 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_rounded,
-                              color: TColor.primary, size: 16),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: TColor.primary,
+                            size: 16,
+                          ),
                         ],
                       ),
                     ),
@@ -192,8 +200,11 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     final popAnim = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _entranceController,
-        curve: Interval(delay, (delay + 0.5).clamp(0, 1),
-            curve: Curves.elasticOut),
+        curve: Interval(
+          delay,
+          (delay + 0.5).clamp(0, 1),
+          curve: Curves.elasticOut,
+        ),
       ),
     );
 
@@ -203,14 +214,16 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
         final scale = 0.3 + (0.7 * popAnim.value.clamp(0.0, 1.0));
         return Transform.scale(
           scale: scale,
-          child: Opacity(
-            opacity: popAnim.value.clamp(0.0, 1.0),
-            child: child,
-          ),
+          child: Opacity(opacity: popAnim.value.clamp(0.0, 1.0), child: child),
         );
       },
       child: _buildBlobCard(
-          index, item, cartController, userController, wishlistController),
+        index,
+        item,
+        cartController,
+        userController,
+        wishlistController,
+      ),
     );
   }
 
@@ -222,10 +235,12 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     WishlistController wishlistController,
   ) {
     String getImageUrl() {
-      if (item.imageUrl != null && item.imageUrl!.isNotEmpty) return item.imageUrl!;
+      if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+        return item.imageUrl!;
       if (item.images != null &&
           item.images.isNotEmpty &&
-          item.images.first.imageUrl.isNotEmpty) return item.images.first.imageUrl;
+          item.images.first.imageUrl.isNotEmpty)
+        return item.images.first.imageUrl;
       if (item.image != null && item.image.isNotEmpty) return item.image;
       return '';
     }
@@ -233,10 +248,10 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     final imageUrl = getImageUrl();
     final String title = item.title?.toString() ?? 'Unknown Item';
     final bool hasPromotion = item.hasActivePromotions;
-    final String priceText =
-        hasPromotion ? item.formattedDiscountedPrice : item.formattedPrice;
-    final String? originalPriceText =
-        hasPromotion ? item.formattedPrice : null;
+    final String priceText = hasPromotion
+        ? item.formattedDiscountedPrice
+        : item.formattedPrice;
+    final String? originalPriceText = hasPromotion ? item.formattedPrice : null;
     final accentColor = _cardAccents[index % _cardAccents.length];
 
     return GestureDetector(
@@ -317,19 +332,22 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                       const SizedBox(height: 6),
                       // Add to cart button
                       Obx(() {
-                        final isProcessing =
-                            cartController.isItemProcessing('${item.id}_add');
+                        final isProcessing = cartController.isItemProcessing(
+                          '${item.id}_add',
+                        );
                         final isInCart = cartController.isItemInCart(item.id);
                         return GestureDetector(
                           onTap: (isProcessing || isInCart)
                               ? null
                               : () async {
                                   if (!userController.isLoggedIn) {
-                                    Get.snackbar('Login Required',
-                                        'Please login to add items to cart',
-                                        snackPosition: SnackPosition.TOP,
-                                        backgroundColor: Colors.orange,
-                                        colorText: Colors.white);
+                                    Get.snackbar(
+                                      'Login Required',
+                                      'Please login to add items to cart',
+                                      snackPosition: SnackPosition.TOP,
+                                      backgroundColor: Colors.orange,
+                                      colorText: Colors.white,
+                                    );
                                     return;
                                   }
                                   try {
@@ -373,7 +391,8 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                         valueColor: AlwaysStoppedAnimation(
-                                            Colors.white),
+                                          Colors.white,
+                                        ),
                                       ),
                                     )
                                   : Row(
@@ -470,8 +489,10 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                 top: 2,
                 right: 10,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFFFF5252), Color(0xFFFF1744)],
@@ -501,20 +522,24 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
               top: 2,
               left: 10,
               child: Obx(() {
-                final isInWishlist =
-                    wishlistController.isItemInWishlist(item.id);
+                final isInWishlist = wishlistController.isItemInWishlist(
+                  item.id,
+                );
                 return GestureDetector(
                   onTap: () {
                     if (userController.isLoggedIn) {
                       wishlistController.toggleWishlist(
-                          menuItem: item,
-                          accessToken: userController.accessToken);
+                        menuItem: item,
+                        accessToken: userController.accessToken,
+                      );
                     } else {
-                      Get.snackbar('Login Required',
-                          'Please login to add items to wishlist',
-                          snackPosition: SnackPosition.TOP,
-                          backgroundColor: Colors.orange,
-                          colorText: Colors.white);
+                      Get.snackbar(
+                        'Login Required',
+                        'Please login to add items to wishlist',
+                        snackPosition: SnackPosition.TOP,
+                        backgroundColor: Colors.orange,
+                        colorText: Colors.white,
+                      );
                     }
                   },
                   child: Container(
@@ -624,13 +649,20 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded, size: 36, color: Colors.grey[400]),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 36,
+              color: Colors.grey[400],
+            ),
             const SizedBox(height: 8),
-            Text('Failed to load items',
-                style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              'Failed to load items',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
@@ -650,11 +682,14 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
           children: [
             Icon(Icons.fastfood_rounded, size: 36, color: Colors.grey[350]),
             const SizedBox(height: 8),
-            Text('No menu items available',
-                style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              'No menu items available',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),

@@ -76,13 +76,16 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
         children: [
           // Animated title row
           SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(-0.3, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: _titleController,
-              curve: Curves.easeOutCubic,
-            )),
+            position:
+                Tween<Offset>(
+                  begin: const Offset(-0.3, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: _titleController,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: FadeTransition(
               opacity: _titleController,
               child: Row(
@@ -166,17 +169,23 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                 final itemAnimation = Tween<double>(begin: 0, end: 1).animate(
                   CurvedAnimation(
                     parent: _entranceController,
-                    curve: Interval(delay, (delay + 0.4).clamp(0, 1),
-                        curve: Curves.easeOutBack),
+                    curve: Interval(
+                      delay,
+                      (delay + 0.4).clamp(0, 1),
+                      curve: Curves.easeOutBack,
+                    ),
                   ),
                 );
 
                 // Parallax offset for image
-                final cardWidth =
-                    (MediaQuery.of(context).size.width * 0.55).clamp(200.0, 280.0);
+                final cardWidth = (MediaQuery.of(context).size.width * 0.55)
+                    .clamp(200.0, 280.0);
                 final cardStart = index * (cardWidth + 16);
                 final parallaxOffset =
-                    ((_scrollOffset - cardStart) / cardWidth * 20).clamp(-20.0, 20.0);
+                    ((_scrollOffset - cardStart) / cardWidth * 20).clamp(
+                      -20.0,
+                      20.0,
+                    );
 
                 return AnimatedBuilder(
                   animation: itemAnimation,
@@ -192,16 +201,14 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                   child: GestureDetector(
                     onTap: () {
                       Get.to(
-                        () =>
-                            RestaurantDetailPage(restaurantId: restaurant.id),
+                        () => RestaurantDetailPage(restaurantId: restaurant.id),
                         transition: Transition.cupertino,
                       );
                     },
                     child: Container(
                       width: cardWidth,
                       margin: EdgeInsets.only(
-                        right:
-                            index == popularRestaurants.length - 1 ? 0 : 16,
+                        right: index == popularRestaurants.length - 1 ? 0 : 16,
                         bottom: 4,
                       ),
                       decoration: BoxDecoration(
@@ -234,7 +241,8 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                                   Positioned.fill(
                                     left: parallaxOffset - 10,
                                     right: -parallaxOffset - 10,
-                                    child: restaurant.imageUrl != null &&
+                                    child:
+                                        restaurant.imageUrl != null &&
                                             restaurant.imageUrl!.isNotEmpty
                                         ? Image.network(
                                             restaurant.imageUrl!,
@@ -242,22 +250,27 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                                             errorBuilder:
                                                 (context, error, stackTrace) =>
                                                     _buildPlaceholderImage(),
-                                            loadingBuilder: (context, child,
-                                                loadingProgress) {
-                                              if (loadingProgress == null) {
-                                                return child;
-                                              }
-                                              return Container(
-                                                color: Colors.grey[200],
-                                                child: Center(
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    color: TColor.primary,
-                                                  ),
-                                                ),
-                                              );
-                                            },
+                                            loadingBuilder:
+                                                (
+                                                  context,
+                                                  child,
+                                                  loadingProgress,
+                                                ) {
+                                                  if (loadingProgress == null) {
+                                                    return child;
+                                                  }
+                                                  return Container(
+                                                    color: Colors.grey[200],
+                                                    child: Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                            color:
+                                                                TColor.primary,
+                                                          ),
+                                                    ),
+                                                  );
+                                                },
                                           )
                                         : _buildPlaceholderImage(),
                                   ),
@@ -295,8 +308,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color:
-                                                  Colors.black.withAlpha(30),
+                                              color: Colors.black.withAlpha(30),
                                               blurRadius: 6,
                                               offset: const Offset(0, 2),
                                             ),
@@ -322,12 +334,10 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                                       ),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(14),
                                         boxShadow: [
                                           BoxShadow(
-                                            color:
-                                                Colors.black.withAlpha(20),
+                                            color: Colors.black.withAlpha(20),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
                                           ),
@@ -344,8 +354,8 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                                           const SizedBox(width: 3),
                                           Text(
                                             (restaurant.avgRating ??
-                                                        restaurant.rating)
-                                                    .toStringAsFixed(1),
+                                                    restaurant.rating)
+                                                .toStringAsFixed(1),
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w800,
                                               fontSize: 12,
@@ -368,8 +378,9 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                                         ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF2E7D32),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -404,7 +415,11 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(
-                                  14, 12, 14, 10),
+                                14,
+                                12,
+                                14,
+                                10,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment:
@@ -445,8 +460,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                                                   height: 1.2,
                                                 ),
                                                 maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],
@@ -698,8 +712,10 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
             GestureDetector(
               onTap: () => restaurantController.refreshRestaurants(),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: TColor.primary.withAlpha(20),
                   borderRadius: BorderRadius.circular(20),
@@ -739,7 +755,9 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
                   onTap: () => restaurantController.refreshRestaurants(),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 10),
+                      horizontal: 24,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: TColor.primary,
                       borderRadius: BorderRadius.circular(20),
@@ -798,8 +816,11 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.restaurant_menu_rounded,
-                    color: Colors.grey[300], size: 48),
+                Icon(
+                  Icons.restaurant_menu_rounded,
+                  color: Colors.grey[300],
+                  size: 48,
+                ),
                 const SizedBox(height: 10),
                 Text(
                   'No restaurants available',
