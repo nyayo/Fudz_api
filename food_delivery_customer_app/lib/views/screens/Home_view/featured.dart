@@ -8,8 +8,39 @@ import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:get/get.dart';
 
-class MenuItemsWidget extends StatelessWidget {
+class MenuItemsWidget extends StatefulWidget {
   const MenuItemsWidget({super.key});
+
+  @override
+  State<MenuItemsWidget> createState() => _MenuItemsWidgetState();
+}
+
+class _MenuItemsWidgetState extends State<MenuItemsWidget>
+    with TickerProviderStateMixin {
+  late AnimationController _entranceController;
+  late AnimationController _titleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 1400),
+      vsync: this,
+    );
+    _titleController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _titleController.forward();
+    _entranceController.forward();
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    _titleController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,43 +50,92 @@ class MenuItemsWidget extends StatelessWidget {
     final WishlistController wishlistController = Get.find();
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final cardWidth = (screenWidth * 0.32).clamp(180.0, 220.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  'Popular Menu Items',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: TColor.primaryText,
+        // Animated title
+        SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(-0.3, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: _titleController,
+            curve: Curves.easeOutCubic,
+          )),
+          child: FadeTransition(
+            opacity: _titleController,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              TColor.primary,
+                              TColor.primary.withAlpha(150),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Popular Menu Items',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: TColor.primaryText,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Get.to(() => AllMenuItemsPage());
-                },
-                child: Text(
-                  'See All',
-                  style: TextStyle(
-                    color: TColor.primary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: () {
+                      Get.to(() => AllMenuItemsPage());
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: TColor.primary.withAlpha(20),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'See all',
+                            style: TextStyle(
+                              color: TColor.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: TColor.primary,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -74,96 +154,90 @@ class MenuItemsWidget extends StatelessWidget {
             return _buildEmptyWidget();
           }
 
-          return SizedBox(
-            height: screenHeight * 0.28,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: displayItems.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final item = displayItems[index];
-                return _buildMenuItemCard(
-                  item,
-                  cartController,
-                  userController,
-                  wishlistController,
-                  cardWidth,
-                  screenHeight * 0.26,
-                );
-              },
-            ),
+          // Use a vertical list with 2-column grid style for menu items
+          return ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: (displayItems.length / 2).ceil(),
+            separatorBuilder: (context, index) => const SizedBox(height: 14),
+            itemBuilder: (context, rowIndex) {
+              final firstIndex = rowIndex * 2;
+              final secondIndex = firstIndex + 1;
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildAnimatedCard(
+                      firstIndex,
+                      displayItems[firstIndex],
+                      cartController,
+                      userController,
+                      wishlistController,
+                      screenWidth,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: secondIndex < displayItems.length
+                        ? _buildAnimatedCard(
+                            secondIndex,
+                            displayItems[secondIndex],
+                            cartController,
+                            userController,
+                            wishlistController,
+                            screenWidth,
+                          )
+                        : const SizedBox(),
+                  ),
+                ],
+              );
+            },
           );
         }),
       ],
     );
   }
 
-  Widget _buildLoadingWidget() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: TColor.primary),
-            const SizedBox(height: 16),
-            Text(
-              'Loading menu items...',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-          ],
+  Widget _buildAnimatedCard(
+    int index,
+    dynamic item,
+    CartController cartController,
+    UserController userController,
+    WishlistController wishlistController,
+    double screenWidth,
+  ) {
+    final delay = (index * 0.12).clamp(0.0, 0.6);
+    final itemAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: Interval(
+          delay,
+          (delay + 0.4).clamp(0, 1),
+          curve: Curves.easeOutBack,
         ),
       ),
     );
-  }
 
-  Widget _buildErrorWidget(String error) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 40, color: Colors.red),
-            const SizedBox(height: 8),
-            Text(
-              'Failed to load items',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+    return AnimatedBuilder(
+      animation: itemAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, 40 * (1 - itemAnimation.value)),
+          child: Transform.scale(
+            scale: 0.85 + (0.15 * itemAnimation.value),
+            child: Opacity(
+              opacity: itemAnimation.value.clamp(0.0, 1.0),
+              child: child,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyWidget() {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.fastfood, size: 40, color: Colors.grey[400]),
-            const SizedBox(height: 8),
-            Text(
-              'No menu items available',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-          ],
-        ),
+          ),
+        );
+      },
+      child: _buildMenuItemCard(
+        item,
+        cartController,
+        userController,
+        wishlistController,
+        screenWidth,
       ),
     );
   }
@@ -173,14 +247,15 @@ class MenuItemsWidget extends StatelessWidget {
     CartController cartController,
     UserController userController,
     WishlistController wishlistController,
-    double cardWidth,
-    double listHeight,
+    double screenWidth,
   ) {
     String getImageUrl() {
       if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
         return item.imageUrl!;
       }
-      if (item.images != null && item.images.isNotEmpty && item.images.first.imageUrl.isNotEmpty) {
+      if (item.images != null &&
+          item.images.isNotEmpty &&
+          item.images.first.imageUrl.isNotEmpty) {
         return item.images.first.imageUrl;
       }
       if (item.image != null && item.image.isNotEmpty) {
@@ -190,92 +265,108 @@ class MenuItemsWidget extends StatelessWidget {
     }
 
     final imageUrl = getImageUrl();
-    final imageHeight = listHeight * 0.45;
-    final contentPadding = cardWidth * 0.05;
-
     final String title = item.title?.toString() ?? 'Unknown Item';
-    final String description = item.description?.toString() ?? 'Delicious food item';
-    
-    // Use discounted price if there's an active promotion
+    final String description =
+        item.description?.toString() ?? 'Delicious food item';
     final bool hasPromotion = item.hasActivePromotions;
-    final String priceText = hasPromotion 
-        ? item.formattedDiscountedPrice 
-        : item.formattedPrice;
-    final String? originalPriceText = hasPromotion ? item.formattedPrice : null;
+    final String priceText =
+        hasPromotion ? item.formattedDiscountedPrice : item.formattedPrice;
+    final String? originalPriceText =
+        hasPromotion ? item.formattedPrice : null;
 
-    return SizedBox(
-      width: cardWidth,
-      child: GestureDetector(
-        onTap: () {
-          Get.to(() => MenuItemDetailPage(menuItemId: item.id));
-        },
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Item Image
-              Container(
-                height: imageHeight,
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => MenuItemDetailPage(menuItemId: item.id));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(12),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image section
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              child: SizedBox(
+                height: 130,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  color: Colors.grey[200],
-                ),
                 child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    // Item Image
                     imageUrl.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(16),
-                            ),
-                            child: Image.network(
-                              imageUrl,
-                              width: double.infinity,
-                              height: imageHeight,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            loadingBuilder:
+                                (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: const Color(0xFFF5F5F5),
+                                child: Center(
                                   child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
+                                    strokeWidth: 2,
                                     color: TColor.primary,
                                   ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildPlaceholderIcon(imageHeight);
-                              },
-                            ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) =>
+                                _buildPlaceholderIcon(),
                           )
-                        : _buildPlaceholderIcon(imageHeight),
-                    
-                    // Promotion Badge
+                        : _buildPlaceholderIcon(),
+                    // Gradient overlay
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 40,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withAlpha(30),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Promotion badge
                     if (hasPromotion)
                       Positioned(
-                        top: 6,
-                        left: 6,
+                        top: 8,
+                        left: 8,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(12),
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFFFF5252),
+                                Color(0xFFFF1744),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 4,
+                                color: Colors.red.withAlpha(50),
+                                blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
@@ -284,51 +375,59 @@ class MenuItemsWidget extends StatelessWidget {
                             '${item.activePromotions.first.formattedDiscount} OFF',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ),
                       ),
-                    
-                    // Wishlist Button
+                    // Wishlist button
                     Positioned(
-                      top: 6,
-                      right: 6,
+                      top: 8,
+                      right: 8,
                       child: Obx(() {
-                        final isInWishlist = wishlistController.isItemInWishlist(item.id);
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              isInWishlist ? Icons.favorite : Icons.favorite_border,
-                              color: isInWishlist ? Colors.red : TColor.primary,
-                              size: 18,
+                        final isInWishlist =
+                            wishlistController.isItemInWishlist(item.id);
+                        return GestureDetector(
+                          onTap: () {
+                            if (userController.isLoggedIn) {
+                              wishlistController.toggleWishlist(
+                                menuItem: item,
+                                accessToken: userController.accessToken,
+                              );
+                            } else {
+                              Get.snackbar(
+                                'Login Required',
+                                'Please login to add items to wishlist',
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.orange,
+                                colorText: Colors.white,
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(
-                              minWidth: cardWidth * 0.16,
-                              minHeight: cardWidth * 0.16,
+                            child: Icon(
+                              isInWishlist
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: isInWishlist
+                                  ? const Color(0xFFFF5252)
+                                  : Colors.grey[400],
+                              size: 16,
                             ),
-                            onPressed: () {
-                              if (userController.isLoggedIn) {
-                                wishlistController.toggleWishlist(
-                                  menuItem: item,
-                                  accessToken: userController.accessToken,
-                                );
-                              } else {
-                                Get.snackbar(
-                                  'Login Required',
-                                  'Please login to add items to wishlist',
-                                  snackPosition: SnackPosition.TOP,
-                                  backgroundColor: Colors.orange,
-                                  colorText: Colors.white,
-                                );
-                              }
-                            },
                           ),
                         );
                       }),
@@ -336,162 +435,339 @@ class MenuItemsWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              // Item Details
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(contentPadding.clamp(8.0, 12.0)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            // Content section
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: TColor.primaryText,
+                      letterSpacing: -0.2,
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 10),
+                  // Price row with add button
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Title and Description
                       Flexible(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              title,
+                              priceText,
                               style: TextStyle(
-                                fontSize: (cardWidth * 0.07).clamp(13.0, 16.0),
-                                fontWeight: FontWeight.bold,
-                                color: TColor.primaryText,
-                                height: 1.2,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: hasPromotion
+                                    ? const Color(0xFFFF5252)
+                                    : TColor.primary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: contentPadding * 0.3),
-                            Text(
-                              description,
-                              style: TextStyle(
-                                fontSize: (cardWidth * 0.055).clamp(10.0, 12.0),
-                                color: Colors.grey[600],
-                                height: 1.2,
+                            if (originalPriceText != null)
+                              Text(
+                                originalPriceText,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[400],
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationColor: Colors.grey[400],
+                                ),
+                                maxLines: 1,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
                           ],
                         ),
                       ),
-                      // Price and Add Button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  priceText,
-                                  style: TextStyle(
-                                    fontSize: (cardWidth * 0.075).clamp(14.0, 16.0),
-                                    fontWeight: FontWeight.bold,
-                                    color: hasPromotion ? Colors.red : TColor.primary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (originalPriceText != null)
-                                  Text(
-                                    originalPriceText,
-                                    style: TextStyle(
-                                      fontSize: (cardWidth * 0.055).clamp(10.0, 12.0),
-                                      color: Colors.grey,
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          // Add Button
-                          Container(
+                      // Add to cart button
+                      Obx(() {
+                        final isProcessing =
+                            cartController.isItemProcessing('${item.id}_add');
+                        final isInCart =
+                            cartController.isItemInCart(item.id);
+                        return GestureDetector(
+                          onTap: (isProcessing || isInCart)
+                              ? null
+                              : () async {
+                                  if (!userController.isLoggedIn) {
+                                    Get.snackbar(
+                                      'Login Required',
+                                      'Please login to add items to cart',
+                                      snackPosition: SnackPosition.TOP,
+                                      backgroundColor: Colors.orange,
+                                      colorText: Colors.white,
+                                    );
+                                    return;
+                                  }
+                                  try {
+                                    await cartController.addToCart(
+                                      menuItem: item,
+                                      quantity: 1,
+                                      accessToken:
+                                          userController.accessToken,
+                                    );
+                                  } catch (e) {
+                                    // Error handled by controller
+                                  }
+                                },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            width: 34,
+                            height: 34,
                             decoration: BoxDecoration(
-                              color: TColor.primary.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Obx(() {
-                              final isProcessing = cartController.isItemProcessing('${item.id}_add');
-                              final isInCart = cartController.isItemInCart(item.id);
-                              
-                              return IconButton(
-                                icon: isProcessing
-                                    ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation(TColor.primary),
-                                        ),
-                                      )
-                                    : Icon(
-                                        isInCart ? Icons.check_circle : Icons.add_circle,
-                                        color: isInCart ? Colors.grey : TColor.primary,
-                                        size: (cardWidth * 0.10).clamp(18.0, 24.0),
+                              gradient: isInCart
+                                  ? null
+                                  : LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        TColor.primary,
+                                        TColor.primary.withAlpha(200),
+                                      ],
+                                    ),
+                              color: isInCart
+                                  ? const Color(0xFFF5F5F5)
+                                  : null,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: isInCart
+                                  ? null
+                                  : [
+                                      BoxShadow(
+                                        color: TColor.primary.withAlpha(60),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
                                       ),
-                                padding: EdgeInsets.zero,
-                                constraints: BoxConstraints(
-                                  minWidth: cardWidth * 0.16,
-                                  minHeight: cardWidth * 0.16,
-                                ),
-                                onPressed: (isProcessing || isInCart)
-                                    ? null
-                                    : () async {
-                                        final userController = Get.find<UserController>();
-                                        if (!userController.isLoggedIn) {
-                                          Get.snackbar(
-                                            'Login Required',
-                                            'Please login to add items to cart',
-                                            snackPosition: SnackPosition.TOP,
-                                            backgroundColor: Colors.orange,
-                                            colorText: Colors.white,
-                                          );
-                                          return;
-                                        }
-
-                                        try {
-                                          await cartController.addToCart(
-                                            menuItem: item,
-                                            quantity: 1,
-                                            accessToken: userController.accessToken,
-                                          );
-                                        } catch (e) {
-                                          // Error handled by controller
-                                        }
-                                      },
-                              );
-                            }),
+                                    ],
+                            ),
+                            child: Center(
+                              child: isProcessing
+                                  ? SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation(
+                                          isInCart
+                                              ? Colors.grey
+                                              : Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(
+                                      isInCart
+                                          ? Icons.check_rounded
+                                          : Icons.add_rounded,
+                                      color: isInCart
+                                          ? Colors.grey[500]
+                                          : Colors.white,
+                                      size: 18,
+                                    ),
+                            ),
                           ),
-                        ],
-                      ),
+                        );
+                      }),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildPlaceholderIcon(double height) {
+  Widget _buildPlaceholderIcon() {
     return Container(
-      width: double.infinity,
-      height: height,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        color: Colors.grey[300],
-      ),
+      color: const Color(0xFFF5F5F5),
       child: Center(
         child: Icon(
-          Icons.fastfood,
-          size: height * 0.35,
-          color: Colors.grey[500],
+          Icons.fastfood_rounded,
+          size: 40,
+          color: Colors.grey[350],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingWidget() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 0.72,
+      ),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.4, end: 1.0),
+          duration: Duration(milliseconds: 800 + (index * 200)),
+          curve: Curves.easeInOut,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(8),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 130,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 90,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            width: 120,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius:
+                                      BorderRadius.circular(4),
+                                ),
+                              ),
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius:
+                                      BorderRadius.circular(12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildErrorWidget(String error) {
+    return Container(
+      height: 140,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline_rounded,
+                size: 36, color: Colors.grey[400]),
+            const SizedBox(height: 8),
+            Text(
+              'Failed to load items',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyWidget() {
+    return Container(
+      height: 140,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.fastfood_rounded,
+                size: 36, color: Colors.grey[350]),
+            const SizedBox(height: 8),
+            Text(
+              'No menu items available',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
