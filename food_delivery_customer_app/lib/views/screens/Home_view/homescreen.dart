@@ -57,22 +57,28 @@ class _HomePageState extends State<HomePage> {
     final wishlistController = Get.find<WishlistController>();
 
     if (userController.isLoggedIn && userController.user != null) {
-      print('✅ User is logged in: ${userController.user?.email}');
-
       final accessToken = userController.accessToken;
       if (accessToken != null && accessToken.isNotEmpty) {
         try {
-          // Run all initializations in parallel for faster loading
-          await Future.wait([
-            cartController.initializeCart(accessToken: accessToken),
-            _orderController.initializeOrders(accessToken: accessToken),
-            wishlistController.loadWishlist(accessToken),
-            restaurantController.getFeaturedItemsWithPromotions(
-              showLoading: false,
-            ),
-          ]);
+          // Only init services that haven't been loaded yet
+          final futures = <Future>[];
 
-          print('✅ User services initialized successfully');
+          if (!cartController.hasItems && cartController.cart == null) {
+            futures.add(cartController.initializeCart(accessToken: accessToken));
+          }
+          futures.add(_orderController.initializeOrders(accessToken: accessToken));
+          if (wishlistController.wishlist == null) {
+            futures.add(wishlistController.loadWishlist(accessToken));
+          }
+          if (restaurantController.featuredItemsWithPromotions.isEmpty) {
+            futures.add(restaurantController.getFeaturedItemsWithPromotions(
+              showLoading: false,
+            ));
+          }
+
+          if (futures.isNotEmpty) {
+            await Future.wait(futures);
+          }
         } catch (e) {
           print('⚠️ Error initializing user services: $e');
         }
@@ -420,23 +426,23 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   // Location and Profile with enhanced styling
                   FadeSlideIn(
-                    duration: const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 500),
                     child: _buildLocationHeader(),
                   ),
 
                   const SizedBox(height: 15),
                   // Categories Widget
                   FadeSlideIn(
-                    duration: const Duration(milliseconds: 300),
-                    delay: const Duration(milliseconds: 50),
+                    duration: const Duration(milliseconds: 500),
+                    delay: const Duration(milliseconds: 100),
                     child: const CategoriesWidget(),
                   ),
 
                   const SizedBox(height: 15),
 
                   FadeSlideIn(
-                    duration: const Duration(milliseconds: 300),
-                    delay: const Duration(milliseconds: 100),
+                    duration: const Duration(milliseconds: 500),
+                    delay: const Duration(milliseconds: 200),
                     child: PromoBannerWidget(
                       featuredItemsWithPromotions:
                           restaurantController.featuredItemsWithPromotions,
@@ -450,8 +456,8 @@ class _HomePageState extends State<HomePage> {
 
                   // Popular Restaurants Widget
                   FadeSlideIn(
-                    duration: const Duration(milliseconds: 300),
-                    delay: const Duration(milliseconds: 150),
+                    duration: const Duration(milliseconds: 500),
+                    delay: const Duration(milliseconds: 300),
                     child: const PopularRestaurantsWidget(),
                   ),
 
@@ -459,8 +465,8 @@ class _HomePageState extends State<HomePage> {
 
                   // Featured Menu Items
                   FadeSlideIn(
-                    duration: const Duration(milliseconds: 300),
-                    delay: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 500),
+                    delay: const Duration(milliseconds: 400),
                     child: const MenuItemsWidget(),
                   ),
 

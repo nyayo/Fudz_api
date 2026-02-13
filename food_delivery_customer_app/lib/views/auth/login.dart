@@ -38,7 +38,7 @@ class LoginScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "WELCOME TO FUDZ",
+                  "WELCOME TO FUDGON",
                   style: ResponsiveText.heading2(context, color: TColor.primary),
                 ),
                 const SizedBox(height: 8),

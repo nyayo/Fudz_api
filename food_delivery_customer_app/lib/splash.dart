@@ -3,6 +3,7 @@ import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
+import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';
 import 'package:food_delivery_customer_app/services/token_service.dart';
 import 'package:food_delivery_customer_app/views/screens/get_started.dart';
 import 'package:food_delivery_customer_app/views/screens/main_tab/main_tab_view.dart';
@@ -15,24 +16,25 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize fade controller for exit animation
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
-    
+
     _initializeApp();
   }
 
@@ -42,72 +44,57 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
+  void _initializeApp() async {
+    try {
+      print('🚀 Initializing app...');
 
-void _initializeApp() async {
-  try {
-    print('🚀 Initializing app...');
-    // Wait for splash animation to complete (2.5 seconds for animations)
-    await Future.delayed(const Duration(milliseconds: 2500));
-    
-    // Start fade-out
-    _fadeController.forward();
-    
-    // Wait for fade-out to complete
-    await Future.delayed(const Duration(milliseconds: 500));
+      // Eagerly trigger RestaurantController so it starts fetching data
+      // in parallel with auth check (it uses Get.lazyPut so this is the first access)
+      Get.find<RestaurantController>();
 
-    final userController = Get.find<UserController>();
-    
-    // Wait for user controller to fully initialize
-    await userController.checkAuthStatus();
-    
-    // Force token check to ensure state is correct
-    await userController.forceTokenCheck();
-    
-    print('🔐 Final auth status check:');
-    print('🔐 isLoggedIn: ${userController.isLoggedIn}');
-    print('🔐 accessToken: ${userController.accessToken != null ? "present" : "null"}');
-    print('🔐 User: ${userController.user != null ? userController.user!.email : "null"}');
-    
-    if (userController.isLoggedIn && userController.user != null) {
-      print('✅ User is logged in: ${userController.user?.email}');
-      
-      // Initialize user-dependent services
-      await _initializeUserServices(userController);
-      
-      print('✅ All services initialized, navigating to home');
-      Get.offAll(() => const MainTabView());
-    } else {
-      print('❌ No valid session, going to login screen');
+      final userController = Get.find<UserController>();
+
+      // Run auth check immediately
+      await userController.checkAuthStatus();
+      await userController.forceTokenCheck();
+
+      print('🔐 isLoggedIn: ${userController.isLoggedIn}');
+
+      if (userController.isLoggedIn && userController.user != null) {
+        print('✅ User is logged in: ${userController.user?.email}');
+
+        // Initialize services in parallel for speed
+        _initializeUserServices(userController); // fire-and-forget
+
+        Get.offAll(() => const MainTabView());
+      } else {
+        print('❌ No valid session, going to login screen');
+        Get.offAll(() => const GetStarted());
+      }
+    } catch (e) {
+      print('❌ Error during app initialization: $e');
       Get.offAll(() => const GetStarted());
     }
-  } catch (e) {
-    print('❌ Error during app initialization: $e');
-    // Fallback navigation
-    Get.offAll(() => const GetStarted());
   }
-}
 
+  Future<void> _initializeUserServices(UserController userController) async {
+    try {
+      final cartController = Get.find<CartController>();
+      final wishlistController = Get.find<WishlistController>();
+      final accessToken = userController.accessToken;
 
-Future<void> _initializeUserServices(UserController userController) async {
-  try {
-    final cartController = Get.find<CartController>();
-    final wishlistController = Get.find<WishlistController>();
-    
-    final accessToken = userController.accessToken;
-    
-    print('🛒 Initializing cart with token: ${accessToken != null ? "present" : "null"}');
-    await cartController.initializeCart(accessToken: accessToken);
-    
-    print('❤️ Initializing wishlist with token: ${accessToken != null ? "present" : "null"}');
-    await wishlistController.loadWishlist(accessToken);
-    
-    print('✅ All user services initialized successfully');
-  } catch (e) {
-    print('⚠️ Error initializing user services: $e');
+      // Run cart and wishlist init in parallel
+      await Future.wait([
+        cartController.initializeCart(accessToken: accessToken),
+        wishlistController.loadWishlist(accessToken),
+      ]);
+
+      print('✅ All user services initialized successfully');
+    } catch (e) {
+      print('⚠️ Error initializing user services: $e');
+    }
   }
-}
 
-  
   Future<bool> _checkTokenValidity(TokenService tokenService) async {
     try {
       final accessToken = await tokenService.getAccessToken();
@@ -157,22 +144,15 @@ Future<void> _initializeUserServices(UserController userController) async {
                   final clampedValue = value.clamp(0.0, 1.0);
                   return Transform.scale(
                     scale: clampedValue,
-                    child: Opacity(
-                      opacity: clampedValue,
-                      child: child,
-                    ),
+                    child: Opacity(opacity: clampedValue, child: child),
                   );
                 },
-                child: Image.asset(
-                  "assets/logo.png",
-                  height: 120,
-                  width: 120,
-                ),
+                child: Image.asset("assets/logo.png", height: 120, width: 120),
               ),
-              
+
               const SizedBox(height: 24),
-              
-              // Animated App Name - delayed 0.3s, lasts 1.5s  
+
+              // Animated App Name - delayed 0.3s, lasts 1.5s
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: const Duration(milliseconds: 1800),
@@ -190,7 +170,7 @@ Future<void> _initializeUserServices(UserController userController) async {
                   );
                 },
                 child: const Text(
-                  'FUDZ',
+                  'FUDGON',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 48,
