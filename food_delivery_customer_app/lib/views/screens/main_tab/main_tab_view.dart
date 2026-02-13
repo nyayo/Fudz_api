@@ -11,8 +11,6 @@ import 'package:food_delivery_customer_app/views/screens/wishlist_page.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 
-
-
 class MainTabView extends StatefulWidget {
   const MainTabView({super.key});
 
@@ -40,7 +38,7 @@ class _MainTabViewState extends State<MainTabView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(

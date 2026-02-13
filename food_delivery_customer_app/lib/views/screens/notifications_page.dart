@@ -174,7 +174,7 @@ class OrderNotificationsTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Order #${order.id}',
+                    _getOrderDisplayName(order),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -201,6 +201,18 @@ class OrderNotificationsTab extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getOrderDisplayName(order) {
+    if (order.items != null && order.items.isNotEmpty) {
+      final firstName = order.items.first.menuItem.title;
+      final remaining = order.items.length - 1;
+      if (remaining > 0) {
+        return '$firstName +$remaining more';
+      }
+      return firstName;
+    }
+    return 'Order #${order.id}';
   }
 
   String _getStatusMessage(String status) {
