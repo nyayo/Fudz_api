@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/location_controller.dart';
@@ -56,8 +55,8 @@ class _HomePageState extends State<HomePage> {
     final cartController = Get.find<CartController>();
     final wishlistController = Get.find<WishlistController>();
 
-    // Wait a bit longer to ensure UserController is fully initialized
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Short wait for UserController to be fully initialized
+    await Future.delayed(const Duration(milliseconds: 100));
 
     if (userController.isLoggedIn && userController.user != null) {
       print('✅ User is logged in: ${userController.user?.email}');
@@ -65,37 +64,20 @@ class _HomePageState extends State<HomePage> {
       final accessToken = userController.accessToken;
       if (accessToken != null && accessToken.isNotEmpty) {
         try {
-          print('🛒 Initializing cart...');
-          await cartController.initializeCart(accessToken: accessToken);
-
-          print('📦 Initializing orders...');
-          await _orderController.initializeOrders(accessToken: accessToken);
-
-          print('❤️ Initializing wishlist...');
-          await wishlistController.loadWishlist(accessToken);
-
-          // Load featured items with promotions (background loading)
-          print('🔥 Loading featured items with promotions...');
-          await restaurantController.getFeaturedItemsWithPromotions(
-            showLoading: false,
-          );
+          // Run all initializations in parallel for faster loading
+          await Future.wait([
+            cartController.initializeCart(accessToken: accessToken),
+            _orderController.initializeOrders(accessToken: accessToken),
+            wishlistController.loadWishlist(accessToken),
+            restaurantController.getFeaturedItemsWithPromotions(
+              showLoading: false,
+            ),
+          ]);
 
           print('✅ User services initialized successfully');
         } catch (e) {
           print('⚠️ Error initializing user services: $e');
         }
-      } else {
-        print('❌ No access token available for service initialization');
-      }
-    } else {
-      print(
-        '❌ User not logged in or user data missing, skipping service initialization',
-      );
-
-      // Debug information
-      if (userController.user != null && !userController.isLoggedIn) {
-        print('🔍 DEBUG: User data exists but isLoggedIn is false');
-        print('🔍 This indicates a token initialization issue');
       }
     }
   }
@@ -438,25 +420,16 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // SizedBox(height: media.height * 0.001),
-
                   // Location and Profile with enhanced styling
-                  FadeSlideIn(
-                    child: _buildLocationHeader(),
-                  ),
+                  _buildLocationHeader(),
 
                   const SizedBox(height: 15),
                   // Categories Widget
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 100),
-                    child: const CategoriesWidget(),
-                  ),
+                  const CategoriesWidget(),
 
                   const SizedBox(height: 15),
 
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 200),
-                    child: PromoBannerWidget(
+                  PromoBannerWidget(
                     featuredItemsWithPromotions:
                         restaurantController.featuredItemsWithPromotions,
                     onBannerTap: () {
@@ -464,23 +437,16 @@ class _HomePageState extends State<HomePage> {
                       // Handle banner tap if needed
                     },
                   ),
-                  ),
 
                   const SizedBox(height: 15),
 
                   // Popular Restaurants Widget
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 300),
-                    child: const PopularRestaurantsWidget(),
-                  ),
+                  const PopularRestaurantsWidget(),
 
                   const SizedBox(height: 15),
 
                   // Featured Menu Items
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 400),
-                    child: const MenuItemsWidget(),
-                  ),
+                  const MenuItemsWidget(),
 
                   const SizedBox(height: 15),
                 ],
