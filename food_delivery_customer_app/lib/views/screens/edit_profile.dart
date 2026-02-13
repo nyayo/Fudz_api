@@ -1,5 +1,6 @@
 // views/screens/edit_profile_page.dart
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:get/get.dart';
@@ -219,15 +220,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: Column(
               children: [
                 // Profile Picture Section
-                _buildProfilePictureSection(),
+                FadeSlideIn(
+                  child: _buildProfilePictureSection(),
+                ),
                 const SizedBox(height: 30),
 
                 // Personal Information Form
-                _buildPersonalInfoForm(),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 150),
+                  child: _buildPersonalInfoForm(),
+                ),
                 const SizedBox(height: 30),
 
                 // Update Button
-                SizedBox(
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 300),
+                  child: SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
@@ -258,6 +266,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                           ),
                   ),
+                ),
                 ),
               ],
             ),
