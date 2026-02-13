@@ -395,10 +395,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 20),
                   const Text(
                     "Popular Restaurants",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 15),
                   SizedBox(
@@ -406,16 +403,14 @@ class _HomePageState extends State<HomePage> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: 3,
-                      itemBuilder: (context, index) => const RestaurantCardShimmer(),
+                      itemBuilder: (context, index) =>
+                          const RestaurantCardShimmer(),
                     ),
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     "Featured Menu Items",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 15),
                   const MenuItemCardShimmer(),

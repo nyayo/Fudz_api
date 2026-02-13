@@ -77,10 +77,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     // Navigate
     categoryController.getCategoryDetail(categoryId);
     Get.to(
-      () => CategoryPage(
-        categoryId: categoryId,
-        categoryName: categoryName,
-      ),
+      () => CategoryPage(categoryId: categoryId, categoryName: categoryName),
     );
   }
 
@@ -91,9 +88,9 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     const spacing = 12.0;
     final targetOffset =
         (index * (itemWidth + spacing)) -
-            (screenWidth / 2) +
-            (itemWidth / 2) +
-            20;
+        (screenWidth / 2) +
+        (itemWidth / 2) +
+        20;
     _scrollController.animateTo(
       targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
       duration: const Duration(milliseconds: 450),
@@ -182,14 +179,16 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
 
                       // Staggered entrance animation
                       final entrance = Tween<double>(begin: 0.0, end: 1.0)
-                          .animate(CurvedAnimation(
-                        parent: _entranceController,
-                        curve: Interval(
-                          (index / categories.length) * 0.4,
-                          0.4 + (index / categories.length) * 0.6,
-                          curve: Curves.easeOutBack,
-                        ),
-                      ));
+                          .animate(
+                            CurvedAnimation(
+                              parent: _entranceController,
+                              curve: Interval(
+                                (index / categories.length) * 0.4,
+                                0.4 + (index / categories.length) * 0.6,
+                                curve: Curves.easeOutBack,
+                              ),
+                            ),
+                          );
 
                       return AnimatedBuilder(
                         animation: entrance,
@@ -299,8 +298,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
               style: TextStyle(
                 fontSize: isSelected ? 13 : 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color:
-                    isSelected ? TColor.primaryText : TColor.secondaryText,
+                color: isSelected ? TColor.primaryText : TColor.secondaryText,
                 letterSpacing: isSelected ? 0.2 : 0,
               ),
               child: Text(
@@ -427,12 +425,7 @@ class _ShelfPainter extends CustomPainter {
 
     final path = Path();
     path.moveTo(0, size.height * 0.45);
-    path.quadraticBezierTo(
-      size.width * 0.5,
-      0,
-      size.width,
-      size.height * 0.45,
-    );
+    path.quadraticBezierTo(size.width * 0.5, 0, size.width, size.height * 0.45);
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.close();

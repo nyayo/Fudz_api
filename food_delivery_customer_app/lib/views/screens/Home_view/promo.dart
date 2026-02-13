@@ -9,8 +9,7 @@ import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 
 class PromoBannerWidget extends StatefulWidget {
-  final List<MenuItem>
-  featuredItemsWithPromotions;
+  final List<MenuItem> featuredItemsWithPromotions;
   final VoidCallback? onBannerTap;
 
   const PromoBannerWidget({
@@ -130,13 +129,13 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
         curve: Curves.easeOut,
       ),
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.15),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: Curves.easeOutCubic,
-        )),
+        position: Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+            .animate(
+              CurvedAnimation(
+                parent: _entranceController,
+                curve: Curves.easeOutCubic,
+              ),
+            ),
         child: Column(
           children: [
             SizedBox(
@@ -159,7 +158,10 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                     builder: (context, child) {
                       double value = 1.0;
                       if (_pageController.position.haveDimensions) {
-                        value = (_pageController.page! - index).abs().clamp(0.0, 1.0);
+                        value = (_pageController.page! - index).abs().clamp(
+                          0.0,
+                          1.0,
+                        );
                       }
                       final scale = 1.0 - (value * 0.08);
                       final opacity = 1.0 - (value * 0.3);
@@ -175,7 +177,10 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                     child: GestureDetector(
                       onTap: () => _onBannerTap(index),
                       child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
@@ -310,15 +315,18 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                                         Builder(
                                           builder: (context) => Text(
                                             banner['originalPrice'] as String,
-                                            style: ResponsiveText.bodySmall(
-                                              context,
-                                              color: Colors.white.withAlpha(150),
-                                            ).copyWith(
-                                              decoration:
-                                                  TextDecoration.lineThrough,
-                                              decorationColor:
-                                                  Colors.white.withAlpha(150),
-                                            ),
+                                            style:
+                                                ResponsiveText.bodySmall(
+                                                  context,
+                                                  color: Colors.white.withAlpha(
+                                                    150,
+                                                  ),
+                                                ).copyWith(
+                                                  decoration: TextDecoration
+                                                      .lineThrough,
+                                                  decorationColor: Colors.white
+                                                      .withAlpha(150),
+                                                ),
                                           ),
                                         ),
                                       ],
@@ -396,9 +404,7 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
-                      color: isActive
-                          ? TColor.primary
-                          : Colors.grey[300],
+                      color: isActive ? TColor.primary : Colors.grey[300],
                       boxShadow: isActive
                           ? [
                               BoxShadow(
