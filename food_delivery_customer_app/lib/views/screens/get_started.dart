@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:food_delivery_customer_app/views/auth/login.dart';
 import 'package:food_delivery_customer_app/views/widgets/auth_layout_wrapper.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 import 'package:get/get.dart';
 
@@ -52,7 +53,10 @@ class _GetStartedState extends State<GetStarted> {
           const SizedBox(height: 40),
           
           // Welcome Card
-          GlassCard(
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 400),
+            slideOffset: const Offset(0, 0.15),
+            child: GlassCard(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: Column(
               children: [
@@ -97,6 +101,7 @@ class _GetStartedState extends State<GetStarted> {
                 ),
               ],
             ),
+          ),
           ),
           
           const SizedBox(height: 40),

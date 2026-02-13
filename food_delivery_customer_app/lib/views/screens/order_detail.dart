@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/models/cart.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 
@@ -34,22 +35,33 @@ class OrderDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Order Status Card
-            _buildStatusCard(),
+            FadeSlideIn(
+              child: _buildStatusCard(),
+            ),
 
             const SizedBox(height: 20),
 
             // Order Items
-            _buildOrderItems(),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 150),
+              child: _buildOrderItems(),
+            ),
 
             const SizedBox(height: 20),
 
             // Order Summary
-            _buildOrderSummary(),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 300),
+              child: _buildOrderSummary(),
+            ),
 
             const SizedBox(height: 20),
 
             // Order Information
-            _buildOrderInformation(),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 450),
+              child: _buildOrderInformation(),
+            ),
           ],
         ),
       ),
