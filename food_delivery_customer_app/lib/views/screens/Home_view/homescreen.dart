@@ -64,16 +64,22 @@ class _HomePageState extends State<HomePage> {
           final futures = <Future>[];
 
           if (!cartController.hasItems && cartController.cart == null) {
-            futures.add(cartController.initializeCart(accessToken: accessToken));
+            futures.add(
+              cartController.initializeCart(accessToken: accessToken),
+            );
           }
-          futures.add(_orderController.initializeOrders(accessToken: accessToken));
+          futures.add(
+            _orderController.initializeOrders(accessToken: accessToken),
+          );
           if (wishlistController.wishlist == null) {
             futures.add(wishlistController.loadWishlist(accessToken));
           }
           if (restaurantController.featuredItemsWithPromotions.isEmpty) {
-            futures.add(restaurantController.getFeaturedItemsWithPromotions(
-              showLoading: false,
-            ));
+            futures.add(
+              restaurantController.getFeaturedItemsWithPromotions(
+                showLoading: false,
+              ),
+            );
           }
 
           if (futures.isNotEmpty) {

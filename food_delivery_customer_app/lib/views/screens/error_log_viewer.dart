@@ -73,10 +73,7 @@ class ErrorLogViewer extends StatelessWidget {
                 const SizedBox(height: 8),
                 const Text(
                   'Your app is running smoothly!',
-                  style: TextStyle(
-                    color: Colors.white38,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white38, fontSize: 14),
                 ),
               ],
             ),
@@ -199,10 +196,7 @@ class ErrorLogViewer extends StatelessWidget {
       color: const Color(0xFF2D2D2D),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: severityColor.withOpacity(0.3),
-          width: 1,
-        ),
+        side: BorderSide(color: severityColor.withOpacity(0.3), width: 1),
       ),
       child: Theme(
         data: ThemeData(
@@ -235,10 +229,7 @@ class ErrorLogViewer extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   log.formattedTimestamp,
-                  style: const TextStyle(
-                    color: Colors.white38,
-                    fontSize: 11,
-                  ),
+                  style: const TextStyle(color: Colors.white38, fontSize: 11),
                 ),
               ],
             ),
@@ -391,7 +382,11 @@ class ErrorLogViewer extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed) {
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 16),
@@ -436,7 +431,8 @@ class ErrorLogViewer extends StatelessWidget {
   }
 
   void _copyLogDetails(ErrorLogEntry log) {
-    final details = '''
+    final details =
+        '''
 Error: ${log.message}
 Source: ${log.sourceLabel}
 Time: ${log.formattedTimestamp}
@@ -456,7 +452,8 @@ ${log.metadata != null ? '\nMetadata:\n${log.metadata}' : ''}
   }
 
   void _copyFullLog(ErrorLogEntry log) {
-    final fullLog = '''
+    final fullLog =
+        '''
 Error Log Entry
 ===============
 ID: ${log.id}
@@ -501,26 +498,26 @@ ${log.stackTrace != null ? 'Stack Trace:\n${log.stackTrace}\n' : ''}
     try {
       // Get the error logs in JSON format
       final logs = errorLogger.exportLogs();
-      
+
       // Get the temporary directory
       final directory = await getTemporaryDirectory();
-      
+
       // Create a file name with timestamp
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final fileName = 'error_logs_$timestamp.json';
       final filePath = '${directory.path}/$fileName';
-      
+
       // Write the logs to the file
       final file = File(filePath);
       await file.writeAsString(logs);
-      
+
       // Share the file
       await Share.shareXFiles(
         [XFile(filePath)],
         subject: 'Error Logs - $timestamp',
-        text: 'Error logs exported from Food Delivery Customer App',
+        text: 'Error logs exported from Fudgo',
       );
-      
+
       Get.snackbar(
         'Shared',
         'Error logs file shared successfully',
@@ -556,10 +553,7 @@ ${log.stackTrace != null ? 'Stack Trace:\n${log.stackTrace}\n' : ''}
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               errorLogger.clearLogs();

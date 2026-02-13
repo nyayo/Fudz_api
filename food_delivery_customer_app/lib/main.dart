@@ -61,9 +61,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (notification == null) {
     print('📱 Data-only background message: showing manual notification');
     final String title =
-        data['title']?.toString() ??
-        data['name']?.toString() ??
-        'Fudgon';
+        data['title']?.toString() ?? data['name']?.toString() ?? 'Fudgo';
     final String body =
         data['body']?.toString() ??
         data['description']?.toString() ??
@@ -154,7 +152,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Fudgon',
+      title: 'Fudgo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,

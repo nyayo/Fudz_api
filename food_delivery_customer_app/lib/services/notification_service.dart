@@ -298,7 +298,7 @@ class NotificationService {
         // Extract info
         final notification = message.notification;
         final data = message.data;
-        final String title = notification?.title ?? data['title']?.toString() ?? 'Fudgon';
+        final String title = notification?.title ?? data['title']?.toString() ?? 'Fudgo';
         final String body = notification?.body ?? data['body']?.toString() ?? '';
 
         // 1. Show local notification (standard system heads-up)
@@ -352,7 +352,7 @@ class NotificationService {
       final String title = notification?.title ?? 
           data['title']?.toString() ?? 
           data['name']?.toString() ??
-          'Fudgon';
+          'Fudgo';
       final String body = notification?.body ?? 
           data['body']?.toString() ?? 
           data['description']?.toString() ??
@@ -401,7 +401,7 @@ class NotificationService {
 
       
       // Skip if we have no meaningful content to show
-      if (title == 'Fudgon' && body.isEmpty) {
+      if (title == 'Fudgo' && body.isEmpty) {
         print('⚠️ Skipping notification with no content');
         return;
       }

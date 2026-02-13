@@ -170,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen>
                   );
                 },
                 child: const Text(
-                  'FUDGON',
+                  'FUDGO',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 48,
