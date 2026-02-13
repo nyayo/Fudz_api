@@ -13,6 +13,7 @@ import 'package:food_delivery_customer_app/controller/restaurant_controller.dart
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/firebase_options.dart';
+import 'package:food_delivery_customer_app/services/connectivity_service.dart';
 import 'package:food_delivery_customer_app/services/notification_service.dart';
 import 'package:food_delivery_customer_app/routes/app_pages.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
@@ -30,24 +31,23 @@ import 'package:get_storage/get_storage.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Initialize Firebase and local notifications for the background isolate
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Minimal initialization for background isolate
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   await GetStorage.init();
-  
+
   print('📱 Terminated/Background message received: ${message.messageId}');
-  
+
   // We need to initialize local notifications because this is a separate isolate
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  
+
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
-  const InitializationSettings initializationSettings =
-      InitializationSettings(android: initializationSettingsAndroid);
-      
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
   // We can't easily use the full NotificationService here because it depends on GetX controllers
@@ -60,14 +60,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // If there is a notification payload, the OS (FCM) already shows it automatically in background/terminated.
   if (notification == null) {
     print('📱 Data-only background message: showing manual notification');
-    final String title = data['title']?.toString() ?? data['name']?.toString() ?? 'Food Delivery';
-    final String body = data['body']?.toString() ?? data['description']?.toString() ?? data['message']?.toString() ?? '';
+    final String title =
+        data['title']?.toString() ??
+        data['name']?.toString() ??
+        'Food Delivery';
+    final String body =
+        data['body']?.toString() ??
+        data['description']?.toString() ??
+        data['message']?.toString() ??
+        '';
 
     if (title.isNotEmpty || body.isNotEmpty) {
       // Determine channel based on message type
       String channelId = 'order_notifications_v1';
       String channelName = 'Order Updates';
-      
+
       final type = data['type']?.toString().toLowerCase() ?? '';
       if (type.contains('promotion') || type == 'new_promotion') {
         channelId = 'promo_notifications_v2';
@@ -76,15 +83,16 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
       final AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
-        channelId,
-        channelName,
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
+            channelId,
+            channelName,
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+          );
+
+      final NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
       );
-      
-      final NotificationDetails platformChannelSpecifics =
-          NotificationDetails(android: androidPlatformChannelSpecifics);
 
       await flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -94,12 +102,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         payload: json.encode(data),
       );
     }
-
   } else {
     print('📱 Notification background message: letting FCM handle display');
   }
 }
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -121,7 +127,6 @@ void main() async {
     print('Error during initialization: $e');
   }
 }
-
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -166,7 +171,10 @@ class AppBindings extends Bindings {
   void dependencies() {
     // Register ERROR LOGGER FIRST so all other services can use it
     Get.put(ErrorLoggerService(), permanent: true);
-    
+
+    // Register connectivity service
+    Get.put(ConnectivityService(), permanent: true);
+
     // Register services FIRST
     Get.lazyPut(() => ApiService(), fenix: true);
     Get.put(TokenService(), permanent: true);

@@ -4,6 +4,7 @@ import 'package:food_delivery_customer_app/controller/restaurant_controller.dart
 
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
 import 'package:get/get.dart';
 
@@ -42,9 +43,15 @@ class _AllRestaurantsPageState extends State<AllRestaurantsPage> {
   }
 
   List<dynamic> get filteredRestaurants {
-    final allRestaurants = _searchQuery.isEmpty 
-        ? restaurantController.restaurants 
-        : restaurantController.restaurants.where((r) => r.restaurantName.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    final allRestaurants = _searchQuery.isEmpty
+        ? restaurantController.restaurants
+        : restaurantController.restaurants
+              .where(
+                (r) => r.restaurantName.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ),
+              )
+              .toList();
 
     return allRestaurants;
   }
@@ -139,31 +146,35 @@ class _AllRestaurantsPageState extends State<AllRestaurantsPage> {
               ),
             ];
           },
-          body: filteredRestaurants.isEmpty && !restaurantController.isLoading.value
+          body:
+              filteredRestaurants.isEmpty &&
+                  !restaurantController.isLoading.value
               ? _buildEmptyState()
               : CustomScrollView(
                   controller: _scrollController,
                   slivers: [
                     SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          return _buildRestaurantCard(filteredRestaurants[index]);
-                        },
-                        childCount: filteredRestaurants.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        return _buildRestaurantCard(filteredRestaurants[index]);
+                      }, childCount: filteredRestaurants.length),
                     ),
                     SliverToBoxAdapter(
-                      child: Obx(() => restaurantController.isLoadingMoreRestaurants.value
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  color: TColor.primary,
-                                  strokeWidth: 3,
+                      child: Obx(
+                        () =>
+                            restaurantController.isLoadingMoreRestaurants.value
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
                                 ),
-                              ),
-                            )
-                          : const SizedBox(height: 50)),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: TColor.primary,
+                                    strokeWidth: 3,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox(height: 50),
+                      ),
                     ),
                   ],
                 ),
@@ -251,45 +262,45 @@ class _AllRestaurantsPageState extends State<AllRestaurantsPage> {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
-                    child: Stack(
-                      children: [
-                        SizedBox(
-                          height: 130,
-                          width: double.infinity,
-                          child: CachedImage(
-                            imageUrl: restaurant.imageUrl,
-                            width: double.infinity,
-                            height: 130,
-                            borderRadius: 0,
-                            placeholderIcon: Icons.restaurant,
-                          ),
-                        ),
-                        // Restaurant Logo - NEW
-                        if (restaurant.logoUrl != null)
-                          Positioned(
-                            bottom: 8,
-                            left: 8,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: CachedImage(
-                                imageUrl: restaurant.logoUrl,
-                                width: 36,
-                                height: 36,
-                                borderRadius: 18,
-                                placeholderIcon: Icons.restaurant,
-                              ),
+              child: Stack(
+                children: [
+                  SizedBox(
+                    height: 130,
+                    width: double.infinity,
+                    child: CachedImage(
+                      imageUrl: restaurant.imageUrl,
+                      width: double.infinity,
+                      height: 130,
+                      borderRadius: 0,
+                      placeholderIcon: Icons.restaurant,
+                    ),
+                  ),
+                  // Restaurant Logo - NEW
+                  if (restaurant.logoUrl != null)
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
+                          ],
+                        ),
+                        child: CachedImage(
+                          imageUrl: restaurant.logoUrl,
+                          width: 36,
+                          height: 36,
+                          borderRadius: 18,
+                          placeholderIcon: Icons.restaurant,
+                        ),
+                      ),
+                    ),
                   Positioned(
                     top: 12,
                     right: 12,
@@ -316,7 +327,9 @@ class _AllRestaurantsPageState extends State<AllRestaurantsPage> {
                           Icon(Icons.star, color: Colors.amber, size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            restaurant.rating?.toStringAsFixed(1) ?? '0.0',
+                            (restaurant.avgRating ?? restaurant.rating)
+                                    ?.toStringAsFixed(1) ??
+                                '0.0',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
@@ -434,29 +447,11 @@ class _AllRestaurantsPageState extends State<AllRestaurantsPage> {
 
   Widget _buildErrorState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 20),
-          Text(
-            restaurantController.error.value,
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: () {
-              restaurantController.refreshRestaurants();
-            },
-            icon: const Icon(Icons.refresh),
-            label: const Text('Try Again'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: TColor.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
-        ],
+      child: ErrorDisplayWidget(
+        errorMessage: restaurantController.error.value,
+        onRetry: () {
+          restaurantController.refreshRestaurants();
+        },
       ),
     );
   }

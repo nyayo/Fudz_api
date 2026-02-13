@@ -7,6 +7,8 @@ import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/restaurant.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 
+import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
+
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
@@ -90,7 +92,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
 
         // Handle different category ID types (int, String, etc.)
         return itemCategoryId == categoryId;
-              return false;
+        return false;
       }).toList();
 
       _filteredMenuItems.value = filteredItems;
@@ -139,7 +141,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
 
         // Handle different category ID types
         return itemCategoryId == categoryId;
-              return false;
+        return false;
       }).length;
     }
     return 0;
@@ -242,7 +244,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                       builder: (context, selectedIndex, child) {
                         final isSelected = selectedIndex == index;
                         return Padding(
-                          padding: const EdgeInsets.only(right: 8,),
+                          padding: const EdgeInsets.only(right: 8),
                           child: FilterChip(
                             label: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -265,7 +267,9 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                                       itemCount.toString(),
                                       style: ResponsiveText.tiny(
                                         context,
-                                        color: isSelected ? Colors.white : TColor.primary,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : TColor.primary,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -383,7 +387,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         Get.to(MenuItemDetailPage(menuItemId: menuItem.id));
       },
       child: Container(
-        margin: const EdgeInsets.only(left:20, right:20, bottom:20 ),
+        margin: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -433,7 +437,10 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     Builder(
                       builder: (context) => Text(
                         menuItem.description!,
-                        style: ResponsiveText.caption(context, color: Colors.grey[600]),
+                        style: ResponsiveText.caption(
+                          context,
+                          color: Colors.grey[600],
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -489,8 +496,10 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                           child: Obx(() {
                             final isProcessing = cartController
                                 .isItemProcessing('${menuItem.id}_add');
-                            final isInCart = cartController.isItemInCart(menuItem.id);
-                            
+                            final isInCart = cartController.isItemInCart(
+                              menuItem.id,
+                            );
+
                             return IconButton(
                               icon: isProcessing
                                   ? SizedBox(
@@ -505,8 +514,12 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                                       ),
                                     )
                                   : Icon(
-                                      isInCart ? Icons.check_circle : Icons.add_circle,
-                                      color: isInCart ? Colors.grey : TColor.primary,
+                                      isInCart
+                                          ? Icons.check_circle
+                                          : Icons.add_circle,
+                                      color: isInCart
+                                          ? Colors.grey
+                                          : TColor.primary,
                                       size: (cardWidth * 0.10).clamp(
                                         18.0,
                                         24.0,
@@ -748,7 +761,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                       Icon(Icons.star, color: Colors.amber, size: 16),
                       const SizedBox(width: 4),
                       Text(
-                        restaurant.rating.toStringAsFixed(1),
+                        (restaurant.avgRating ?? restaurant.rating)
+                            .toStringAsFixed(1),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -817,7 +831,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     label: 'Categories',
                   ),
                   _buildStatItem(
-                    value: restaurant.rating.toStringAsFixed(1),
+                    value: (restaurant.avgRating ?? restaurant.rating)
+                        .toStringAsFixed(1),
                     label: 'Rating',
                   ),
                 ],
@@ -838,12 +853,15 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     title: 'Address',
                     value: restaurant.address,
                   ),
-                  const SizedBox(height: 12),
-                  _buildInfoRow(
-                    icon: Icons.person,
-                    title: 'Owner',
-                    value: restaurant.ownerName ?? 'Not specified',
-                  ),
+                  if (restaurant.phone != null &&
+                      restaurant.phone!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildInfoRow(
+                      icon: Icons.phone,
+                      title: 'Phone',
+                      value: restaurant.phone!,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -959,59 +977,11 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
   }
 
   Widget _buildErrorState(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              message,
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Restaurant ID: ${widget.restaurantId}',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  restaurantController.getRestaurantDetail(widget.restaurantId);
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Try Again'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: TColor.primary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              TextButton.icon(
-                onPressed: () => Get.back(),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Go Back'),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return ErrorDisplayWidget(
+      errorMessage: message,
+      onRetry: () {
+        restaurantController.getRestaurantDetail(widget.restaurantId);
+      },
     );
   }
 }

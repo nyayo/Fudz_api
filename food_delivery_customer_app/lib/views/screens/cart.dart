@@ -58,10 +58,7 @@ class _CartPageState extends State<CartPage> {
               child: Row(
                 children: [
                   const Spacer(),
-                  Text(
-                    'My Cart',
-                    style: ResponsiveText.heading2(context),
-                  ),
+                  Text('My Cart', style: ResponsiveText.heading2(context)),
                   const Spacer(),
                   Obx(() {
                     if (_cartController.hasItems) {
@@ -119,10 +116,7 @@ class _CartPageState extends State<CartPage> {
           children: [
             Icon(Icons.shopping_cart_outlined, size: 80, color: TColor.primary),
             const SizedBox(height: 20),
-            Text(
-              'No items in cart',
-              style: ResponsiveText.heading2(context),
-            ),
+            Text('No items in cart', style: ResponsiveText.heading2(context)),
             const SizedBox(height: 10),
             Text(
               'Your favorite foods are waiting!',
@@ -184,386 +178,397 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildCartItemCard(CartItem item, Size media) {
-  final bool hasPromotion = item.menuItem.hasActivePromotions;
-  final double originalPrice = item.menuItem.price;
-  final double discountedPrice = item.menuItem.discountedPrice;
-  final bool isDiscounted = hasPromotion && discountedPrice < originalPrice;
-  final double itemPrice = isDiscounted ? discountedPrice : originalPrice;
-  final double itemTotal = itemPrice * item.quantity;
+    final bool hasPromotion = item.menuItem.hasActivePromotions;
+    final double originalPrice = item.menuItem.price;
+    final double discountedPrice = item.menuItem.discountedPrice;
+    final bool isDiscounted = hasPromotion && discountedPrice < originalPrice;
+    final double itemPrice = isDiscounted ? discountedPrice : originalPrice;
+    final double itemTotal = itemPrice * item.quantity;
 
-  return Obx(() {
-    final isProcessing =
-        _cartController.isItemProcessing('${item.id}_update') ||
-        _cartController.isItemProcessing('${item.id}_remove');
+    return Obx(() {
+      final isProcessing =
+          _cartController.isItemProcessing('${item.id}_update') ||
+          _cartController.isItemProcessing('${item.id}_remove');
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: isDiscounted
-            ? Border.all(color: Colors.red.withOpacity(0.2), width: 1)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            spreadRadius: 0.5,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Discount badge (top-right corner)
-          if (isDiscounted)
-            Positioned(
-              top: 4,
-              right: 4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${_calculateDiscountPercentage(originalPrice, discountedPrice)}%',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: isDiscounted
+              ? Border.all(color: Colors.red.withOpacity(0.2), width: 1)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              spreadRadius: 0.5,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Discount badge (top-right corner)
+            if (isDiscounted)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_calculateDiscountPercentage(originalPrice, discountedPrice)}%',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Food Image - Centered
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Builder(
-                    builder: (context) {
-                      final imageUrl = item.menuItem.imageUrl;
-                      
-                      if (imageUrl == null || imageUrl.isEmpty) {
-                        return Center(
-                          child: Icon(Icons.fastfood, 
-                            color: Colors.grey[400], 
-                            size: 24,
-                          ),
-                        );
-                      }
-                      
-                      return Image.network(
-                        imageUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Food Image - Centered
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Builder(
+                      builder: (context) {
+                        final imageUrl = item.menuItem.imageUrl;
+
+                        if (imageUrl == null || imageUrl.isEmpty) {
                           return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              strokeWidth: 1.5,
-                              color: TColor.primary,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(Icons.broken_image, 
-                              color: Colors.grey[400], 
+                            child: Icon(
+                              Icons.fastfood,
+                              color: Colors.grey[400],
                               size: 24,
                             ),
                           );
-                        },
-                      );
-                    },
+                        }
+
+                        return Image.network(
+                          imageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                                strokeWidth: 1.5,
+                                color: TColor.primary,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                color: Colors.grey[400],
+                                size: 24,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              // Food Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Title and Restaurant name
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          item.menuItem.title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[900],
+                // Food Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Title and Restaurant name
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.menuItem.title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[900],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item.menuItem.safeRestaurantName,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
+                          const SizedBox(height: 2),
+                          Text(
+                            item.menuItem.safeRestaurantName,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
 
-                    // Price, quantity, and total section
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Price and total column
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Unit price
-                              Row(
-                                children: [
-                                  Text(
-                                    CurrencyFormatter.format(itemPrice),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDiscounted 
-                                          ? Colors.red 
-                                          : TColor.primary,
-                                    ),
-                                  ),
-                                  if (isDiscounted)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 4),
-                                      child: Text(
-                                        CurrencyFormatter.format(originalPrice),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey,
-                                          decoration: TextDecoration.lineThrough,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              
-                              // Quantity × Price calculation
-                              Row(
-                                children: [
-                                  Text(
-                                    '${item.quantity} × ${CurrencyFormatter.format(itemPrice)}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              
-                              // Item total
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  // horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                      // Price, quantity, and total section
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Price and total column
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Unit price
+                                Row(
                                   children: [
                                     Text(
-                                      'Item total: ',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                    Text(
-                                      CurrencyFormatter.format(itemTotal),
+                                      CurrencyFormatter.format(itemPrice),
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: TColor.primary,
+                                        color: isDiscounted
+                                            ? Colors.red
+                                            : TColor.primary,
+                                      ),
+                                    ),
+                                    if (isDiscounted)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 4),
+                                        child: Text(
+                                          CurrencyFormatter.format(
+                                            originalPrice,
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+
+                                // Quantity × Price calculation
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${item.quantity} × ${CurrencyFormatter.format(itemPrice)}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                const SizedBox(height: 4),
 
-                        const SizedBox(width: 8),
-
-                        // Vertical quantity controls
-                        Container(
-                          width: 32,
-                          decoration: BoxDecoration(
-                            color: TColor.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: TColor.primary.withOpacity(0.2),
-                              width: 1,
+                                // Item total
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    // horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Item total: ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      Text(
+                                        CurrencyFormatter.format(itemTotal),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: TColor.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Plus button
-                              SizedBox(
-                                height: 24,
-                                width: 32,
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(11),
-                                      topRight: Radius.circular(11),
-                                    ),
-                                    onTap: isProcessing
-                                        ? null
-                                        : () {
-                                            _cartController.updateQuantity(
-                                              itemId: item.id,
-                                              quantity: item.quantity + 1,
-                                              accessToken: _userController.accessToken,
-                                            );
-                                          },
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.add,
-                                        size: 18,
-                                        color: isProcessing
-                                            ? Colors.grey[400]
-                                            : TColor.primary,
+
+                          const SizedBox(width: 8),
+
+                          // Vertical quantity controls
+                          Container(
+                            width: 28,
+                            decoration: BoxDecoration(
+                              color: TColor.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: TColor.primary.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Plus button
+                                SizedBox(
+                                  height: 22,
+                                  width: 28,
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(9),
+                                        topRight: Radius.circular(9),
+                                      ),
+                                      onTap: isProcessing
+                                          ? null
+                                          : () {
+                                              _cartController.updateQuantity(
+                                                itemId: item.id,
+                                                quantity: item.quantity + 1,
+                                                accessToken:
+                                                    _userController.accessToken,
+                                              );
+                                            },
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.add,
+                                          size: 14,
+                                          color: isProcessing
+                                              ? Colors.grey[400]
+                                              : TColor.primary,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
 
-                              // Divider
-                              Container(
-                                height: 1,
-                                width: 32,
-                                color: TColor.primary.withOpacity(0.2),
-                              ),
-
-                              // Quantity display
-                              Container(
-                                height: 26,
-                                width: 32,
-                                color: Colors.white,
-                                child: Center(
-                                  child: Text(
-                                    item.quantity.toString(),
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: TColor.primaryText,
-                                    ),
-                                  ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  width: 28,
+                                  color: TColor.primary.withOpacity(0.2),
                                 ),
-                              ),
 
-                              // Divider
-                              Container(
-                                height: 1,
-                                width: 32,
-                                color: TColor.primary.withOpacity(0.2),
-                              ),
-
-                              // Minus button
-                              SizedBox(
-                                height: 24,
-                                width: 32,
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: const BorderRadius.only(
-                                      bottomLeft: Radius.circular(11),
-                                      bottomRight: Radius.circular(11),
-                                    ),
-                                    onTap: isProcessing
-                                        ? null
-                                        : () {
-                                            _cartController.updateQuantity(
-                                              itemId: item.id,
-                                              quantity: item.quantity - 1,
-                                              accessToken: _userController.accessToken,
-                                            );
-                                          },
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.remove,
-                                        size: 18,
-                                        color: isProcessing
-                                            ? Colors.grey[400]
-                                            : TColor.primary,
+                                // Quantity display
+                                Container(
+                                  height: 22,
+                                  width: 28,
+                                  color: Colors.white,
+                                  child: Center(
+                                    child: Text(
+                                      item.quantity.toString(),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: TColor.primaryText,
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  width: 28,
+                                  color: TColor.primary.withOpacity(0.2),
+                                ),
+
+                                // Minus button
+                                SizedBox(
+                                  height: 22,
+                                  width: 28,
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(9),
+                                        bottomRight: Radius.circular(9),
+                                      ),
+                                      onTap: isProcessing
+                                          ? null
+                                          : () {
+                                              _cartController.updateQuantity(
+                                                itemId: item.id,
+                                                quantity: item.quantity - 1,
+                                                accessToken:
+                                                    _userController.accessToken,
+                                              );
+                                            },
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.remove,
+                                          size: 14,
+                                          color: isProcessing
+                                              ? Colors.grey[400]
+                                              : TColor.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // Processing overlay
-          if (isProcessing)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: TColor.primary,
+            // Processing overlay
+            if (isProcessing)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: TColor.primary,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
-    );
-  });
-}
+          ],
+        ),
+      );
+    });
+  }
 
   // Helper method to calculate discount percentage
   int _calculateDiscountPercentage(
@@ -574,8 +579,6 @@ class _CartPageState extends State<CartPage> {
     final discount = ((originalPrice - discountedPrice) / originalPrice) * 100;
     return discount.round();
   }
-
-
 
   Widget _buildOrderSummary() {
     final CartController cartController = Get.find();

@@ -4,6 +4,7 @@ import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/user.dart';
 import 'package:food_delivery_customer_app/views/screens/edit_profile.dart';
+import 'package:food_delivery_customer_app/views/screens/notification_preferences_page.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 
@@ -42,6 +43,10 @@ class ProfilePage extends StatelessWidget {
 
                     // Account Information Section
                     if (isLoggedIn) _buildAccountInfoSection(user),
+                    if (isLoggedIn) const SizedBox(height: 24),
+
+                    // Notification Preferences
+                    if (isLoggedIn) _buildNotificationPreferencesButton(),
                     if (isLoggedIn) const SizedBox(height: 32),
 
                     // Logout Button
@@ -67,16 +72,17 @@ class ProfilePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Builder(
-              builder: (context) => Text(
-                'My Profile',
-                style: ResponsiveText.heading1(context),
-              ),
+              builder: (context) =>
+                  Text('My Profile', style: ResponsiveText.heading1(context)),
             ),
             const SizedBox(height: 4),
             Builder(
               builder: (context) => Text(
                 'Manage your personal information',
-                style: ResponsiveText.bodySmall(context, color: Colors.grey[600]),
+                style: ResponsiveText.bodySmall(
+                  context,
+                  color: Colors.grey[600],
+                ),
               ),
             ),
           ],
@@ -88,11 +94,7 @@ class ProfilePage extends StatelessWidget {
             color: TColor.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(25),
           ),
-          child: Icon(
-            Icons.person_outline,
-            color: TColor.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.person_outline, color: TColor.primary, size: 24),
         ),
       ],
     );
@@ -105,10 +107,7 @@ class ProfilePage extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            TColor.primary.withOpacity(0.8),
-            TColor.primary,
-          ],
+          colors: [TColor.primary.withOpacity(0.8), TColor.primary],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -133,11 +132,7 @@ class ProfilePage extends StatelessWidget {
                 width: 2,
               ),
             ),
-            child: Icon(
-              Icons.person,
-              size: 40,
-              color: Colors.white,
-            ),
+            child: Icon(Icons.person, size: 40, color: Colors.white),
           ),
           const SizedBox(width: 16),
           // User Info
@@ -148,7 +143,10 @@ class ProfilePage extends StatelessWidget {
                 Builder(
                   builder: (context) => Text(
                     isLoggedIn ? user?.displayName ?? 'User' : 'Guest User',
-                    style: ResponsiveText.heading2(context, color: Colors.white),
+                    style: ResponsiveText.heading2(
+                      context,
+                      color: Colors.white,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -168,8 +166,10 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 8),
                 if (isLoggedIn)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -200,11 +200,7 @@ class ProfilePage extends StatelessWidget {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.edit,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: Icon(Icons.edit, color: Colors.white, size: 20),
               ),
             ),
         ],
@@ -232,11 +228,7 @@ class ProfilePage extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.person_outline,
-                color: TColor.primary,
-                size: 20,
-              ),
+              Icon(Icons.person_outline, color: TColor.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Personal Information',
@@ -318,11 +310,7 @@ class ProfilePage extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.security_outlined,
-                color: TColor.primary,
-                size: 20,
-              ),
+              Icon(Icons.security_outlined, color: TColor.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Account Information',
@@ -356,8 +344,9 @@ class ProfilePage extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color:
-                        user?.isVerified == true ? Colors.green : Colors.orange,
+                    color: user?.isVerified == true
+                        ? Colors.green
+                        : Colors.orange,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -368,8 +357,9 @@ class ProfilePage extends StatelessWidget {
                       : 'Pending Verification',
                   style: TextStyle(
                     fontSize: 16,
-                    color:
-                        user?.isVerified == true ? Colors.green : Colors.orange,
+                    color: user?.isVerified == true
+                        ? Colors.green
+                        : Colors.orange,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -420,11 +410,7 @@ class ProfilePage extends StatelessWidget {
             color: TColor.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icon,
-            color: TColor.primary,
-            size: 20,
-          ),
+          child: Icon(icon, color: TColor.primary, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -433,10 +419,7 @@ class ProfilePage extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               const SizedBox(height: 2),
               value,
@@ -444,6 +427,68 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNotificationPreferencesButton() {
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => const NotificationPreferencesPage());
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: TColor.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.notifications_outlined,
+                color: TColor.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Notification Preferences',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: TColor.primaryText,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Manage your notification settings',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+          ],
+        ),
+      ),
     );
   }
 
@@ -467,17 +512,11 @@ class ProfilePage extends StatelessWidget {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.logout,
-              size: 20,
-            ),
+            Icon(Icons.logout, size: 20),
             SizedBox(width: 8),
             Text(
               'Logout',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -502,11 +541,7 @@ class ProfilePage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.login,
-            size: 64,
-            color: TColor.primary,
-          ),
+          Icon(Icons.login, size: 64, color: TColor.primary),
           const SizedBox(height: 16),
           Text(
             'Login Required',
@@ -520,10 +555,7 @@ class ProfilePage extends StatelessWidget {
           Text(
             'Please login to view your profile information',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -559,48 +591,52 @@ class ProfilePage extends StatelessWidget {
       AlertDialog(
         title: const Row(
           children: [
-            Icon(
-              Icons.logout,
-              color: Colors.red,
-            ),
+            Icon(Icons.logout, color: Colors.red),
             SizedBox(width: 8),
             Text('Logout'),
           ],
         ),
         content: const Text('Are you sure you want to logout?'),
         actions: [
-          Obx(() => TextButton(
-                onPressed: userController.isLoading.value ? null : () => Get.back(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: userController.isLoading.value
-                        ? Colors.grey
-                        : TColor.primaryText,
-                  ),
+          Obx(
+            () => TextButton(
+              onPressed: userController.isLoading.value
+                  ? null
+                  : () => Get.back(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: userController.isLoading.value
+                      ? Colors.grey
+                      : TColor.primaryText,
                 ),
-              )),
-          Obx(() => TextButton(
-                onPressed: userController.isLoading.value
-                    ? null
-                    : () {
-                        userController.logout();
-                      },
-                style: TextButton.styleFrom(
-                  foregroundColor:
-                      userController.isLoading.value ? Colors.grey : Colors.red,
-                ),
-                child: userController.isLoading.value
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                        ),
-                      )
-                    : const Text('Logout'),
-              )),
+              ),
+            ),
+          ),
+          Obx(
+            () => TextButton(
+              onPressed: userController.isLoading.value
+                  ? null
+                  : () {
+                      userController.logout();
+                    },
+              style: TextButton.styleFrom(
+                foregroundColor: userController.isLoading.value
+                    ? Colors.grey
+                    : Colors.red,
+              ),
+              child: userController.isLoading.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                      ),
+                    )
+                  : const Text('Logout'),
+            ),
+          ),
         ],
       ),
     );
@@ -630,7 +666,7 @@ class ProfilePage extends StatelessWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return months[month - 1];
   }
