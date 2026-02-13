@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/location_controller.dart';
@@ -31,10 +32,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text(
-          'Checkout',
-          style: ResponsiveText.heading2(context),
-        ),
+        title: Text('Checkout', style: ResponsiveText.heading2(context)),
         backgroundColor: Colors.white,
         foregroundColor: TColor.primaryText,
         elevation: 0,
@@ -53,66 +51,91 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Payment Methods Section
-                    Text(
-                      'Payment Method',
-                      style: ResponsiveText.heading3(context),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildPaymentMethodCard(
-                      icon: Icons.money,
-                      title: 'Cash on Delivery',
-                      value: 'cash',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildPaymentMethodCard(
-                      icon: Icons.payment,
-                      title: 'Mobile Money / Card',
-                      value: 'payment',
-                    ),
+                    FadeSlideIn(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Payment Method',
+                            style: ResponsiveText.heading3(context),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildPaymentMethodCard(
+                            icon: Icons.money,
+                            title: 'Cash on Delivery',
+                            value: 'cash',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildPaymentMethodCard(
+                            icon: Icons.payment,
+                            title: 'Mobile Money / Card',
+                            value: 'payment',
+                          ),
 
-                    // Momo provider selection (shown only when 'payment' is selected)
-                    if (_selectedPaymentMethod == 'payment') ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Select Provider',
-                        style: ResponsiveText.body(context,
-                            fontWeight: FontWeight.w600),
+                          // Momo provider selection (shown only when 'payment' is selected)
+                          if (_selectedPaymentMethod == 'payment') ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              'Select Provider',
+                              style: ResponsiveText.body(
+                                context,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildMomoProviderCard(
+                              icon: Icons.phone_android,
+                              title: 'MTN Mobile Money',
+                              provider: 'mtn',
+                              color: Colors.yellow[700]!,
+                            ),
+                            const SizedBox(height: 8),
+                            _buildMomoProviderCard(
+                              icon: Icons.phone_android,
+                              title: 'Airtel Money',
+                              provider: 'airtel',
+                              color: Colors.red[700]!,
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      _buildMomoProviderCard(
-                        icon: Icons.phone_android,
-                        title: 'MTN Mobile Money',
-                        provider: 'mtn',
-                        color: Colors.yellow[700]!,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildMomoProviderCard(
-                        icon: Icons.phone_android,
-                        title: 'Airtel Money',
-                        provider: 'airtel',
-                        color: Colors.red[700]!,
-                      ),
-                    ],
+                    ),
 
                     const SizedBox(height: 24),
 
                     // Delivery Location Section
-                    Text(
-                      'Delivery Address',
-                      style: ResponsiveText.heading3(context),
+                    FadeSlideIn(
+                      delay: const Duration(milliseconds: 150),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Delivery Address',
+                            style: ResponsiveText.heading3(context),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDeliveryLocationButton(),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    _buildDeliveryLocationButton(),
 
                     const SizedBox(height: 24),
 
                     // Order Summary Section
-                    Text(
-                      'Order Summary',
-                      style: ResponsiveText.heading3(context),
+                    FadeSlideIn(
+                      delay: const Duration(milliseconds: 300),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Order Summary',
+                            style: ResponsiveText.heading3(context),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildOrderSummary(),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    _buildOrderSummary(),
                   ],
                 ),
               ),
@@ -123,8 +146,9 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.2),
@@ -253,11 +277,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -357,11 +377,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               }),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: TColor.primary,
-              size: 16,
-            ),
+            Icon(Icons.arrow_forward_ios, color: TColor.primary, size: 16),
           ],
         ),
       ),
@@ -385,8 +401,9 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         final isDiscounted = discountedPrice < originalPrice;
 
         final originalItemTotal = originalPrice * item.quantity;
-        final discountedItemTotal =
-            isDiscounted ? discountedPrice * item.quantity : originalItemTotal;
+        final discountedItemTotal = isDiscounted
+            ? discountedPrice * item.quantity
+            : originalItemTotal;
 
         originalSubtotal += originalItemTotal;
         discountedSubtotal += discountedItemTotal;
@@ -409,8 +426,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         ),
         child: Column(
           children: [
-            _buildSummaryRow('Order Amount',
-                CurrencyFormatter.format(discountedSubtotal)),
+            _buildSummaryRow(
+              'Order Amount',
+              CurrencyFormatter.format(discountedSubtotal),
+            ),
             if (totalSavings > 0) ...[
               const SizedBox(height: 8),
               _buildSummaryRow(
@@ -457,7 +476,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           style: TextStyle(
             fontSize: isTotal ? 18 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: valueColor ?? (isTotal ? TColor.primary : TColor.primaryText),
+            color:
+                valueColor ?? (isTotal ? TColor.primary : TColor.primaryText),
           ),
         ),
       ],
@@ -471,7 +491,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       final isProcessing = _orderController.isLoading.value;
 
       // Validate payment selection
-      final paymentValid = _selectedPaymentMethod == 'cash' ||
+      final paymentValid =
+          _selectedPaymentMethod == 'cash' ||
           (_selectedPaymentMethod == 'payment' &&
               _selectedMomoProvider != null);
 
@@ -551,7 +572,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
       // Determine payment method string for backend
       String paymentMethod = _selectedPaymentMethod;
-      if (_selectedPaymentMethod == 'payment' && _selectedMomoProvider != null) {
+      if (_selectedPaymentMethod == 'payment' &&
+          _selectedMomoProvider != null) {
         paymentMethod = 'momo_$_selectedMomoProvider';
       }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/category_controller.dart';
@@ -243,7 +244,21 @@ class _CategoryPageState extends State<CategoryPage> {
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final menuItem = filteredMenuItems[index];
-                  return _buildMenuItemCard(menuItem);
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 400 + (index % 6) * 80),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _buildMenuItemCard(menuItem),
+                  );
                 }, childCount: filteredMenuItems.length),
               ),
             );
@@ -445,70 +460,80 @@ class _CategoryPageState extends State<CategoryPage> {
                           ],
                         ),
 
-                          Obx(() {
-                            final isProcessing = _cartController.isItemProcessing('${menuItem.id}_add');
-                            final isInCart = _cartController.isItemInCart(menuItem.id);
-                            
-                            return GestureDetector(
-                              onTap: (isProcessing || isInCart)
-                                  ? null
-                                  : () async {
-                                      if (!_userController.isLoggedIn) {
-                                        Get.snackbar(
-                                          'Login Required',
-                                          'Please login to add items to cart',
-                                          snackPosition: SnackPosition.TOP,
-                                          backgroundColor: Colors.orange,
-                                          colorText: Colors.white,
-                                        );
-                                        return;
-                                      }
-                                      try {
-                                        await _cartController.addToCart(
-                                          menuItem: menuItem,
-                                          quantity: 1,
-                                          accessToken: _userController.accessToken,
-                                        );
-                                      } catch (e) {
-                                        // Error handled by controller
-                                      }
-                                    },
-                              child: Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: isInCart ? Colors.grey : TColor.primary,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: (isInCart ? Colors.grey : TColor.primary).withOpacity(0.3),
-                                      spreadRadius: 1,
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: isProcessing
-                                    ? const Center(
-                                        child: SizedBox(
-                                          height: 16,
-                                          width: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    : Icon(
-                                        isInCart ? Icons.check : Icons.add,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
+                        Obx(() {
+                          final isProcessing = _cartController.isItemProcessing(
+                            '${menuItem.id}_add',
+                          );
+                          final isInCart = _cartController.isItemInCart(
+                            menuItem.id,
+                          );
+
+                          return GestureDetector(
+                            onTap: (isProcessing || isInCart)
+                                ? null
+                                : () async {
+                                    if (!_userController.isLoggedIn) {
+                                      Get.snackbar(
+                                        'Login Required',
+                                        'Please login to add items to cart',
+                                        snackPosition: SnackPosition.TOP,
+                                        backgroundColor: Colors.orange,
+                                        colorText: Colors.white,
+                                      );
+                                      return;
+                                    }
+                                    try {
+                                      await _cartController.addToCart(
+                                        menuItem: menuItem,
+                                        quantity: 1,
+                                        accessToken:
+                                            _userController.accessToken,
+                                      );
+                                    } catch (e) {
+                                      // Error handled by controller
+                                    }
+                                  },
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: isInCart ? Colors.grey : TColor.primary,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        (isInCart
+                                                ? Colors.grey
+                                                : TColor.primary)
+                                            .withOpacity(0.3),
+                                    spreadRadius: 1,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            );
-                          }),
+                              child: isProcessing
+                                  ? const Center(
+                                      child: SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(
+                                      isInCart ? Icons.check : Icons.add,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
                   ],

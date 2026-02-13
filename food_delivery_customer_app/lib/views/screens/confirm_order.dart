@@ -56,30 +56,30 @@ class OrderConfirmationPage extends StatelessWidget {
             FadeSlideIn(
               delay: const Duration(milliseconds: 600),
               child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Delivery to:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: TColor.primaryText,
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Delivery to:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: TColor.primaryText,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    order.displayDeliveryAddress,
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      order.displayDeliveryAddress,
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
               ),
-            ),
             ),
 
             const Spacer(),
@@ -87,25 +87,25 @@ class OrderConfirmationPage extends StatelessWidget {
               delay: const Duration(milliseconds: 750),
               slideOffset: const Offset(0, 0.2),
               child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: TColor.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                onPressed: () {
-                  Get.offAllNamed('/home');
-                },
-                child: const Text(
-                  'Back to Home',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColor.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    Get.offAllNamed('/home');
+                  },
+                  child: const Text(
+                    'Back to Home',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
             ),
           ],
         ),

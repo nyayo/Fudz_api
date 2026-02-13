@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
@@ -58,8 +59,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
           return _buildErrorState('Menu item not found');
         }
 
-        return 
-        CustomScrollView(
+        return CustomScrollView(
           slivers: [
             // App Bar with Menu Item Image
             SliverAppBar(
@@ -242,7 +242,9 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                                     fontSize: 16,
                                     color: Colors.white.withOpacity(0.7),
                                     decoration: TextDecoration.lineThrough,
-                                    decorationColor: Colors.white.withOpacity(0.7),
+                                    decorationColor: Colors.white.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ] else
@@ -300,165 +302,176 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
 
             // Menu Item Info
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 60),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Promotion Information
-                    if (menuItem.hasActivePromotions)
-                      _buildPromotionInfo(menuItem),
+              child: FadeSlideIn(
+                delay: const Duration(milliseconds: 200),
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 20,
+                    bottom: 60,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Promotion Information
+                      if (menuItem.hasActivePromotions)
+                        _buildPromotionInfo(menuItem),
 
-                    if (menuItem.hasActivePromotions)
-                      const SizedBox(height: 16),
+                      if (menuItem.hasActivePromotions)
+                        const SizedBox(height: 16),
 
-                    // Description
-                    if (menuItem.description != null &&
-                        menuItem.description!.isNotEmpty)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Description',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: TColor.primaryText,
+                      // Description
+                      if (menuItem.description != null &&
+                          menuItem.description!.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Description',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: TColor.primaryText,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            menuItem.description!,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 16,
-                              height: 1.5,
+                            const SizedBox(height: 8),
+                            Text(
+                              menuItem.description!,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                                height: 1.5,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-
-                    const SizedBox(height: 20),
-
-                    // Item Information
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Item Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: TColor.primaryText,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildInfoRow(
-                            'Availability',
-                            menuItem.isAvailable
-                                ? 'Available'
-                                : 'Not Available',
-                          ),
-                          if (menuItem.prepTimeMinutes != null)
-                            _buildInfoRow(
-                              'Preparation Time',
-                              '${menuItem.prepTimeMinutes} mins',
-                            ),
-                          _buildInfoRow(
-                            'Category',
-                            menuItem.categoryName ??
-                                'Category ${menuItem.category}',
-                          ),
-                          if (menuItem.allergens?.isNotEmpty ?? false)
-                            _buildInfoRow('Allergens', menuItem.allergens!),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Add to Cart Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: TColor.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          ],
                         ),
 
-                        // Update your onPressed handler in the Add to Cart button:
-                        onPressed: menuItem.isAvailable
-                            ? () async {
-                                if (cartController.isItemInCart(menuItem.id)) return;
-                                
-                                try {
-                                  // Add a small delay to ensure smooth UI transition
-                                  await Future.delayed(
-                                    const Duration(milliseconds: 100),
-                                  );
+                      const SizedBox(height: 20),
 
-                                  await cartController
-                                      .addToCart(
-                                        menuItem: menuItem,
-                                        quantity: 1,
-                                        accessToken: userController.accessToken,
-                                      );
-                                } catch (e) {
-                                  // Error is handled by CartController via SnackbarService
-                                }
-                              } : null,
-                        child: Obx(() {
-                          final isAddingItem =
-                              cartController.isItemProcessing(
-                                '${menuItem.id}_add',
-                              );
-                          
-                          final isInCart = cartController.isItemInCart(menuItem.id);
-
-                          String buttonText;
-                          if (!menuItem.isAvailable) {
-                            buttonText = 'Not Available';
-                          } else if (isInCart) {
-                            buttonText = 'Already added to cart';
-                          } else {
-                            buttonText = menuItem.hasActivePromotions
-                                ? 'Add to Cart - ${menuItem.formattedDiscountedPrice}'
-                                : 'Add to Cart - ${menuItem.formattedPrice}';
-                          }
-
-                          return isAddingItem
-                              ? SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  buttonText,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: isInCart ? Colors.white70 : Colors.white,
-                                  ),
-                                );
-                        }),
+                      // Item Information
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Item Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: TColor.primaryText,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildInfoRow(
+                              'Availability',
+                              menuItem.isAvailable
+                                  ? 'Available'
+                                  : 'Not Available',
+                            ),
+                            if (menuItem.prepTimeMinutes != null)
+                              _buildInfoRow(
+                                'Preparation Time',
+                                '${menuItem.prepTimeMinutes} mins',
+                              ),
+                            _buildInfoRow(
+                              'Category',
+                              menuItem.categoryName ??
+                                  'Category ${menuItem.category}',
+                            ),
+                            if (menuItem.allergens?.isNotEmpty ?? false)
+                              _buildInfoRow('Allergens', menuItem.allergens!),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 24),
+
+                      // Add to Cart Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TColor.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+
+                          // Update your onPressed handler in the Add to Cart button:
+                          onPressed: menuItem.isAvailable
+                              ? () async {
+                                  if (cartController.isItemInCart(menuItem.id))
+                                    return;
+
+                                  try {
+                                    // Add a small delay to ensure smooth UI transition
+                                    await Future.delayed(
+                                      const Duration(milliseconds: 100),
+                                    );
+
+                                    await cartController.addToCart(
+                                      menuItem: menuItem,
+                                      quantity: 1,
+                                      accessToken: userController.accessToken,
+                                    );
+                                  } catch (e) {
+                                    // Error is handled by CartController via SnackbarService
+                                  }
+                                }
+                              : null,
+                          child: Obx(() {
+                            final isAddingItem = cartController
+                                .isItemProcessing('${menuItem.id}_add');
+
+                            final isInCart = cartController.isItemInCart(
+                              menuItem.id,
+                            );
+
+                            String buttonText;
+                            if (!menuItem.isAvailable) {
+                              buttonText = 'Not Available';
+                            } else if (isInCart) {
+                              buttonText = 'Already added to cart';
+                            } else {
+                              buttonText = menuItem.hasActivePromotions
+                                  ? 'Add to Cart - ${menuItem.formattedDiscountedPrice}'
+                                  : 'Add to Cart - ${menuItem.formattedPrice}';
+                            }
+
+                            return isAddingItem
+                                ? SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    buttonText,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: isInCart
+                                          ? Colors.white70
+                                          : Colors.white,
+                                    ),
+                                  );
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

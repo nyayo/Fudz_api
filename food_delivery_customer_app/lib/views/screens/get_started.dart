@@ -28,7 +28,7 @@ class _GetStartedState extends State<GetStarted> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 40),
-          
+
           // Logo with subtle shadow
           Hero(
             tag: 'app_logo',
@@ -42,76 +42,78 @@ class _GetStartedState extends State<GetStarted> {
                   ),
                 ],
               ),
-              child: Image.asset(
-                "assets/logo.png",
-                height: 120,
-                width: 120,
-              ),
+              child: Image.asset("assets/logo.png", height: 120, width: 120),
             ),
           ),
-          
+
           const SizedBox(height: 40),
-          
+
           // Welcome Card
           FadeSlideIn(
             delay: const Duration(milliseconds: 400),
             slideOffset: const Offset(0, 0.15),
             child: GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              children: [
-                Text(
-                  "Welcome",
-                  style: ResponsiveText.heading1(context, color: Colors.black87),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "Your Favorite Food, Delivered Fast!",
-                  style: ResponsiveText.bodySmall(context, color: Colors.black54),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                
-                // Primary Action Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                children: [
+                  Text(
+                    "Welcome",
+                    style: ResponsiveText.heading1(
+                      context,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Your Favorite Food, Delivered Fast!",
+                    style: ResponsiveText.bodySmall(
+                      context,
+                      color: Colors.black54,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Primary Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () {
+                        Get.to(
+                          () => LoginScreen(),
+                          transition: Transition.rightToLeftWithFade,
+                          duration: const Duration(milliseconds: 400),
+                        );
+                      },
+                      child: Text(
+                        "Get Started",
+                        style: ResponsiveText.button(context),
                       ),
                     ),
-                    onPressed: () {
-                      Get.to(
-                        () => LoginScreen(),
-                        transition: Transition.rightToLeftWithFade,
-                        duration: const Duration(milliseconds: 400),
-                      );
-                    },
-                    child: Text(
-                      "Get Started",
-                      style: ResponsiveText.button(context),
-                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-          ),
-          
+
           const SizedBox(height: 40),
-          
+
           // Optional Footer Text
           Text(
             "Powered by FUDZ",
             style: ResponsiveText.tiny(context, color: Colors.white70),
           ),
-          
+
           const SizedBox(height: 20),
         ],
       ),

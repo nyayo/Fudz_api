@@ -1,5 +1,6 @@
 // views/screens/wishlist_page.dart
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
@@ -236,257 +237,287 @@ class WishlistPage extends StatelessWidget {
         final items = wishlist.items;
         if (index >= items.length) return const SizedBox.shrink();
 
-        return _buildWishlistItemCard(items[index]);
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: Duration(milliseconds: 400 + index * 80),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 20 * (1 - value)),
+                child: child,
+              ),
+            );
+          },
+          child: _buildWishlistItemCard(items[index]),
+        );
       },
     );
   }
 
   Widget _buildWishlistItemCard(WishlistItem wishlistItem) {
-  final menuItem = wishlistItem.menuItem;
-  final bool hasPromotion = menuItem.hasActivePromotions;
+    final menuItem = wishlistItem.menuItem;
+    final bool hasPromotion = menuItem.hasActivePromotions;
 
-  return Container(
-    margin: const EdgeInsets.only(bottom: 12, top: 20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: hasPromotion 
-          ? Border.all(color: Colors.red.withOpacity(0.3), width: 2)
-          : null,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.1),
-          spreadRadius: 1,
-          blurRadius: 4,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12, top: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Get.to(() => MenuItemDetailPage(menuItemId: menuItem.id));
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Item Image with Promotion Badge
-              Stack(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[200],
-                    ),
-                    child: menuItem.imageUrl != null && menuItem.imageUrl!.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              menuItem.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.fastfood,
-                                  color: Colors.grey[400],
-                                  size: 30,
-                                );
-                              },
-                            ),
-                          )
-                        : Icon(Icons.fastfood, color: Colors.grey[400], size: 30),
-                  ),
-                  if (hasPromotion)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          '${menuItem.activePromotions.first.formattedDiscount}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              
-              // Item Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        border: hasPromotion
+            ? Border.all(color: Colors.red.withOpacity(0.3), width: 2)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Get.to(() => MenuItemDetailPage(menuItemId: menuItem.id));
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Item Image with Promotion Badge
+                Stack(
                   children: [
-                    // Title
-                    Text(
-                      menuItem.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: TColor.primaryText,
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[200],
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      child:
+                          menuItem.imageUrl != null &&
+                              menuItem.imageUrl!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                menuItem.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.fastfood,
+                                    color: Colors.grey[400],
+                                    size: 30,
+                                  );
+                                },
+                              ),
+                            )
+                          : Icon(
+                              Icons.fastfood,
+                              color: Colors.grey[400],
+                              size: 30,
+                            ),
                     ),
-                    const SizedBox(height: 4),
-                    
-                    // Promotion Banner
                     if (hasPromotion)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '🔥 ${menuItem.activePromotions.first.name}',
-                          style: const TextStyle(
-                            fontSize: 11,
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
                             color: Colors.red,
-                            fontWeight: FontWeight.w600,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              bottomRight: Radius.circular(8),
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          child: Text(
+                            '${menuItem.activePromotions.first.formattedDiscount}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
-                    
-                    // Description
-                    Text(
-                      menuItem.description ?? 'Delicious food item',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    
-                    // Price
-                    if (hasPromotion)
-                      Row(
-                        children: [
-                          Text(
-                            menuItem.formattedDiscountedPrice,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            menuItem.formattedPrice,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        ],
-                      )
-                    else
+                  ],
+                ),
+                const SizedBox(width: 12),
+
+                // Item Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
                       Text(
-                        menuItem.formattedPrice,
+                        menuItem.title,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: TColor.primary,
+                          color: TColor.primaryText,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    const SizedBox(height: 8),
-                    
-                    // Action Buttons
-                    Row(
-                      children: [
-                        // Add to Cart Button
-                        Expanded(
-                          child: Obx(() {
-                            final isProcessing = _cartController.isItemProcessing('${menuItem.id}_add');
-                            final isInCart = _cartController.isItemInCart(menuItem.id);
-                            
-                            return ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isInCart ? Colors.grey : TColor.primary,
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              onPressed: (isProcessing || isInCart)
-                                  ? null
-                                  : () async {
-                                      await _cartController.addToCart(
-                                        menuItem: menuItem,
-                                        quantity: 1,
-                                        accessToken: _userController.accessToken,
-                                      );
-                                    },
-                              child: isProcessing
-                                  ? const SizedBox(
-                                      height: 16,
-                                      width: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                                      ),
-                                    )
-                                  : Text(
-                                      isInCart ? 'Added' : 'Add to Cart',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            );
-                          }),
-                        ),
-                        const SizedBox(width: 8),
-                        
-                        // Remove from Wishlist Button
-                        IconButton(
-                          icon: Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                            size: 24,
+                      const SizedBox(height: 4),
+
+                      // Promotion Banner
+                      if (hasPromotion)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
                           ),
-                          onPressed: () {
-                            _wishlistController.removeFromWishlist(
-                              menuItemId: menuItem.id,
-                              accessToken: _userController.accessToken,
-                            );
-                          },
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '🔥 ${menuItem.activePromotions.first.name}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ],
-                    ),
-                  ],
+
+                      // Description
+                      Text(
+                        menuItem.description ?? 'Delicious food item',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Price
+                      if (hasPromotion)
+                        Row(
+                          children: [
+                            Text(
+                              menuItem.formattedDiscountedPrice,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              menuItem.formattedPrice,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Text(
+                          menuItem.formattedPrice,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: TColor.primary,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+
+                      // Action Buttons
+                      Row(
+                        children: [
+                          // Add to Cart Button
+                          Expanded(
+                            child: Obx(() {
+                              final isProcessing = _cartController
+                                  .isItemProcessing('${menuItem.id}_add');
+                              final isInCart = _cartController.isItemInCart(
+                                menuItem.id,
+                              );
+
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isInCart
+                                      ? Colors.grey
+                                      : TColor.primary,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onPressed: (isProcessing || isInCart)
+                                    ? null
+                                    : () async {
+                                        await _cartController.addToCart(
+                                          menuItem: menuItem,
+                                          quantity: 1,
+                                          accessToken:
+                                              _userController.accessToken,
+                                        );
+                                      },
+                                child: isProcessing
+                                    ? const SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        isInCart ? 'Added' : 'Add to Cart',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              );
+                            }),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Remove from Wishlist Button
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                              size: 24,
+                            ),
+                            onPressed: () {
+                              _wishlistController.removeFromWishlist(
+                                menuItemId: menuItem.id,
+                                accessToken: _userController.accessToken,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _showClearWishlistDialog() {
     Get.dialog(
