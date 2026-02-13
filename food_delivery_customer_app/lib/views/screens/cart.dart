@@ -100,8 +100,7 @@ class _CartPageState extends State<CartPage> {
               if (!_cartController.hasItems) return const SizedBox();
 
               return FadeSlideIn(
-                delay: const Duration(milliseconds: 300),
-                slideOffset: const Offset(0, 0.15),
+                duration: const Duration(milliseconds: 300),
                 child: _buildOrderSummary(),
               );
             }),
@@ -119,9 +118,8 @@ class _CartPageState extends State<CartPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ScalePopIn(
-              curve: Curves.elasticOut,
-              duration: const Duration(milliseconds: 800),
+            FadeSlideIn(
+              duration: const Duration(milliseconds: 300),
               child: Icon(
                 Icons.shopping_cart_outlined,
                 size: 80,
@@ -130,7 +128,8 @@ class _CartPageState extends State<CartPage> {
             ),
             const SizedBox(height: 20),
             FadeSlideIn(
-              delay: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 300),
+              delay: const Duration(milliseconds: 50),
               child: Text(
                 'No items in cart',
                 style: ResponsiveText.heading2(context),
@@ -138,7 +137,8 @@ class _CartPageState extends State<CartPage> {
             ),
             const SizedBox(height: 10),
             FadeSlideIn(
-              delay: const Duration(milliseconds: 350),
+              duration: const Duration(milliseconds: 300),
+              delay: const Duration(milliseconds: 100),
               child: Text(
                 'Your favorite foods are waiting!',
                 style: ResponsiveText.body(context, color: Colors.grey[600]),
@@ -189,24 +189,9 @@ class _CartPageState extends State<CartPage> {
           separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final item = sortedItems[index];
-            return TweenAnimationBuilder<double>(
-              key: ValueKey('cart_anim_${item.menuItem.id}'),
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 400 + (index * 80)),
-              curve: Curves.easeOutCubic,
-              builder: (context, value, child) {
-                return Opacity(
-                  opacity: value.clamp(0.0, 1.0),
-                  child: Transform.translate(
-                    offset: Offset(0, 20 * (1 - value)),
-                    child: child,
-                  ),
-                );
-              },
-              child: KeyedSubtree(
-                key: ValueKey('cart_item_${item.menuItem.id}'),
-                child: _buildCartItemCard(item, media),
-              ),
+            return KeyedSubtree(
+              key: ValueKey('cart_item_${item.menuItem.id}'),
+              child: _buildCartItemCard(item, media),
             );
           },
         );
