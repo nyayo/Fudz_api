@@ -95,7 +95,7 @@ class CartController extends GetxController {
       if (localCartData != null) {
         _localCart.value = Cart.fromJson(localCartData);
         print('🛒 Local cart loaded: ${_localCart.value?.items.length} items');
-        
+
         // Debug: Verify MenuItem data is preserved
         if (_localCart.value != null) {
           for (final item in _localCart.value!.items) {
@@ -188,7 +188,8 @@ class CartController extends GetxController {
       // 3. Show feedback after delay
       String successMessage = '${menuItem.title} added to cart';
       if (menuItem.hasActivePromotions) {
-        successMessage += ' with ${menuItem.activePromotions.first.formattedDiscount} discount!';
+        successMessage +=
+            ' with ${menuItem.activePromotions.first.formattedDiscount} discount!';
       }
       SnackbarService.showSuccess(successMessage);
 
@@ -356,40 +357,52 @@ class CartController extends GetxController {
       print('❌ Remote cart is null, skipping merge');
       return;
     }
-    
+
     if (_localCart.value == null) {
       print('❌ Local cart is null, nothing to preserve');
       // If local cart is missing but we have remote cart, just save remote as local
-       _localCart.value = _cart.value;
-       _saveLocalCart();
-       return;
+      _localCart.value = _cart.value;
+      _saveLocalCart();
+      return;
     }
 
-    print('📊 merging: Remote Items: ${_cart.value!.items.length}, Local Items: ${_localCart.value!.items.length}');
+    print(
+      '📊 merging: Remote Items: ${_cart.value!.items.length}, Local Items: ${_localCart.value!.items.length}',
+    );
 
     // Build a map of local menu items for quick lookup
     final localMenuItemsById = <int, MenuItem>{};
     for (final item in _localCart.value!.items) {
       localMenuItemsById[item.menuItem.id] = item.menuItem;
-      print('📍 Local Item [${item.menuItem.id}]: ${item.menuItem.title}, Has Image: ${item.menuItem.imageUrl != null}, Restaurant: ${item.menuItem.restaurantName}');
+      print(
+        '📍 Local Item [${item.menuItem.id}]: ${item.menuItem.title}, Has Image: ${item.menuItem.imageUrl != null}, Restaurant: ${item.menuItem.restaurantName}',
+      );
     }
 
     // Merge remote cart items with local menu item data
     final mergedItems = <CartItem>[];
     for (final remoteItem in _cart.value!.items) {
       final localMenuItem = localMenuItemsById[remoteItem.menuItem.id];
-      print('🔗 Processing Remote Item [${remoteItem.menuItem.id}]: ${remoteItem.menuItem.title}');
-      
-      if (localMenuItem != null && (localMenuItem.imageUrl != null || localMenuItem.restaurantName != null)) {
+      print(
+        '🔗 Processing Remote Item [${remoteItem.menuItem.id}]: ${remoteItem.menuItem.title}',
+      );
+
+      if (localMenuItem != null &&
+          (localMenuItem.imageUrl != null ||
+              localMenuItem.restaurantName != null)) {
         // Use local menu item data which has more info (image, description, etc.)
-        print('✅ Preserving local data for: ${localMenuItem.title}, Restaurant: ${localMenuItem.restaurantName}');
-        mergedItems.add(CartItem(
-          id: remoteItem.id,
-          menuItem: localMenuItem,
-          quantity: remoteItem.quantity,
-          totalPrice: remoteItem.totalPrice,
-          unitPrice: remoteItem.unitPrice,
-        ));
+        print(
+          '✅ Preserving local data for: ${localMenuItem.title}, Restaurant: ${localMenuItem.restaurantName}',
+        );
+        mergedItems.add(
+          CartItem(
+            id: remoteItem.id,
+            menuItem: localMenuItem,
+            quantity: remoteItem.quantity,
+            totalPrice: remoteItem.totalPrice,
+            unitPrice: remoteItem.unitPrice,
+          ),
+        );
       } else {
         // Use remote item as-is (new item or no local data)
         print('⚠️ Using remote data (no rich local data found)');
@@ -641,12 +654,50 @@ class CartController extends GetxController {
 
   bool isItemInCart(int menuItemId) {
     if (_localCart.value != null) {
-      return _localCart.value!.items.any((item) => item.menuItem.id == menuItemId);
+      return _localCart.value!.items.any(
+        (item) => item.menuItem.id == menuItemId,
+      );
     }
     if (_cart.value != null) {
       return _cart.value!.items.any((item) => item.menuItem.id == menuItemId);
     }
     return false;
+  }
+
+  int getItemQuantity(int menuItemId) {
+    if (_localCart.value != null) {
+      final item = _localCart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => item!.menuItem.id == menuItemId,
+        orElse: () => null,
+      );
+      return item?.quantity ?? 0;
+    }
+    if (_cart.value != null) {
+      final item = _cart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => item!.menuItem.id == menuItemId,
+        orElse: () => null,
+      );
+      return item?.quantity ?? 0;
+    }
+    return 0;
+  }
+
+  String? getCartItemId(int menuItemId) {
+    if (_localCart.value != null) {
+      final item = _localCart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => item!.menuItem.id == menuItemId,
+        orElse: () => null,
+      );
+      return item?.id;
+    }
+    if (_cart.value != null) {
+      final item = _cart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => item!.menuItem.id == menuItemId,
+        orElse: () => null,
+      );
+      return item?.id;
+    }
+    return null;
   }
 
   void _setItemProcessing(String itemId, bool processing) {

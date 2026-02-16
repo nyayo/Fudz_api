@@ -129,34 +129,37 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              TColor.primary,
-                              TColor.primary.withAlpha(150),
-                            ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                TColor.primary,
+                                TColor.primary.withAlpha(150),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(2),
                           ),
-                          borderRadius: BorderRadius.circular(2),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Popular Menu Items',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: TColor.primaryText,
-                          letterSpacing: -0.5,
+                        const SizedBox(width: 8),
+                        Text(
+                          'Popular Menu Items',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: TColor.primaryText,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => Get.to(() => AllMenuItemsPage()),
@@ -361,25 +364,31 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (originalPriceText != null) ...[
-                            Text(
-                              originalPriceText,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey[500],
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: Colors.grey[500],
+                            Flexible(
+                              child: Text(
+                                originalPriceText,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationColor: Colors.grey[500],
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 4),
                           ],
-                          Text(
-                            priceText,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: hasPromotion
-                                  ? const Color(0xFFE53935)
-                                  : TColor.primary,
+                          Flexible(
+                            child: Text(
+                              priceText,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: hasPromotion
+                                    ? const Color(0xFFE53935)
+                                    : TColor.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

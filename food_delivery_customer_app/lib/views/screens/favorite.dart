@@ -4,6 +4,7 @@ import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/order_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/cart.dart';
+import 'package:food_delivery_customer_app/utils/url_utils.dart';
 import 'package:food_delivery_customer_app/views/screens/order_detail.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
@@ -199,190 +200,197 @@ class _OrdersPageState extends State<OrdersPage>
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Food Image
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child:
-                      firstItem != null && firstItem.menuItem.imageUrl != null
-                      ? Image.network(
-                          firstItem.menuItem.imageUrl!,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.fastfood,
-                              color: Colors.grey[400],
-                              size: 32,
-                            );
-                          },
-                        )
-                      : Icon(Icons.fastfood, color: Colors.grey[400], size: 32),
-                ),
-              ),
-              const SizedBox(width: 12),
+          padding: const EdgeInsets.all(14),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Food Image
+                Builder(
+                  builder: (context) {
+                    // Normalize cached URL through UrlUtils
+                    final rawUrl = firstItem?.menuItem.imageUrl;
+                    final imageUrl = UrlUtils.ensureAbsoluteUrl(rawUrl);
 
-              // Order Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Dish name
-                    Text(
-                      firstItem?.menuItem.title ?? 'Order Items',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: TColor.primaryText,
+                    return Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: imageUrl != null && imageUrl.isNotEmpty
+                            ? Image.network(
+                                imageUrl,
+                                width: 76,
+                                height: 76,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.fastfood,
+                                    color: Colors.grey[400],
+                                    size: 30,
+                                  );
+                                },
+                              )
+                            : Icon(
+                                Icons.fastfood,
+                                color: Colors.grey[400],
+                                size: 30,
+                              ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 12),
 
-                    // Rating (only for completed orders)
-                    if (isCompleted && order.rating != null)
+                // Order Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top row: dish name + status badge
                       Row(
                         children: [
-                          ...List.generate(5, (index) {
-                            return Icon(
-                              index < (order.rating ?? 0)
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: Colors.amber,
-                              size: 16,
-                            );
-                          }),
-                        ],
-                      )
-                    else if (isCompleted)
-                      Text(
-                        'Not rated yet',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      )
-                    else
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(order.status).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _formatStatus(order.status),
-                          style: TextStyle(
-                            color: _getStatusColor(order.status),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-
-                    const SizedBox(height: 6),
-
-                    // Order code
-                    Row(
-                      children: [
-                        Text(
-                          'Code: #${order.id}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Text(
-                          ' • ${_formatDate(order.placedAt)}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Price
-                    Text(
-                      CurrencyFormatter.format(order.totalAmount),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: TColor.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Action buttons
-                    Row(
-                      children: [
-                        // Rate button (only for completed unrated orders)
-                        if (isCompleted && order.rating == null)
                           Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: TColor.primary),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                              ),
-                              onPressed: () => _showRatingDialog(order),
-                              child: Text(
-                                'Rate',
-                                style: TextStyle(
-                                  color: TColor.primary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                        if (isCompleted && order.rating == null)
-                          const SizedBox(width: 8),
-
-                        // Re-Order button
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: TColor.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                            ),
-                            onPressed: () => _reorderItems(order),
-                            child: const Text(
-                              'Re-Order',
+                            child: Text(
+                              firstItem?.menuItem.title ?? 'Order Items',
                               style: TextStyle(
-                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: TColor.primaryText,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(
+                                order.status,
+                              ).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _formatStatus(order.status),
+                              style: TextStyle(
+                                color: _getStatusColor(order.status),
                                 fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                                fontSize: 10,
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Order code + date
+                      Text(
+                        '#${order.id}  •  ${_formatDate(order.placedAt)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // Rating display (for completed orders)
+                      if (isCompleted && order.rating != null)
+                        Row(
+                          children: [
+                            ...List.generate(5, (i) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: Icon(
+                                  i < (order.rating ?? 0)
+                                      ? Icons.star_rounded
+                                      : Icons.star_outline_rounded,
+                                  color: i < (order.rating ?? 0)
+                                      ? Colors.amber
+                                      : Colors.grey[300],
+                                  size: 18,
+                                ),
+                              );
+                            }),
+                            if (order.ratingComment != null &&
+                                order.ratingComment!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 13,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ],
+
+                      const SizedBox(height: 8),
+
+                      // Bottom row: price + action button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            CurrencyFormatter.format(order.totalAmount),
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: TColor.primary,
+                            ),
+                          ),
+                          // Rate button for completed unrated orders
+                          if (isCompleted && order.rating == null)
+                            SizedBox(
+                              height: 32,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: TColor.primary,
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                ),
+                                onPressed: () => _showRatingDialog(order),
+                                icon: Icon(
+                                  Icons.star_outline_rounded,
+                                  color: TColor.primary,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  'Rate',
+                                  style: TextStyle(
+                                    color: TColor.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          // View details arrow for ongoing orders
+                          if (!isCompleted)
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: Colors.grey[400],
+                              size: 16,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

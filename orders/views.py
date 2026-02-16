@@ -14,8 +14,8 @@ from .serializers import CartSerializer, CartItemSerializer, AddCartItemSerializ
 
 
 class CartViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
-    queryset = Cart.objects.prefetch_related('items__menu_item').all()
-    permission_classes = [IsAuthenticated]
+    queryset = Cart.objects.prefetch_related('items__menu_item__images', 'items__menu_item__promotions').all()
+    permission_classes = [AllowAny]
     serializer_class = CartSerializer
 
 
@@ -35,7 +35,7 @@ class CartItemViewSet(ModelViewSet):
     
     
     def get_queryset(self):
-        return CartItem.objects.filter(cart_id=self.kwargs['cart_pk']).select_related('menu_item').all()
+        return CartItem.objects.filter(cart_id=self.kwargs['cart_pk']).select_related('menu_item').prefetch_related('menu_item__images', 'menu_item__promotions').all()
     
     
 class OrderViewSet(ModelViewSet):
@@ -63,15 +63,19 @@ class OrderViewSet(ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
+        base_qs = Order.objects.prefetch_related(
+            'items__menu_item__images', 'items__menu_item__promotions'
+        ).select_related('restaurant')
+
         if user.is_staff:
-            return Order.objects.all()
+            return base_qs.all()
 
         if hasattr(user, 'customer_profile'):
-            return Order.objects.filter(customer=user.customer_profile)
+            return base_qs.filter(customer=user.customer_profile)
         if hasattr(user, 'restaurant_profile'):
-            return Order.objects.filter(restaurant=user.restaurant_profile)
+            return base_qs.filter(restaurant=user.restaurant_profile)
         if hasattr(user, 'courier_profile'):
-            return Order.objects.filter(courier=user.courier_profile)
+            return base_qs.filter(courier=user.courier_profile)
 
         return Order.objects.none()
     

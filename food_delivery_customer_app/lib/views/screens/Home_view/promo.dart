@@ -1,9 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/promo.dart';
+import 'package:food_delivery_customer_app/views/screens/promotion_detail_screen.dart';
 
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
@@ -29,26 +30,30 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
   Timer? _timer;
   late AnimationController _entranceController;
 
-  List<Map<String, dynamic>> get banners {
-    return widget.featuredItemsWithPromotions
-        .where((item) => item.hasActivePromotions)
-        .map((item) {
-          final activePromotions = item.activePromotions;
-          final highestPromo = activePromotions.reduce(
-            (a, b) => a.discount > b.discount ? a : b,
-          );
+  /// Group items by their promotion and return a list of
+  /// {promotion, items, bestImage}
+  List<Map<String, dynamic>> get groupedPromotions {
+    final Map<int, Map<String, dynamic>> promoMap = {};
 
-          return {
-            'menuItem': item,
-            'promotion': highestPromo,
-            'image': item.safeImageUrl,
-            'title': '${highestPromo.formattedDiscount} OFF: ${item.title}',
-            'subtitle': highestPromo.name,
-            'originalPrice': item.formattedPrice,
-            'discountedPrice': item.formattedDiscountedPrice,
+    for (final item in widget.featuredItemsWithPromotions) {
+      if (!item.hasActivePromotions) continue;
+
+      for (final promo in item.activePromotions) {
+        if (!promoMap.containsKey(promo.id)) {
+          promoMap[promo.id] = {
+            'promotion': promo,
+            'items': <MenuItem>[],
+            'bestImage': item.hasImage ? item.safeImageUrl : null,
           };
-        })
-        .toList();
+        }
+        (promoMap[promo.id]!['items'] as List<MenuItem>).add(item);
+        if (promoMap[promo.id]!['bestImage'] == null && item.hasImage) {
+          promoMap[promo.id]!['bestImage'] = item.safeImageUrl;
+        }
+      }
+    }
+
+    return promoMap.values.toList();
   }
 
   @override
@@ -59,7 +64,7 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
       vsync: this,
     );
     _entranceController.forward();
-    if (banners.isNotEmpty) {
+    if (groupedPromotions.isNotEmpty) {
       _startAutoScroll();
     }
   }
@@ -67,9 +72,9 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
   @override
   void didUpdateWidget(covariant PromoBannerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (banners.isNotEmpty && _timer == null) {
+    if (groupedPromotions.isNotEmpty && _timer == null) {
       _startAutoScroll();
-    } else if (banners.isEmpty) {
+    } else if (groupedPromotions.isEmpty) {
       _timer?.cancel();
       _timer = null;
     }
@@ -84,13 +89,14 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
   }
 
   void _startAutoScroll() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (banners.isEmpty) {
+    _timer = Timer.periodic(const Duration(seconds: 6), (timer) {
+      final promos = groupedPromotions;
+      if (promos.isEmpty) {
         timer.cancel();
         return;
       }
 
-      if (_currentBanner < banners.length - 1) {
+      if (_currentBanner < promos.length - 1) {
         _currentBanner++;
       } else {
         _currentBanner = 0;
@@ -107,19 +113,21 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
   }
 
   void _onBannerTap(int index) {
-    final banner = banners[index];
-    final menuItem = banner['menuItem'] as MenuItem;
+    final promo = groupedPromotions[index];
+    final promotion = promo['promotion'] as Promotion;
+    final items = promo['items'] as List<MenuItem>;
 
-    if (widget.onBannerTap != null) {
-      widget.onBannerTap!();
-    } else {
-      Get.toNamed('/menu-item-details', arguments: menuItem);
-    }
+    Get.to(
+      () => PromotionDetailScreen(promotion: promotion, items: items),
+      transition: Transition.cupertino,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (banners.isEmpty) {
+    final promos = groupedPromotions;
+
+    if (promos.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -137,21 +145,56 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
               ),
             ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Section title
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12, left: 10, right: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Hot Deals',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: TColor.primaryText,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.local_fire_department_rounded,
+                    color: Colors.deepOrange,
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+
             SizedBox(
-              height: 190,
+              height: 180,
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: banners.length,
+                itemCount: promos.length,
                 onPageChanged: (index) {
                   setState(() {
                     _currentBanner = index;
                   });
                 },
                 itemBuilder: (context, index) {
-                  final banner = banners[index];
-                  final menuItem = banner['menuItem'] as MenuItem;
-                  final promotion = banner['promotion'] as Promotion;
+                  final promo = promos[index];
+                  final promotion = promo['promotion'] as Promotion;
+                  final items = promo['items'] as List<MenuItem>;
+                  final bestImage = promo['bestImage'] as String?;
 
                   return AnimatedBuilder(
                     animation: _pageController,
@@ -163,7 +206,7 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                           1.0,
                         );
                       }
-                      final scale = 1.0 - (value * 0.08);
+                      final scale = 1.0 - (value * 0.06);
                       final opacity = 1.0 - (value * 0.3);
 
                       return Transform.scale(
@@ -182,203 +225,156 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
+                          color: const Color(0xFF363636),
+                          borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withAlpha(20),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                              spreadRadius: 0,
+                              color: Colors.black.withAlpha(70),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Stack(
+                          borderRadius: BorderRadius.circular(22),
+                          child: Row(
                             children: [
-                              // Background Image
-                              if (menuItem.hasImage)
-                                Positioned.fill(
-                                  child: Image.network(
-                                    menuItem.safeImageUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey[200],
-                                        child: const Icon(
-                                          Icons.fastfood_rounded,
-                                          color: Colors.grey,
-                                          size: 50,
+                              // Left side - Text content
+                              Expanded(
+                                flex: 3,
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    18,
+                                    8,
+                                    18,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // Discount badge
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
                                         ),
-                                      );
-                                    },
-                                  ),
-                                )
-                              else
-                                Container(
-                                  color: TColor.primary.withAlpha(25),
-                                  child: const Icon(
-                                    Icons.fastfood_rounded,
-                                    color: Colors.grey,
-                                    size: 50,
-                                  ),
-                                ),
-
-                              // Gradient Overlay — darker and more premium
-                              Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topRight,
-                                    end: Alignment.bottomLeft,
-                                    colors: [
-                                      Colors.black.withAlpha(20),
-                                      Colors.black.withAlpha(100),
-                                      Colors.black.withAlpha(180),
-                                    ],
-                                    stops: const [0.0, 0.5, 1.0],
-                                  ),
-                                ),
-                              ),
-
-                              // Content
-                              Positioned(
-                                bottom: 18,
-                                left: 18,
-                                right: 18,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Promo badge
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            TColor.primary,
-                                            TColor.primary.withAlpha(200),
-                                          ],
-                                        ),
-                                        borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: TColor.primary.withAlpha(60),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 3),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
-                                        ],
+                                        ),
+                                        child: Text(
+                                          '${promotion.formattedDiscount} OFF',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
                                       ),
-                                      child: Text(
-                                        banner['subtitle'] as String,
+                                      const SizedBox(height: 10),
+
+                                      // Promo name
+                                      Text(
+                                        promotion.name,
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.3,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-
-                                    // Title
-                                    Builder(
-                                      builder: (context) => Text(
-                                        banner['title'] as String,
-                                        style: ResponsiveText.heading4(
-                                          context,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          height: 1.2,
+                                          letterSpacing: -0.3,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
+                                      const SizedBox(height: 8),
 
-                                    const SizedBox(height: 6),
-
-                                    // Price row
-                                    Row(
-                                      children: [
-                                        Builder(
-                                          builder: (context) => Text(
-                                            banner['discountedPrice'] as String,
-                                            style: ResponsiveText.heading3(
-                                              context,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w800,
+                                      // Items count + view
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.restaurant_menu_rounded,
+                                            color: Colors.white.withAlpha(160),
+                                            size: 14,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${items.length} items',
+                                            style: TextStyle(
+                                              color: Colors.white.withAlpha(
+                                                160,
+                                              ),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Builder(
-                                          builder: (context) => Text(
-                                            banner['originalPrice'] as String,
-                                            style:
-                                                ResponsiveText.bodySmall(
-                                                  context,
-                                                  color: Colors.white.withAlpha(
-                                                    150,
-                                                  ),
-                                                ).copyWith(
-                                                  decoration: TextDecoration
-                                                      .lineThrough,
-                                                  decorationColor: Colors.white
-                                                      .withAlpha(150),
-                                                ),
+                                          const Spacer(),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withAlpha(30),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: const Text(
+                                              'View all',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
                                           ),
+                                        ],
+                                      ),
+
+                                      // Time remaining
+                                      if (promotion.endDate.isAfter(
+                                        DateTime.now(),
+                                      )) ...[
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.timer_outlined,
+                                              color: Colors.redAccent.withAlpha(
+                                                200,
+                                              ),
+                                              size: 13,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${_getDaysRemaining(promotion.endDate)}d left',
+                                              style: TextStyle(
+                                                color: Colors.redAccent
+                                                    .withAlpha(200),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
 
-                              // Time remaining badge
-                              if (promotion.endDate.isAfter(DateTime.now()))
-                                Positioned(
-                                  top: 12,
-                                  right: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFF1744),
-                                      borderRadius: BorderRadius.circular(14),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.red.withAlpha(50),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.timer_outlined,
-                                          color: Colors.white,
-                                          size: 12,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Builder(
-                                          builder: (context) => Text(
-                                            '${_getDaysRemaining(promotion.endDate)}d left',
-                                            style: ResponsiveText.tiny(
-                                              context,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                              // Right side - Food image with curved left edge
+                              Expanded(
+                                flex: 2,
+                                child: ClipPath(
+                                  clipper: _LeftCurveClipper(),
+                                  child: _buildPromotionImage(bestImage, items),
                                 ),
+                              ),
                             ],
                           ),
                         ),
@@ -388,32 +384,23 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                 },
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
-            // Page indicators — pill style
-            if (banners.length > 1)
+            // Page indicators
+            if (promos.length > 1)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(banners.length, (index) {
+                children: List.generate(promos.length, (index) {
                   final isActive = _currentBanner == index;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 350),
                     curve: Curves.easeInOut,
-                    width: isActive ? 28 : 8,
+                    width: isActive ? 26 : 8,
                     height: 8,
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
                       color: isActive ? TColor.primary : Colors.grey[300],
-                      boxShadow: isActive
-                          ? [
-                              BoxShadow(
-                                color: TColor.primary.withAlpha(40),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
                     ),
                   );
                 }),
@@ -424,9 +411,89 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
     );
   }
 
+  Widget _buildPromotionImage(String? bestImage, List<MenuItem> items) {
+    // Try bestImage first, then look through items for any image
+    String? imageUrl = bestImage;
+    if (imageUrl == null || imageUrl.isEmpty) {
+      for (final item in items) {
+        if (item.hasImage) {
+          imageUrl = item.safeImageUrl;
+          break;
+        }
+      }
+    }
+
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+          ),
+          // Subtle left-edge gradient so text doesn't clip into image
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                  colors: [
+                    Colors.transparent,
+                    const Color(0xFF363636).withAlpha(180),
+                  ],
+                  stops: const [0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _buildImagePlaceholder();
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      color: const Color(0xFF424242),
+      child: Center(
+        child: Icon(
+          Icons.fastfood_rounded,
+          color: Colors.white.withAlpha(50),
+          size: 48,
+        ),
+      ),
+    );
+  }
+
   int _getDaysRemaining(DateTime endDate) {
     final now = DateTime.now();
     final difference = endDate.difference(now);
     return difference.inDays;
   }
+}
+
+/// Custom clipper that curves the left edge of the food image
+class _LeftCurveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    // Start from top-left with an inward curve
+    path.moveTo(40, 0);
+    // Top edge
+    path.lineTo(size.width, 0);
+    // Right edge
+    path.lineTo(size.width, size.height);
+    // Bottom edge
+    path.lineTo(40, size.height);
+    // Left edge curved inward (concave curve from bottom to top)
+    path.quadraticBezierTo(0, size.height * 0.5, 40, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

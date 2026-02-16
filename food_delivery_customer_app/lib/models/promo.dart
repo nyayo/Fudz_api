@@ -6,6 +6,7 @@ class Promotion {
   final DateTime startDate;
   final DateTime endDate;
   final bool isActive;
+  final String? banner;
 
   Promotion({
     required this.id,
@@ -15,6 +16,7 @@ class Promotion {
     required this.startDate,
     required this.endDate,
     required this.isActive,
+    this.banner,
   });
 
   factory Promotion.fromJson(Map<String, dynamic> json) {
@@ -23,9 +25,14 @@ class Promotion {
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       discount: _parseDouble(json['discount']) ?? 0.0,
-      startDate: DateTime.parse(json['start_date']?.toString() ?? DateTime.now().toString()),
-      endDate: DateTime.parse(json['end_date']?.toString() ?? DateTime.now().toString()),
+      startDate: DateTime.parse(
+        json['start_date']?.toString() ?? DateTime.now().toString(),
+      ),
+      endDate: DateTime.parse(
+        json['end_date']?.toString() ?? DateTime.now().toString(),
+      ),
       isActive: json['is_active'] ?? false,
+      banner: json['banner']?.toString(),
     );
   }
 
@@ -38,8 +45,11 @@ class Promotion {
       'start_date': startDate.toIso8601String(),
       'end_date': endDate.toIso8601String(),
       'is_active': isActive,
+      'banner': banner,
     };
   }
+
+  bool get hasBanner => banner != null && banner!.isNotEmpty;
 
   bool get isCurrentlyActive {
     final now = DateTime.now();

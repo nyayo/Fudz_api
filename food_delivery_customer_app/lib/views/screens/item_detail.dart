@@ -5,6 +5,7 @@ import 'package:food_delivery_customer_app/controller/restaurant_controller.dart
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
+import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
 
 import 'package:get/get.dart';
@@ -49,7 +50,10 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await menuController.getMenuItemDetail(widget.menuItemId);
+      await menuController.getMenuItemDetail(
+        widget.menuItemId,
+        forceRefresh: true,
+      );
       _animController.forward();
     });
   }
@@ -570,67 +574,159 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
 
   Widget _buildPromotionCard(MenuItem menuItem) {
     final promo = menuItem.activePromotions.first;
+    final savings = menuItem.price - menuItem.discountedPrice;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            TColor.primary.withOpacity(0.05),
-            TColor.primary.withOpacity(0.12),
+            const Color(0xFFE53935).withOpacity(0.04),
+            const Color(0xFFE53935).withOpacity(0.10),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: TColor.primary.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFE53935).withOpacity(0.25)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: TColor.primary.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.local_offer, color: TColor.primary, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  promo.name,
-                  style: TextStyle(
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.local_offer,
+                  color: Color(0xFFE53935),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      promo.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: TColor.primaryText,
+                      ),
+                    ),
+                    if (promo.description.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        promo.description,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${promo.formattedDiscount} OFF',
+                  style: const TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: TColor.primaryText,
+                    color: Colors.white,
                   ),
                 ),
-                if (promo.description.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    promo.description,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Price breakdown
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Promo Price',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      menuItem.formattedDiscountedPrice,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: TColor.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Original',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      menuItem.formattedPrice,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[400],
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: Colors.grey[400],
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
                   ),
-                ],
-                const SizedBox(height: 4),
-                Text(
-                  'Expires ${DateFormat('MMM dd, yyyy').format(promo.endDate.toLocal())}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[500],
-                    fontStyle: FontStyle.italic,
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Save ${CurrencyFormatter.format(savings)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 8),
           Text(
-            promo.formattedDiscount,
+            'Expires ${DateFormat('MMM dd, yyyy').format(promo.endDate.toLocal())}',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: TColor.primary,
+              fontSize: 11,
+              color: Colors.grey[500],
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -780,12 +876,19 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
   }
 
   Widget _buildBottomBar(MenuItem menuItem) {
+    final hasPromo = menuItem.hasActivePromotions;
+    final effectivePrice = hasPromo ? menuItem.discountedPrice : menuItem.price;
+    final totalPrice = effectivePrice * _quantity;
+    final savings = hasPromo
+        ? (menuItem.price - menuItem.discountedPrice) * _quantity
+        : 0.0;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
-        16,
+        12,
         20,
-        MediaQuery.of(context).padding.bottom + 16,
+        MediaQuery.of(context).padding.bottom + 12,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -798,88 +901,172 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Quantity selector
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                _quantityButton(Icons.remove, () {
-                  if (_quantity > 1) setState(() => _quantity--);
-                }),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    '$_quantity',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: TColor.primaryText,
+          // Savings banner
+          if (hasPromo)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.green.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.local_offer_rounded,
+                    color: Colors.green,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'You save ${CurrencyFormatter.format(savings)}',
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
                     ),
                   ),
-                ),
-                _quantityButton(Icons.add, () {
-                  setState(() => _quantity++);
-                }),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Add to cart button
-          Expanded(
-            child: Obx(() {
-              final isAdding = cartController.isItemProcessing(
-                '${menuItem.id}_add',
-              );
-              final isInCart = cartController.isItemInCart(menuItem.id);
-
-              return ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isInCart ? Colors.grey[400] : TColor.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  const Spacer(),
+                  Text(
+                    '${menuItem.activePromotions.first.formattedDiscount} OFF',
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
-                  elevation: isInCart ? 0 : 2,
+                ],
+              ),
+            ),
+          Row(
+            children: [
+              // Quantity selector
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                onPressed: (!menuItem.isAvailable || isInCart)
-                    ? null
-                    : () async {
-                        try {
-                          await cartController.addToCart(
-                            menuItem: menuItem,
-                            quantity: _quantity,
-                            accessToken: userController.accessToken,
-                          );
-                        } catch (_) {}
-                      },
-                child: isAdding
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        !menuItem.isAvailable
-                            ? 'Unavailable'
-                            : isInCart
-                            ? 'In Cart'
-                            : 'Add to Cart',
-                        style: const TextStyle(
-                          fontSize: 16,
+                child: Row(
+                  children: [
+                    _quantityButton(Icons.remove, () {
+                      if (_quantity > 1) setState(() => _quantity--);
+                    }),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        '$_quantity',
+                        style: TextStyle(
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: TColor.primaryText,
                         ),
                       ),
-              );
-            }),
+                    ),
+                    _quantityButton(Icons.add, () {
+                      setState(() => _quantity++);
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Add to cart button
+              Expanded(
+                child: Obx(() {
+                  final isAdding = cartController.isItemProcessing(
+                    '${menuItem.id}_add',
+                  );
+                  final isInCart = cartController.isItemInCart(menuItem.id);
+
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isInCart
+                          ? Colors.grey[400]
+                          : TColor.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: isInCart ? 0 : 2,
+                    ),
+                    onPressed: (!menuItem.isAvailable || isInCart)
+                        ? null
+                        : () async {
+                            try {
+                              await cartController.addToCart(
+                                menuItem: menuItem,
+                                quantity: _quantity,
+                                accessToken: userController.accessToken,
+                              );
+                            } catch (_) {}
+                          },
+                    child: isAdding
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                !menuItem.isAvailable
+                                    ? 'Unavailable'
+                                    : isInCart
+                                    ? 'In Cart'
+                                    : 'Add to Cart',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              if (menuItem.isAvailable && !isInCart) ...[
+                                const SizedBox(height: 2),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      CurrencyFormatter.format(totalPrice),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white.withOpacity(0.9),
+                                      ),
+                                    ),
+                                    if (hasPromo) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        CurrencyFormatter.format(
+                                          menuItem.price * _quantity,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white.withOpacity(0.6),
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          decorationColor: Colors.white
+                                              .withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                  );
+                }),
+              ),
+            ],
           ),
         ],
       ),
