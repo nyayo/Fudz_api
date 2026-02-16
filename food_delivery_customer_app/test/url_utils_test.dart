@@ -19,7 +19,7 @@ void main() {
     test('ensureAbsoluteUrl prepends host to relative URLs', () {
       const String relativeWithSlash = '/media/item.jpg';
       const String relativeWithoutSlash = 'media/item.jpg';
-      const String expected = 'http://129.151.165.133/media/item.jpg';
+      const String expected = 'https://unshifter.site/media/item.jpg';
       
       expect(UrlUtils.ensureAbsoluteUrl(relativeWithSlash), expected);
       expect(UrlUtils.ensureAbsoluteUrl(relativeWithoutSlash), expected);

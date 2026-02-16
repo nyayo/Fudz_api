@@ -62,15 +62,19 @@ class OrderViewSet(ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
+        base_qs = Order.objects.prefetch_related(
+            'items__menu_item__images'
+        ).select_related('restaurant')
+
         if user.is_staff:
-            return Order.objects.all()
+            return base_qs.all()
 
         if hasattr(user, 'customer_profile'):
-            return Order.objects.filter(customer=user.customer_profile)
+            return base_qs.filter(customer=user.customer_profile)
         if hasattr(user, 'restaurant_profile'):
-            return Order.objects.filter(restaurant=user.restaurant_profile)
+            return base_qs.filter(restaurant=user.restaurant_profile)
         if hasattr(user, 'courier_profile'):
-            return Order.objects.filter(courier=user.courier_profile)
+            return base_qs.filter(courier=user.courier_profile)
 
         return Order.objects.none()
     

@@ -185,19 +185,35 @@ class Order {
     restaurantId ??= json['restaurantId'] is int ? json['restaurantId'] : null;
     restaurantName ??= json['restaurantName']?.toString();
 
-    // Handle dropoff_location or dropoffLocation - could be a Map with coordinates and address
+    // Handle dropoff_location or dropoffLocation - could be a Map, JSON string, or EWKT
     Map<String, dynamic>? dropoffLocation;
     final dropoffData = json['dropoff_location'] ?? json['dropoffLocation'];
     if (dropoffData is Map) {
       dropoffLocation = Map<String, dynamic>.from(dropoffData);
     } else if (dropoffData is String) {
-      // If it's a string, try to parse it as JSON
-      try {
-        dropoffLocation = Map<String, dynamic>.from(
-          convert.jsonDecode(dropoffData),
-        );
-      } catch (e) {
-        print('❌ Failed to parse dropoff_location string: $e');
+      // Try EWKT format first: SRID=4326;POINT (lng lat)
+      final ewktMatch = RegExp(r'POINT\s*\(([\d.\-]+)\s+([\d.\-]+)\)').firstMatch(dropoffData);
+      if (ewktMatch != null) {
+        final lng = double.tryParse(ewktMatch.group(1) ?? '');
+        final lat = double.tryParse(ewktMatch.group(2) ?? '');
+        if (lng != null && lat != null) {
+          dropoffLocation = {
+            'type': 'Point',
+            'coordinates': [lng, lat],
+            'longitude': lng,
+            'latitude': lat,
+          };
+          print('📍 Parsed EWKT dropoff_location: lat=$lat, lng=$lng');
+        }
+      } else {
+        // Fallback: try JSON
+        try {
+          dropoffLocation = Map<String, dynamic>.from(
+            convert.jsonDecode(dropoffData),
+          );
+        } catch (e) {
+          print('⚠️ Could not parse dropoff_location: $dropoffData');
+        }
       }
     }
 
@@ -377,6 +393,10 @@ class OrderItem {
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     print('🛒 Creating OrderItem from JSON: ${json.keys}');
+    
+    final menuItemData = json['menu_item'] ?? {};
+    print('🛒 OrderItem menu_item data: $menuItemData');
+    print('🛒 OrderItem menu_item images: ${menuItemData['images']}');
 
     return OrderItem(
       id: json['id'] is int

@@ -1,14 +1,23 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from restaurants.models import MenuItem
+from restaurants.models import MenuItem, MenuItemImage
 from .models import Cart, CartItem, Order, OrderItem
 from users.models import CustomerProfile
 
+
+class MenuItemImageSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuItemImage
+        fields = ['id', 'image']
+
+
 class SimpleMenuSerializer(serializers.ModelSerializer):
+    images = MenuItemImageSimpleSerializer(many=True, read_only=True)
+
     class Meta:
         model = MenuItem
-        fields = ['id', 'title', 'price']
+        fields = ['id', 'title', 'price', 'images']
 
 
 class CartItemSerializer(serializers.ModelSerializer):

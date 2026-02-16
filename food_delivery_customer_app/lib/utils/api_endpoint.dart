@@ -8,7 +8,7 @@ class ApiEndpoint {
   // Example: flutter run --dart-define=API_BASE_URL=https://api.myhost.com/api/v1
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.example.com/api/v1',
+    defaultValue: 'https://unshifter.site/api/v1',
   );
 
   // Auth endpoints

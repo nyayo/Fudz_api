@@ -9,7 +9,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService extends GetxService {
-  static const String baseUrl = 'http://129.151.165.133/api/v1';
+  static const String baseUrl = 'https://unshifter.site/api/v1';
   final GetStorage _storage = GetStorage();
   final http.Client client = http.Client();
   bool _isRefreshing = false;
