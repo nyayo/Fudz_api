@@ -235,157 +235,161 @@ class _OrdersPageState extends State<OrdersPage>
                                   );
                                 },
                               )
-                            : Icon(Icons.fastfood, color: Colors.grey[400], size: 30),
+                            : Icon(
+                                Icons.fastfood,
+                                color: Colors.grey[400],
+                                size: 30,
+                              ),
                       ),
                     );
                   },
                 ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              // Order Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top row: dish name + status badge
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            firstItem?.menuItem.title ?? 'Order Items',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: TColor.primaryText,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(
-                              order.status,
-                            ).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            _formatStatus(order.status),
-                            style: TextStyle(
-                              color: _getStatusColor(order.status),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Order code + date
-                    Text(
-                      '#${order.id}  •  ${_formatDate(order.placedAt)}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    // Rating display (for completed orders)
-                    if (isCompleted && order.rating != null)
+                // Order Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top row: dish name + status badge
                       Row(
                         children: [
-                          ...List.generate(5, (i) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 2),
-                              child: Icon(
-                                i < (order.rating ?? 0)
-                                    ? Icons.star_rounded
-                                    : Icons.star_outline_rounded,
-                                color: i < (order.rating ?? 0)
-                                    ? Colors.amber
-                                    : Colors.grey[300],
-                                size: 18,
+                          Expanded(
+                            child: Text(
+                              firstItem?.menuItem.title ?? 'Order Items',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: TColor.primaryText,
                               ),
-                            );
-                          }),
-                          if (order.ratingComment != null &&
-                              order.ratingComment!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: Icon(
-                                Icons.chat_bubble_outline,
-                                size: 13,
-                                color: Colors.grey[400],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(
+                                order.status,
+                              ).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _formatStatus(order.status),
+                              style: TextStyle(
+                                color: _getStatusColor(order.status),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 10,
                               ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Order code + date
+                      Text(
+                        '#${order.id}  •  ${_formatDate(order.placedAt)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // Rating display (for completed orders)
+                      if (isCompleted && order.rating != null)
+                        Row(
+                          children: [
+                            ...List.generate(5, (i) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: Icon(
+                                  i < (order.rating ?? 0)
+                                      ? Icons.star_rounded
+                                      : Icons.star_outline_rounded,
+                                  color: i < (order.rating ?? 0)
+                                      ? Colors.amber
+                                      : Colors.grey[300],
+                                  size: 18,
+                                ),
+                              );
+                            }),
+                            if (order.ratingComment != null &&
+                                order.ratingComment!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 13,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                          ],
+                        ),
+
+                      const SizedBox(height: 8),
+
+                      // Bottom row: price + action button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            CurrencyFormatter.format(order.totalAmount),
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: TColor.primary,
+                            ),
+                          ),
+                          // Rate button for completed unrated orders
+                          if (isCompleted && order.rating == null)
+                            SizedBox(
+                              height: 32,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: TColor.primary,
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                ),
+                                onPressed: () => _showRatingDialog(order),
+                                icon: Icon(
+                                  Icons.star_outline_rounded,
+                                  color: TColor.primary,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  'Rate',
+                                  style: TextStyle(
+                                    color: TColor.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          // View details arrow for ongoing orders
+                          if (!isCompleted)
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: Colors.grey[400],
+                              size: 16,
                             ),
                         ],
                       ),
-
-                    const SizedBox(height: 8),
-
-                    // Bottom row: price + action button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          CurrencyFormatter.format(order.totalAmount),
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: TColor.primary,
-                          ),
-                        ),
-                        // Rate button for completed unrated orders
-                        if (isCompleted && order.rating == null)
-                          SizedBox(
-                            height: 32,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: TColor.primary,
-                                  width: 1.5,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                              ),
-                              onPressed: () => _showRatingDialog(order),
-                              icon: Icon(
-                                Icons.star_outline_rounded,
-                                color: TColor.primary,
-                                size: 16,
-                              ),
-                              label: Text(
-                                'Rate',
-                                style: TextStyle(
-                                  color: TColor.primary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
-                        // View details arrow for ongoing orders
-                        if (!isCompleted)
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            color: Colors.grey[400],
-                            size: 16,
-                          ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
             ),
           ),
         ),

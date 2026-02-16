@@ -110,137 +110,143 @@ class _HomePageState extends State<HomePage> {
         // Top row: greeting + orders badge
         Obx(() {
           final user = _userController.user;
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (user != null) ...[
-                Text(
-                  'Hi, ${user.displayName}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: TColor.primaryText,
+          return Padding(
+            padding: const EdgeInsets.only(left: 10, right: 20, top: 10, bottom: 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (user != null) ...[
+                  Text(
+                    'Hi, ${user.displayName}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: TColor.primaryText,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
+                  const SizedBox(width: 8),
+                ],
+                _buildOrdersNotificationBadge(),
               ],
-              _buildOrdersNotificationBadge(),
-            ],
+            ),
           );
         }),
         const SizedBox(height: 14),
 
         // Location bar - compact pill style
-        GestureDetector(
-          onTap: () async {
-            final selectedLocation = await Get.to(
-              () => LocationSelectionScreen(),
-            );
-            if (selectedLocation != null) {
-              locationController.updateSelectedLocation(selectedLocation);
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Location pin with pulse ring
-                Obx(() {
-                  final hasLocation =
-                      locationController.selectedLocation != null;
-                  final isGettingLocation =
-                      locationController.isGettingLocationValue;
-
-                  if (isGettingLocation) {
-                    return SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: TColor.primary,
-                      ),
-                    );
-                  }
-
-                  return Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: hasLocation
-                          ? TColor.primary.withOpacity(0.1)
-                          : Colors.grey.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.location_on_rounded,
-                      color: hasLocation ? TColor.primary : Colors.grey,
-                      size: 18,
-                    ),
-                  );
-                }),
-                const SizedBox(width: 10),
-
-                // Address text
-                Expanded(
-                  child: Obx(() {
-                    final location = locationController.selectedLocation;
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: GestureDetector(
+            onTap: () async {
+              final selectedLocation = await Get.to(
+                () => LocationSelectionScreen(),
+              );
+              if (selectedLocation != null) {
+                locationController.updateSelectedLocation(selectedLocation);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Location pin with pulse ring
+                  Obx(() {
+                    final hasLocation =
+                        locationController.selectedLocation != null;
                     final isGettingLocation =
                         locationController.isGettingLocationValue;
-
+          
                     if (isGettingLocation) {
-                      return Text(
-                        "Getting your location...",
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      return SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: TColor.primary,
+                        ),
                       );
                     }
-
-                    return Text(
-                      location?.address ?? "Set delivery location",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: location != null
-                            ? TColor.primaryText
-                            : Colors.grey[400],
+          
+                    return Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: hasLocation
+                            ? TColor.primary.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: Icon(
+                        Icons.location_on_rounded,
+                        color: hasLocation ? TColor.primary : Colors.grey,
+                        size: 18,
+                      ),
                     );
                   }),
-                ),
-
-                const SizedBox(width: 6),
-                Obx(() {
-                  final isGettingLocation =
-                      locationController.isGettingLocationValue;
-                  return isGettingLocation
-                      ? const SizedBox(width: 16, height: 16)
-                      : Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: TColor.primary.withOpacity(0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: TColor.primary,
-                            size: 20,
-                          ),
+                  const SizedBox(width: 10),
+          
+                  // Address text
+                  Expanded(
+                    child: Obx(() {
+                      final location = locationController.selectedLocation;
+                      final isGettingLocation =
+                          locationController.isGettingLocationValue;
+          
+                      if (isGettingLocation) {
+                        return Text(
+                          "Getting your location...",
+                          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                         );
-                }),
-              ],
+                      }
+          
+                      return Text(
+                        location?.address ?? "Set delivery location",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: location != null
+                              ? TColor.primaryText
+                              : Colors.grey[400],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }),
+                  ),
+          
+                  const SizedBox(width: 6),
+                  Obx(() {
+                    final isGettingLocation =
+                        locationController.isGettingLocationValue;
+                    return isGettingLocation
+                        ? const SizedBox(width: 16, height: 16)
+                        : Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: TColor.primary.withOpacity(0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: TColor.primary,
+                              size: 20,
+                            ),
+                          );
+                  }),
+                ],
+              ),
             ),
           ),
         ),
@@ -350,7 +356,6 @@ class _HomePageState extends State<HomePage> {
           // Show smooth shimmers ONLY on initial load (first launch or fresh login)
           if (restaurantController.isInitialLoading.value) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -410,7 +415,6 @@ class _HomePageState extends State<HomePage> {
               ]);
             },
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

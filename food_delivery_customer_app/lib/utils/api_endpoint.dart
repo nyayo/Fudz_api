@@ -48,4 +48,8 @@ class ApiEndpoint {
   static const String getWishlist = '$baseUrl/wishlists/';
   static const String addToWishlist = '$baseUrl/wishlists/add/';
   static String removeFromWishlist(int menuItemId) => '$baseUrl/wishlists/remove/$menuItemId/';
+
+  // Review endpoints
+  static const String reviews = '$baseUrl/reviews/';
+  static String getRestaurantReviews(int restaurantId) => '$baseUrl/reviews/?restaurant=$restaurantId';
 }

@@ -429,7 +429,7 @@ class WishlistPage extends StatelessWidget {
                       // Action Buttons
                       Row(
                         children: [
-                          // Add to Cart Button
+                          // Add to Cart Button / Quantity Counter
                           Expanded(
                             child: Obx(() {
                               final isProcessing = _cartController
@@ -438,16 +438,97 @@ class WishlistPage extends StatelessWidget {
                                 menuItem.id,
                               );
 
+                              if (isInCart) {
+                                // Show quantity counter
+                                final quantity = _cartController.getItemQuantity(menuItem.id);
+                                final cartItemId = _cartController.getCartItemId(menuItem.id);
+                                final isUpdating = _cartController.isItemProcessing('${cartItemId}_update');
+
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: TColor.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(25),
+                                    border: Border.all(color: TColor.primary.withOpacity(0.3)),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      // Decrease / Remove button
+                                      SizedBox(
+                                        width: 32,
+                                        height: 32,
+                                        child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          icon: Icon(
+                                            quantity <= 1 ? Icons.delete_outline : Icons.remove,
+                                            color: quantity <= 1 ? Colors.red : TColor.primary,
+                                            size: 18,
+                                          ),
+                                          onPressed: isUpdating ? null : () {
+                                            if (cartItemId != null) {
+                                              _cartController.updateQuantity(
+                                                itemId: cartItemId,
+                                                quantity: quantity - 1,
+                                                accessToken: _userController.accessToken,
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      // Quantity display
+                                      isUpdating
+                                          ? const SizedBox(
+                                              height: 16,
+                                              width: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : Text(
+                                              '$quantity',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: TColor.primary,
+                                              ),
+                                            ),
+                                      // Increase button
+                                      SizedBox(
+                                        width: 32,
+                                        height: 32,
+                                        child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          icon: Icon(
+                                            Icons.add,
+                                            color: TColor.primary,
+                                            size: 18,
+                                          ),
+                                          onPressed: isUpdating ? null : () {
+                                            if (cartItemId != null) {
+                                              _cartController.updateQuantity(
+                                                itemId: cartItemId,
+                                                quantity: quantity + 1,
+                                                accessToken: _userController.accessToken,
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+
+                              // Show Add to Cart button
                               return ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: isInCart
-                                      ? Colors.grey
-                                      : TColor.primary,
+                                  backgroundColor: TColor.primary,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 8,
                                   ),
                                 ),
-                                onPressed: (isProcessing || isInCart)
+                                onPressed: isProcessing
                                     ? null
                                     : () async {
                                         await _cartController.addToCart(
@@ -468,9 +549,9 @@ class WishlistPage extends StatelessWidget {
                                           ),
                                         ),
                                       )
-                                    : Text(
-                                        isInCart ? 'Added' : 'Add to Cart',
-                                        style: const TextStyle(
+                                    : const Text(
+                                        'Add to Cart',
+                                        style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,

@@ -118,35 +118,38 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: TColor.primary,
-                  borderRadius: BorderRadius.circular(2),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: TColor.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "Categories",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: TColor.primaryText,
-                  letterSpacing: -0.5,
+                const SizedBox(width: 8),
+                Text(
+                  "Categories",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: TColor.primaryText,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              if (kDebugMode)
-                IconButton(
-                  onPressed: () {
-                    categoryController.debugCacheStatus();
-                  },
-                  icon: const Icon(Icons.bug_report, size: 20),
-                ),
-            ],
+                const Spacer(),
+                if (kDebugMode)
+                  IconButton(
+                    onPressed: () {
+                      categoryController.debugCacheStatus();
+                    },
+                    icon: const Icon(Icons.bug_report, size: 20),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -235,8 +238,8 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     final isSelected = _selectedCategory == index;
 
     // Circle sizes — bigger pop on selected
-    final double circleSize = isSelected ? 80 : 66;
-    final double imageSize = isSelected ? 52 : 40;
+    final double circleSize = isSelected ? 100 : 80;
+    final double imageSize = isSelected ? 70 : 50;
 
     return GestureDetector(
       onTap: () => _onCategoryTap(index, categoryId, categoryName),

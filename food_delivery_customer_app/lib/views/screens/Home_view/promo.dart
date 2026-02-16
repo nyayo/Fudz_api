@@ -149,7 +149,7 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
           children: [
             // Section title
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 12, left: 10, right: 10),
               child: Row(
                 children: [
                   Container(

@@ -50,7 +50,10 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await menuController.getMenuItemDetail(widget.menuItemId, forceRefresh: true);
+      await menuController.getMenuItemDetail(
+        widget.menuItemId,
+        forceRefresh: true,
+      );
       _animController.forward();
     });
   }
@@ -597,7 +600,11 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
                   color: const Color(0xFFE53935).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.local_offer, color: Color(0xFFE53935), size: 22),
+                child: const Icon(
+                  Icons.local_offer,
+                  color: Color(0xFFE53935),
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -623,7 +630,10 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE53935),
                   borderRadius: BorderRadius.circular(10),
@@ -690,7 +700,10 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -866,7 +879,9 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
     final hasPromo = menuItem.hasActivePromotions;
     final effectivePrice = hasPromo ? menuItem.discountedPrice : menuItem.price;
     final totalPrice = effectivePrice * _quantity;
-    final savings = hasPromo ? (menuItem.price - menuItem.discountedPrice) * _quantity : 0.0;
+    final savings = hasPromo
+        ? (menuItem.price - menuItem.discountedPrice) * _quantity
+        : 0.0;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -902,7 +917,11 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.local_offer_rounded, color: Colors.green, size: 16),
+                  const Icon(
+                    Icons.local_offer_rounded,
+                    color: Colors.green,
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'You save ${CurrencyFormatter.format(savings)}',
@@ -965,7 +984,9 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
 
                   return ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isInCart ? Colors.grey[400] : TColor.primary,
+                      backgroundColor: isInCart
+                          ? Colors.grey[400]
+                          : TColor.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -999,8 +1020,8 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
                                 !menuItem.isAvailable
                                     ? 'Unavailable'
                                     : isInCart
-                                        ? 'In Cart'
-                                        : 'Add to Cart',
+                                    ? 'In Cart'
+                                    : 'Add to Cart',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
@@ -1024,12 +1045,16 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
                                     if (hasPromo) ...[
                                       const SizedBox(width: 4),
                                       Text(
-                                        CurrencyFormatter.format(menuItem.price * _quantity),
+                                        CurrencyFormatter.format(
+                                          menuItem.price * _quantity,
+                                        ),
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: Colors.white.withOpacity(0.6),
-                                          decoration: TextDecoration.lineThrough,
-                                          decorationColor: Colors.white.withOpacity(0.6),
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          decorationColor: Colors.white
+                                              .withOpacity(0.6),
                                         ),
                                       ),
                                     ],
