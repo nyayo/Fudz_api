@@ -361,25 +361,31 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (originalPriceText != null) ...[
-                            Text(
-                              originalPriceText,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey[500],
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: Colors.grey[500],
+                            Flexible(
+                              child: Text(
+                                originalPriceText,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationColor: Colors.grey[500],
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 4),
                           ],
-                          Text(
-                            priceText,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: hasPromotion
-                                  ? const Color(0xFFE53935)
-                                  : TColor.primary,
+                          Flexible(
+                            child: Text(
+                              priceText,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: hasPromotion
+                                    ? const Color(0xFFE53935)
+                                    : TColor.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

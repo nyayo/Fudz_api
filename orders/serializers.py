@@ -1,9 +1,12 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from restaurants.models import MenuItem, MenuItemImage
+from restaurants.models import MenuItem, MenuItemImage, Promotion
+from restaurants.serializers import PromotionSerializer
 from .models import Cart, CartItem, Order, OrderItem
 from users.models import CustomerProfile
+from django.utils import timezone
+from decimal import Decimal
 
 
 class MenuItemImageSimpleSerializer(serializers.ModelSerializer):
@@ -14,22 +17,38 @@ class MenuItemImageSimpleSerializer(serializers.ModelSerializer):
 
 class SimpleMenuSerializer(serializers.ModelSerializer):
     images = MenuItemImageSimpleSerializer(many=True, read_only=True)
+    promotions = PromotionSerializer(many=True, read_only=True)
 
     class Meta:
         model = MenuItem
-        fields = ['id', 'title', 'price', 'images']
+        fields = ['id', 'title', 'price', 'images', 'promotions']
 
 
 class CartItemSerializer(serializers.ModelSerializer):
     menu_item = SimpleMenuSerializer()
     total_price = serializers.SerializerMethodField()
+    unit_price = serializers.SerializerMethodField()
     
     def get_total_price(self, cart_item: CartItem):
-        return cart_item.qty * cart_item.menu_item.price
+        return float(cart_item.qty * self._get_effective_price(cart_item.menu_item))
+    
+    def get_unit_price(self, cart_item: CartItem):
+        return float(self._get_effective_price(cart_item.menu_item))
+    
+    def _get_effective_price(self, menu_item):
+        """Get the effective price considering active promotions."""
+        now = timezone.now()
+        active_promos = menu_item.promotions.filter(
+            is_active=True, start_date__lte=now, end_date__gte=now
+        )
+        if active_promos.exists():
+            highest_discount = max(p.discount for p in active_promos)
+            return menu_item.price * Decimal(str(1 - highest_discount / 100))
+        return menu_item.price
     
     class Meta:
         model = CartItem
-        fields = ['id', 'menu_item', 'qty', 'total_price']
+        fields = ['id', 'menu_item', 'qty', 'total_price', 'unit_price']
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -39,7 +58,19 @@ class CartSerializer(serializers.ModelSerializer):
     restaurant_id = serializers.SerializerMethodField()
     
     def get_total_price(self, cart: Cart):
-        return sum([item.qty * item.menu_item.price for item in cart.items.all()])
+        now = timezone.now()
+        total = Decimal('0')
+        for item in cart.items.all():
+            active_promos = item.menu_item.promotions.filter(
+                is_active=True, start_date__lte=now, end_date__gte=now
+            )
+            if active_promos.exists():
+                highest_discount = max(p.discount for p in active_promos)
+                price = item.menu_item.price * Decimal(str(1 - highest_discount / 100))
+            else:
+                price = item.menu_item.price
+            total += item.qty * price
+        return float(total)
     
     def get_restaurant_id(self, cart: Cart):
         first_item = cart.items.first()
@@ -146,7 +177,13 @@ class CreateOrderSerializer(serializers.Serializer):
                 user_id=self.context['user_id']
             )
 
-            cart_items = CartItem.objects.filter(cart_id=cart_id).select_related('menu_item__restaurant').all()
+            cart_items = CartItem.objects.filter(
+                cart_id=cart_id
+            ).select_related(
+                'menu_item__restaurant'
+            ).prefetch_related(
+                'menu_item__promotions'
+            ).all()
             
             if not cart_items:
                 raise serializers.ValidationError("Cart is empty.")
@@ -165,14 +202,25 @@ class CreateOrderSerializer(serializers.Serializer):
                 pickup_location=restaurant.location if hasattr(restaurant, 'location') else None
             )
             
-            order_items = [
-                OrderItem(
-                    order=order,
-                    menu_item=item.menu_item,
-                    qty=item.qty,
-                    unit_price=item.menu_item.price
-                ) for item in cart_items
-            ]
+            now = timezone.now()
+            order_items = []
+            for item in cart_items:
+                active_promos = item.menu_item.promotions.filter(
+                    is_active=True, start_date__lte=now, end_date__gte=now
+                )
+                if active_promos.exists():
+                    highest_discount = max(p.discount for p in active_promos)
+                    unit_price = item.menu_item.price * Decimal(str(1 - highest_discount / 100))
+                else:
+                    unit_price = item.menu_item.price
+                order_items.append(
+                    OrderItem(
+                        order=order,
+                        menu_item=item.menu_item,
+                        qty=item.qty,
+                        unit_price=unit_price
+                    )
+                )
             
             OrderItem.objects.bulk_create(order_items)
 

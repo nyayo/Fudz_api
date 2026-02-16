@@ -5,6 +5,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/promo.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
+import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:get/get.dart';
 
 class PromotionDetailScreen extends StatelessWidget {
@@ -294,7 +295,7 @@ class _PromotionItemCard extends StatelessWidget {
     final discountedPrice = originalPrice * (1 - promotion.discount / 100);
 
     return GestureDetector(
-      onTap: () => Get.toNamed('/menu-item-details', arguments: item),
+      onTap: () => Get.to(() => MenuItemDetailPage(menuItemId: item.id)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
@@ -440,7 +441,7 @@ class _AddToCartButton extends StatelessWidget {
 
     return Obx(() {
       final isInCart = cartController.isItemInCart(item.id);
-      final isProcessing = cartController.isItemProcessing(item.id);
+      final isProcessing = cartController.isItemProcessing('${item.id}_add');
 
       return GestureDetector(
         onTap: isInCart || isProcessing
@@ -477,8 +478,8 @@ class _AddToCartButton extends StatelessWidget {
             color: isProcessing
                 ? Colors.grey[300]
                 : isInCart
-                    ? Colors.grey[400]
-                    : TColor.primary,
+                ? Colors.grey[400]
+                : TColor.primary,
             borderRadius: BorderRadius.circular(10),
             boxShadow: isInCart
                 ? []

@@ -19,7 +19,7 @@ class UrlUtils {
     }
 
     if (url!.startsWith('http://') || url.startsWith('https://')) return url;
-    
+
     // Prepend host for relative URLs
     if (url.startsWith('/')) {
       return '$baseHost$url';

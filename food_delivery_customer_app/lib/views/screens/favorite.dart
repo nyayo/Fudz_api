@@ -386,6 +386,7 @@ class _OrdersPageState extends State<OrdersPage>
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),

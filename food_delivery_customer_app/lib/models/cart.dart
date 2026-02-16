@@ -99,7 +99,8 @@ class CartItem {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'menu_item': menuItem.toJson(), // Use full MenuItem.toJson() to preserve all fields
+      'menu_item': menuItem
+          .toJson(), // Use full MenuItem.toJson() to preserve all fields
       'qty': quantity,
       'total_price': totalPrice,
       'unit_price': unitPrice,
@@ -162,9 +163,11 @@ class Order {
     // If total_amount or totalAmount is provided, use it, otherwise calculate
     // Support both snake_case (API) and camelCase (local storage) formats
     if (json['total_amount'] != null || json['totalAmount'] != null) {
-      totalAmount = double.tryParse(
-        (json['total_amount'] ?? json['totalAmount']).toString()
-      ) ?? totalAmount;
+      totalAmount =
+          double.tryParse(
+            (json['total_amount'] ?? json['totalAmount']).toString(),
+          ) ??
+          totalAmount;
     }
 
     // Get restaurant information
@@ -180,7 +183,7 @@ class Order {
           restaurantData['restaurant_name']?.toString() ??
           restaurantData['name']?.toString();
     }
-    
+
     // Fallback to restaurantId/restaurantName from local storage format
     restaurantId ??= json['restaurantId'] is int ? json['restaurantId'] : null;
     restaurantName ??= json['restaurantName']?.toString();
@@ -192,7 +195,9 @@ class Order {
       dropoffLocation = Map<String, dynamic>.from(dropoffData);
     } else if (dropoffData is String) {
       // Try EWKT format first: SRID=4326;POINT (lng lat)
-      final ewktMatch = RegExp(r'POINT\s*\(([\d.\-]+)\s+([\d.\-]+)\)').firstMatch(dropoffData);
+      final ewktMatch = RegExp(
+        r'POINT\s*\(([\d.\-]+)\s+([\d.\-]+)\)',
+      ).firstMatch(dropoffData);
       if (ewktMatch != null) {
         final lng = double.tryParse(ewktMatch.group(1) ?? '');
         final lat = double.tryParse(ewktMatch.group(2) ?? '');
@@ -219,15 +224,19 @@ class Order {
 
     // Parse dates - support both snake_case (API) and camelCase (local storage) formats
     DateTime placedAt;
-    final placedAtStr = json['placed_at']?.toString() ?? json['placedAt']?.toString();
+    final placedAtStr =
+        json['placed_at']?.toString() ?? json['placedAt']?.toString();
     if (placedAtStr != null) {
       placedAt = DateTime.tryParse(placedAtStr) ?? DateTime.now();
     } else {
       placedAt = DateTime.now();
     }
 
-    final deliveredAtStr = json['delivered_at']?.toString() ?? json['deliveredAt']?.toString();
-    final estimatedDeliveryStr = json['estimated_delivery']?.toString() ?? json['estimatedDelivery']?.toString();
+    final deliveredAtStr =
+        json['delivered_at']?.toString() ?? json['deliveredAt']?.toString();
+    final estimatedDeliveryStr =
+        json['estimated_delivery']?.toString() ??
+        json['estimatedDelivery']?.toString();
 
     return Order(
       id: json['id'] is int
@@ -235,22 +244,40 @@ class Order {
           : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       status: json['status']?.toString() ?? 'pending',
       // Support both snake_case (API) and camelCase (local storage) for all fields
-      paymentStatus: (json['payment_status'] ?? json['paymentStatus'])?.toString() ?? 'pending',
+      paymentStatus:
+          (json['payment_status'] ?? json['paymentStatus'])?.toString() ??
+          'pending',
       items: items,
       totalAmount: totalAmount,
       placedAt: placedAt,
-      deliveryAddress: (json['delivery_address'] ?? json['deliveryAddress'])?.toString(),
-      specialInstructions: (json['special_instructions'] ?? json['specialInstructions'])?.toString(),
-      paymentMethod: (json['payment_method'] ?? json['paymentMethod'])?.toString(),
-      cancellationReason: (json['cancellation_reason'] ?? json['cancellationReason'])?.toString(),
-      deliveredAt: deliveredAtStr != null ? DateTime.tryParse(deliveredAtStr) : null,
-      estimatedDelivery: estimatedDeliveryStr != null ? DateTime.tryParse(estimatedDeliveryStr) : null,
-      trackingNumber: (json['tracking_number'] ?? json['trackingNumber'])?.toString(),
+      deliveryAddress: (json['delivery_address'] ?? json['deliveryAddress'])
+          ?.toString(),
+      specialInstructions:
+          (json['special_instructions'] ?? json['specialInstructions'])
+              ?.toString(),
+      paymentMethod: (json['payment_method'] ?? json['paymentMethod'])
+          ?.toString(),
+      cancellationReason:
+          (json['cancellation_reason'] ?? json['cancellationReason'])
+              ?.toString(),
+      deliveredAt: deliveredAtStr != null
+          ? DateTime.tryParse(deliveredAtStr)
+          : null,
+      estimatedDelivery: estimatedDeliveryStr != null
+          ? DateTime.tryParse(estimatedDeliveryStr)
+          : null,
+      trackingNumber: (json['tracking_number'] ?? json['trackingNumber'])
+          ?.toString(),
       dropoffLocation: dropoffLocation,
       restaurantId: restaurantId,
       restaurantName: restaurantName,
-      rating: json['rating'] is int ? json['rating'] : (json['rating'] != null ? int.tryParse(json['rating'].toString()) : null),
-      ratingComment: (json['rating_comment'] ?? json['ratingComment'])?.toString(),
+      rating: json['rating'] is int
+          ? json['rating']
+          : (json['rating'] != null
+                ? int.tryParse(json['rating'].toString())
+                : null),
+      ratingComment: (json['rating_comment'] ?? json['ratingComment'])
+          ?.toString(),
     );
   }
 
@@ -393,7 +420,7 @@ class OrderItem {
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     print('🛒 Creating OrderItem from JSON: ${json.keys}');
-    
+
     final menuItemData = json['menu_item'] ?? {};
     print('🛒 OrderItem menu_item data: $menuItemData');
     print('🛒 OrderItem menu_item images: ${menuItemData['images']}');

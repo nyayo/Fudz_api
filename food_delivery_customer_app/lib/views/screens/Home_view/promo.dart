@@ -229,7 +229,7 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withAlpha(10),
+                              color: Colors.black.withAlpha(70),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
