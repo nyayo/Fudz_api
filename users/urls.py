@@ -10,9 +10,12 @@ from .views import (
     SetNewPasswordView,
     VerifyOTPView,
     RegisterView,
-    LoginView,
     UserProfileView,
     RestaurantStaffViewSet,
+    register_device,
+    unregister_device,
+    send_test_notification,
+    NotificationPreferenceView,
 )
 
 routers = routers.DefaultRouter()
@@ -24,12 +27,16 @@ urlpatterns = [
     path("auth/request-otp/", RequestOTPView.as_view(), name="request-otp"),
     path("auth/verify-otp/", VerifyOTPView.as_view(), name="verify-otp"),
     path("auth/register/", RegisterView.as_view(), name="register"),
-    path("auth/login/", LoginView.as_view(), name="login"),
     path("auth/google/", GoogleOauthSignInview.as_view(), name="google"),
     path('auth/profile/', UserProfileView.as_view(), name='profile'),
     path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
-    path('auth/password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirm.as_view(), name='reset-password-confirm'),
+    path('auth/password-reset-confirm/<str:uidb64>/<str:token>/', PasswordResetConfirm.as_view(), name='reset-password-confirm'),
     path('auth/set-new-password/', SetNewPasswordView.as_view(), name='set-new-password'),
+    
+    path('auth/device/register/', register_device, name='register_device'),
+    path('auth/device/unregister/', unregister_device, name='unregister_device'),
+    path('auth/notification/test/', send_test_notification, name='test_notification'),
+    path('auth/notification-preferences/', NotificationPreferenceView.as_view(), name='notification_preferences'),
 
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ] + routers.urls

@@ -1,18 +1,23 @@
 import random
 import string
 
-from rest_framework_simplejwt.tokens import RefreshToken
-
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
 from django.core.validators import RegexValidator
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .managers import UserManager
 
-AUTH_PROVIDERS ={'email':'email', 'google':'google', 'github':'github', 'linkedin':'linkedin'}
+AUTH_PROVIDERS = {
+    "email": "email",
+    "google": "google",
+    "github": "github",
+    "linkedin": "linkedin",
+}
+
 
 class User(AbstractUser, PermissionsMixin):
     USER_TYPES = (
@@ -39,20 +44,25 @@ class User(AbstractUser, PermissionsMixin):
     )
 
     is_verified = models.BooleanField(default=False)
-    auth_provider=models.CharField(max_length=50, blank=False, null=False, default=AUTH_PROVIDERS.get('email'))
+    auth_provider = models.CharField(
+        max_length=50,
+        blank=False,
+        null=False,
+        default=AUTH_PROVIDERS.get("email"),
+    )
     username = models.CharField(max_length=150, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["user_type", "first_name", "last_name"]
-    
+
     objects = UserManager()
 
     def save(self, *args, **kwargs):
         if not self.username:
-            base_username = self.email.split('@')[0]
-            
+            base_username = self.email.split("@")[0]
+
             if self.user_type == "customer":
                 self.username = f"customer_{base_username}"
             elif self.user_type == "courier":
@@ -71,18 +81,15 @@ class User(AbstractUser, PermissionsMixin):
                 counter += 1
 
         super().save(*args, **kwargs)
-        
-    def tokens(self):    
+
+    def tokens(self):
         refresh = RefreshToken.for_user(self)
-        return {
-            "refresh":str(refresh),
-            "access":str(refresh.access_token)
-        }
+        return {"refresh": str(refresh), "access": str(refresh.access_token)}
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.get_user_type_display()}"
-    
-    
+
+
 class EmailVerification(models.Model):
     email = models.EmailField()
     otp = models.CharField(max_length=6)
@@ -97,7 +104,7 @@ class EmailVerification(models.Model):
         return timezone.now() > self.expires_at
 
     def generate_otp(self):
-        self.otp = ''.join(random.choices(string.digits, k=6))
+        self.otp = "".join(random.choices(string.digits, k=6))
         self.expires_at = timezone.now() + timezone.timedelta(minutes=10)
         self.save()
 
@@ -105,6 +112,9 @@ class EmailVerification(models.Model):
 class CustomerProfile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="customer_profile"
+    )
+    current_location = gis_models.PointField(
+        geography=True, null=True, blank=True
     )
     date_of_birth = models.DateField(blank=True, null=True)
     address = models.ForeignKey(
@@ -114,6 +124,7 @@ class CustomerProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}"
+
 
 class CourierProfile(models.Model):
     VEHICLE_CHOICES = (
@@ -140,24 +151,43 @@ class CourierProfile(models.Model):
     earnings_balance = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00
     )
-    
+
     def __str__(self):
         return f"{self.user.username}"
 
 
 class RestaurantProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="restaurant_profile")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="restaurant_profile"
+    )
     restaurant_name = models.CharField(max_length=100)
     business_license = models.CharField(max_length=100, unique=True)
+    image = models.ImageField(
+        upload_to="images/restaurant_images/",
+        null=True,
+        blank=True,
+        help_text="Restaurant profile image",
+    )
+    logo = models.ImageField(
+        upload_to="images/restaurant_logos/",
+        null=True,
+        blank=True,
+        help_text="Restaurant logo",
+    )
     address = models.TextField()
-    location = gis_models.PointField(geography=True, null=True, blank=True, default=Point(0, 0))
+    location = gis_models.PointField(
+        geography=True, null=True, blank=True, default=Point(0, 0)
+    )
     opening_hours = models.JSONField(default=dict)
-    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0, db_index=True)
+    rating = models.DecimalField(
+        max_digits=3, decimal_places=2, default=0.0, db_index=True
+    )
     is_approved = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    
+
     def __str__(self):
         return f"{self.restaurant_name}"
+
 
 class RestaurantStaffProfile(models.Model):
     ROLE_CHOICES = (
@@ -180,7 +210,6 @@ class RestaurantStaffProfile(models.Model):
         return f"{self.user.first_name} - {self.role} @ {self.restaurant.restaurant_name}"
 
 
-
 class Address(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="addresses"
@@ -193,3 +222,29 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.user.username})"
+
+
+class NotificationPreference(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="notification_preferences"
+    )
+    # Channel preferences
+    receive_push = models.BooleanField(default=True)
+    receive_email = models.BooleanField(default=True)
+    # Category preferences
+    promotions_and_offers = models.BooleanField(
+        default=True, help_text="Receive promotional offers and discounts"
+    )
+    new_restaurants = models.BooleanField(
+        default=True, help_text="Notifications about new restaurants and menu items"
+    )
+    review_reminders = models.BooleanField(
+        default=True, help_text="Reminders to review completed orders"
+    )
+
+    class Meta:
+        db_table = "notification_preferences"
+
+    def __str__(self):
+        return f"Notification preferences for {self.user.email}"
+

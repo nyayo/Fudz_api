@@ -32,4 +32,4 @@ class WishlistItem(models.Model):
         ordering = ['-added_at']
 
     def __str__(self):
-        return f"{self.menu_item.name} in {self.wishlist.customer.user.username}'s wishlist"
+        return f"{self.menu_item.title} in {self.wishlist.customer.user.username}'s wishlist"

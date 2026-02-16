@@ -13,23 +13,19 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
 
-from .models import CourierProfile, CustomerProfile, User, RestaurantProfile, EmailVerification, RestaurantStaffProfile
+from .models import CourierProfile, CustomerProfile, User, RestaurantProfile, EmailVerification, RestaurantStaffProfile, NotificationPreference
 from .services import send_normal_email
 
 
 class RequestOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-    def validate_email(self, email):
-        if User.objects.filter(email=email).exists() and EmailVerification.objects.filter(email=email, is_verified=True).exists():
-            raise serializers.ValidationError("User already exists. Please log in.")
-        return email
-
 
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6, write_only=True)
-    verified = serializers.BooleanField(read_only=True)
+    user_exists = serializers.BooleanField(read_only=True)
+    requires_registration = serializers.BooleanField(read_only=True)
 
     def validate(self, data):
         try:
@@ -39,6 +35,10 @@ class VerifyOTPSerializer(serializers.Serializer):
         
         if record.is_expired():
             raise serializers.ValidationError("OTP expired.")
+        
+        user_exists = User.objects.filter(email=data["email"]).exists()
+        data['user_exists'] = user_exists
+        data['requires_registration'] = not user_exists
         
         return data
 
@@ -50,7 +50,14 @@ class VerifyOTPSerializer(serializers.Serializer):
         record.is_verified = True
         record.save()
         
-        return {"email": validated_data["email"], "verified": True}
+        user_exists = User.objects.filter(email=validated_data["email"]).exists()
+        
+        return {
+            "email": validated_data["email"], 
+            "verified": True,
+            "user_exists": user_exists,
+            "requires_registration": not user_exists
+        }
 
 
 class RegistrationSerializer(serializers.Serializer):
@@ -73,8 +80,6 @@ class RegistrationSerializer(serializers.Serializer):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError("Passwords do not match")
 
-        if User.objects.filter(email=attrs['email']).exists():
-            raise serializers.ValidationError("Email already registered.")
         if not EmailVerification.objects.filter(email=attrs['email'], is_verified=True).exists():
             raise serializers.ValidationError("Email not verified.")
         
@@ -100,6 +105,8 @@ class RegistrationSerializer(serializers.Serializer):
         return attrs
     
     def create(self, validated_data):
+        from .tasks import send_templated_email_task
+        
         profile_data = {}
         profile_fields = {
             'customer': [],
@@ -130,6 +137,16 @@ class RegistrationSerializer(serializers.Serializer):
             RestaurantProfile.objects.create(user=user, **profile_data)
         elif user_type == 'courier':
             CourierProfile.objects.create(user=user, **profile_data)
+        
+        # Send welcome email asynchronously
+        send_templated_email_task.delay(
+            user.email,
+            "welcome_verified",
+            {
+                "user_name": user.first_name or user.email,
+                "username": user.username or user.email
+            }
+        )
         
         return user
 
@@ -238,24 +255,26 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         fields = ['email']
 
     def validate(self, attrs):
+        from .tasks import send_templated_email_task
         
         email = attrs.get('email')
         if User.objects.filter(email=email).exists():
-            user= User.objects.get(email=email)
-            uidb64=urlsafe_base64_encode(smart_bytes(user.id))
+            user = User.objects.get(email=email)
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
-            request=self.context.get('request')
-            current_site=get_current_site(request).domain
-            relative_link =reverse('users:reset-password-confirm', kwargs={'uidb64':uidb64, 'token':token})
-            abslink=f"http://{current_site}{relative_link}"
-            print(abslink)
-            email_body=f"Hi {user.first_name} use the link below to reset your password {abslink}"
-            data={
-                'email_body':email_body, 
-                'email_subject':"Reset your Password", 
-                'to_email':user.email
-                }
-            send_normal_email(data)
+            request = self.context.get('request')
+            current_site = get_current_site(request).domain
+            relative_link = reverse('users:reset-password-confirm', kwargs={'uidb64': uidb64, 'token': token})
+            
+            # Generate a reset code (first 6 chars of token for display)
+            reset_code = token[:6].upper()
+            
+            # Send password reset email asynchronously via Celery
+            send_templated_email_task.delay(
+                user.email,
+                "password_reset",
+                {"user_name": user.first_name or user.username, "reset_code": reset_code}
+            )
 
         return super().validate(attrs)
 
@@ -270,6 +289,8 @@ class SetNewPasswordSerializer(serializers.Serializer):
         fields = ['password', 'confirm_password', 'uidb64', 'token']
 
     def validate(self, attrs):
+        from .tasks import send_templated_email_task
+        
         try:
             token=attrs.get('token')
             uidb64=attrs.get('uidb64')
@@ -284,6 +305,14 @@ class SetNewPasswordSerializer(serializers.Serializer):
                 raise AuthenticationFailed("passwords do not match")
             user.set_password(password)
             user.save()
+            
+            # Send password reset success email asynchronously
+            send_templated_email_task.delay(
+                user.email,
+                "password_reset_success",
+                {"user_name": user.first_name or user.username}
+            )
+            
             return user
         except Exception as e:
             return AuthenticationFailed("link is invalid or has expired")
@@ -386,6 +415,20 @@ class RestaurantStaffSerializer(serializers.ModelSerializer):
 
         staff_profile = RestaurantStaffProfile.objects.create(user=user, **validated_data)
         return staff_profile
+
+
+class NotificationPreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationPreference
+        fields = [
+            "id",
+            "receive_push",
+            "receive_email",
+            "promotions_and_offers",
+            "new_restaurants",
+            "review_reminders",
+        ]
+        read_only_fields = ["id"]
 
 
 

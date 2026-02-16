@@ -1,7 +1,9 @@
 import requests
+from datetime import timedelta
 
 from django.contrib.auth import authenticate
 from django.conf import settings
+from django.utils import timezone
 
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
@@ -89,3 +91,50 @@ def register_social_user(provider, email, first_name, last_name, user_type, prof
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     return {"refresh": str(refresh), "access": str(refresh.access_token)}
+
+def send_order_notification(user, title, order):
+    from .tasks import send_push_notification_to_user
+    
+    send_push_notification_to_user.delay(
+        user.id,
+        f"Order {title}",
+        f"Your order #{order.id} has been {title.lower()}!",
+        {'order_id': order.id, 'type': 'order_update'}
+    )
+    
+def notify_new_promotion(promotion, user_ids):
+    from .tasks import send_fcm_to_multiple_users, send_promotion_email
+    
+    # Send FCM notifications
+    send_fcm_to_multiple_users.delay(
+        user_ids,
+        "New Promotion!",
+        f"{promotion.name} - {promotion.discount}% off",
+        {
+            'promotion_id': str(promotion.id),
+            'type': 'promotion'
+        }
+    )
+    
+    # Send promotion emails to all customers
+    send_promotion_email.delay(promotion.id, user_ids)
+    
+def convert_data_to_strings(data):
+    if not data:
+        return {}
+    
+    converted = {}
+    for key, value in data.items():
+        if value is None:
+            converted[key] = ""
+        elif isinstance(value, bool):
+            converted[key] = "true" if value else "false"
+        elif isinstance(value, (int, float)):
+            converted[key] = str(value)
+        elif isinstance(value, (dict, list)):
+            import json
+            converted[key] = json.dumps(value)
+        else:
+            converted[key] = str(value)
+    
+    return converted

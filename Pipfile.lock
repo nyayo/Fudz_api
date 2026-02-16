@@ -64,14 +64,6 @@
             "markers": "python_version >= '3.7'",
             "version": "==4.2.2"
         },
-        "cachetools": {
-            "hashes": [
-                "sha256:09868944b6dde876dfd44e1d47e18484541eaf12f26f29b7af91b26cc892d701",
-                "sha256:3f391e4bd8f8bf0931169baf7456cc822705f4e2a31f840d218f445b9a854201"
-            ],
-            "markers": "python_version >= '3.9'",
-            "version": "==6.2.1"
-        },
         "celery": {
             "hashes": [
                 "sha256:0b5761a07057acee94694464ca482416b959568904c9dfa41ce8413a7d65d525",
@@ -1248,14 +1240,6 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==24.2.0"
-        },
-        "setuptools": {
-            "hashes": [
-                "sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922",
-                "sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c"
-            ],
-            "markers": "python_version >= '3.9'",
-            "version": "==80.9.0"
         },
         "six": {
             "hashes": [

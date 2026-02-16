@@ -1,6 +1,8 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers as drf_serializers
 
 from .models import Wishlist, WishlistItem
 from .serializers import WishlistItemSerializer
@@ -14,6 +16,21 @@ class WishlistListView(generics.ListAPIView):
         wishlist, _ = Wishlist.objects.get_or_create(customer=self.request.user.customer_profile)
         return wishlist.items.select_related('menu_item')
 
+@extend_schema(
+    request=inline_serializer(
+        name='AddToWishlistRequest',
+        fields={
+            'menu_item_id': drf_serializers.IntegerField(),
+        }
+    ),
+    responses={
+        201: WishlistItemSerializer,
+        400: inline_serializer(
+            name='WishlistErrorResponse',
+            fields={'detail': drf_serializers.CharField()}
+        )
+    }
+)
 class AddToWishlistView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -37,6 +54,15 @@ class AddToWishlistView(APIView):
         serializer = WishlistItemSerializer(item)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+@extend_schema(
+    responses={
+        204: None,
+        404: inline_serializer(
+            name='WishlistNotFoundResponse',
+            fields={'detail': drf_serializers.CharField()}
+        )
+    }
+)
 class RemoveFromWishlistView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

@@ -18,7 +18,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(models.CustomerProfile)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ["user__first_name", "user__last_name", "user__phone"]
+    list_display = ["user__first_name", "user__last_name", "user__phone", "current_location", "address"]
     ordering = ["user__first_name", "user__last_name"]
     list_per_page = 10
     search_fields = ["user__first_name__istartswith", "user__last_name__istartswith"]
