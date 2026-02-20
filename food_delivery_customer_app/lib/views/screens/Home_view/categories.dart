@@ -289,18 +289,6 @@ class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerPr
                                   color: Colors.grey,
                                 );
                               },
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                    strokeWidth: 2,
-                                  ),
-                                );
-                              },
                             )
                           : Icon(
                               Icons.category,

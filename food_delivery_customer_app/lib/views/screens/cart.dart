@@ -291,25 +291,6 @@ class _CartPageState extends State<CartPage> {
                               width: 64,
                               height: 64,
                               fit: BoxFit.cover,
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Center(
-                                      child: CircularProgressIndicator(
-                                        value:
-                                            loadingProgress
-                                                    .expectedTotalBytes !=
-                                                null
-                                            ? loadingProgress
-                                                      .cumulativeBytesLoaded /
-                                                  loadingProgress
-                                                      .expectedTotalBytes!
-                                            : null,
-                                        strokeWidth: 1.5,
-                                        color: TColor.primary,
-                                      ),
-                                    );
-                                  },
                               errorBuilder: (context, error, stackTrace) {
                                 return Center(
                                   child: Icon(
