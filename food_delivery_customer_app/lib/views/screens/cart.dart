@@ -64,7 +64,7 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SafeArea(
-        child: Column(
+          child: Column(
           children: [
             // Header
             Padding(
