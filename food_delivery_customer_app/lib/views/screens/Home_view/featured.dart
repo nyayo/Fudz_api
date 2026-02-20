@@ -417,22 +417,6 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                           fit: BoxFit.cover,
                           width: 96,
                           height: 96,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              color: accentColor.withAlpha(40),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: TColor.primary,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
                           errorBuilder: (_, __, ___) =>
                               _buildPlaceholderIcon(accentColor),
                         )
