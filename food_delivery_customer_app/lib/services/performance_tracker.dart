@@ -128,14 +128,12 @@ class _TimingEntry {
   final String label;
   final DateTime startTime;
   DateTime? endTime;
-  bool success;
+  bool success = true;
   String? error;
 
   _TimingEntry({
     required this.label,
     required this.startTime,
-    this.success = true,
-    this.error,
   });
 
   int get durationMs =>

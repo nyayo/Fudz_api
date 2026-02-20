@@ -14,12 +14,13 @@ class CategoriesWidget extends StatefulWidget {
   State<CategoriesWidget> createState() => _CategoriesWidgetState();
 }
 
-class _CategoriesWidgetState extends State<CategoriesWidget> {
+class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerProviderStateMixin {
   int _selectedCategory = 0;
   final CategoryController categoryController = Get.find();
   late ScrollController _scrollController;
   int _lastCategoryCount = 0;
   bool _isSnapping = false;
+  late AnimationController _animationController;
 
   double _itemWidth = 88.0;
   static const double _itemSpacing = 12.0;
@@ -28,12 +29,17 @@ class _CategoriesWidgetState extends State<CategoriesWidget> {
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _scrollController = ScrollController()..addListener(_onScroll);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -41,6 +47,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget> {
     setState(() {
       _selectedCategory = index;
     });
+    _animationController.forward(from: 0);
 
     categoryController.getCategoryDetail(categoryId);
     Get.to(
@@ -50,6 +57,27 @@ class _CategoriesWidgetState extends State<CategoriesWidget> {
         _selectedCategory = 0;
       });
     });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients || _lastCategoryCount == 0) return;
+
+    final viewportWidth = _scrollController.position.viewportDimension;
+    final scrollOffset = _scrollController.offset;
+
+    final centerOfViewport =
+        scrollOffset + (viewportWidth / 2) - _horizontalPadding;
+
+    final totalItemWidth = _itemWidth + _itemSpacing;
+    int centerIndex = (centerOfViewport / totalItemWidth).round();
+    centerIndex = centerIndex.clamp(0, _lastCategoryCount - 1);
+
+    if (centerIndex != _selectedCategory) {
+      setState(() {
+        _selectedCategory = centerIndex;
+      });
+      _animationController.forward(from: 0);
+    }
   }
 
   void _scrollToCenter(int index) {
@@ -206,9 +234,19 @@ class _CategoriesWidgetState extends State<CategoriesWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Circle with image
-            Transform.scale(
-              scale: isSelected ? 1.0 : 0.88,
+            // Circle with image - animated scale
+            AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                final animValue = Curves.easeOut.transform(_animationController.value);
+                final scale = isSelected 
+                    ? 1.0 + (0.12 * animValue) 
+                    : 0.88 + (0.12 * (1 - animValue));
+                return Transform.scale(
+                  scale: scale,
+                  child: child,
+                );
+              },
               child: Container(
                 width: circleSize,
                 height: circleSize,
