@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class CachedImage extends StatelessWidget {
   final String? imageUrl;
@@ -9,6 +10,14 @@ class CachedImage extends StatelessWidget {
   final double borderRadius;
   final IconData placeholderIcon;
   final bool showLoader;
+
+  static final CacheManager _cacheManager = CacheManager(
+    Config(
+      'customImageCache',
+      stalePeriod: const Duration(days: 7),
+      maxNrOfCacheObjects: 200,
+    ),
+  );
 
   const CachedImage({
     super.key,
@@ -34,14 +43,14 @@ class CachedImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        cacheManager: _cacheManager,
         placeholder: (context, url) =>
             showLoader ? _buildLoader() : _buildPlaceholder(isSubtle: true),
         errorWidget: (context, url, error) => _buildPlaceholder(),
-        fadeInDuration: Duration.zero,
-        // Use a 30-day cache duration for images
-        cacheKey: imageUrl,
-        maxWidthDiskCache: 1000,
-        maxHeightDiskCache: 1000,
+        fadeInDuration: const Duration(milliseconds: 100),
+        memCacheWidth: width != null ? (width! * 2).toInt() : null,
+        maxWidthDiskCache: 800,
+        maxHeightDiskCache: 800,
       ),
     );
   }
