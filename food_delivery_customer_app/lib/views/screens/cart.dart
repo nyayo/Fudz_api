@@ -124,6 +124,7 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
             }),
           ],
         ),
+        ),
       ),
     );
   }
