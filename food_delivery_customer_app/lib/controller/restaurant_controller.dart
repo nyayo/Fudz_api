@@ -416,6 +416,20 @@ class RestaurantController extends GetxController {
       final response = await _apiService.get(
         'restaurants/restaurants/$restaurantId/',
       );
+      
+      // Debug: Print raw JSON for restaurant detail
+      print('🏪 RESTAURANT DETAIL RAW JSON:');
+      print(JsonEncoder.withIndent('  ').convert(response));
+      if (response is Map) {
+        print('🏪 DETAIL AVAILABLE KEYS: ${response.keys.toList()}');
+        for (final key in response.keys) {
+          if (key.toString().toLowerCase().contains('logo') || 
+              key.toString().toLowerCase().contains('image')) {
+            print('🏪 DETAIL Field "$key": ${response[key]}');
+          }
+        }
+      }
+      
       final restaurant = RestaurantProfile.fromJson(response);
 
       // Update cache
