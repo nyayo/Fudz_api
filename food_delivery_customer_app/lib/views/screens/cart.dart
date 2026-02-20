@@ -21,14 +21,25 @@ class CartPage extends StatefulWidget {
   State<CartPage> createState() => _CartPageState();
 }
 
-class _CartPageState extends State<CartPage> {
+class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin {
   final CartController _cartController = Get.find<CartController>();
   final UserController _userController = Get.find<UserController>();
   final LocationController _locationController = Get.find<LocationController>();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _animationController.forward();
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_userController.isLoggedIn && _cartController.cart == null) {
         _cartController.initializeCart(
@@ -39,13 +50,21 @@ class _CartPageState extends State<CartPage> {
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: Column(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SafeArea(
+          child: Column(
           children: [
             // Header
             Padding(

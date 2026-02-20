@@ -18,27 +18,56 @@ class MainTabView extends StatefulWidget {
   State<MainTabView> createState() => _MainTabViewState();
 }
 
-class _MainTabViewState extends State<MainTabView> {
+class _MainTabViewState extends State<MainTabView> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   final CartController _cartController = Get.find<CartController>();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   final List<Widget> _pages = [
     const HomePage(),
     WishlistPage(),
-    const CartPage(), // Cart is now at index 2 (replacing Order)
+    const CartPage(),
     const ProfilePage(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index != _selectedIndex) {
+      _animationController.reverse().then((_) {
+        setState(() {
+          _selectedIndex = index;
+        });
+        _animationController.forward();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: IndexedStack(index: _selectedIndex, children: _pages),
+      ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(
