@@ -157,26 +157,26 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                     );
                   },
                   child: Container(
-                  width: cardWidth,
-                  margin: EdgeInsets.only(
-                    right: index == popularRestaurants.length - 1 ? 0 : 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(12),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Column(
-                        children: [
+                    width: cardWidth,
+                    margin: EdgeInsets.only(
+                      right: index == popularRestaurants.length - 1 ? 0 : 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(12),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Column(
+                          children: [
                           // Top section with restaurant image
                           Expanded(
                             flex: 3,
