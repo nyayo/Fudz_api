@@ -193,6 +193,11 @@ class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerPr
                         final categoryId = category.id;
                         final categoryName = category.name;
                         final imageUrl = category.mapImageUrl();
+                        
+                        // Debug output
+                        if (index == 0) {
+                          print('🎨 Category ${category.name}: imageUrl=$imageUrl, hasImage=${category.hasImage}');
+                        }
 
                         return _buildCategoryItem(
                           index: index,
@@ -275,13 +280,38 @@ class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerPr
                     width: imageSize,
                     height: imageSize,
                     child: ClipOval(
-                      child: CachedImage(
-                        imageUrl: imageUrl,
-                        width: imageSize,
-                        height: imageSize,
-                        borderRadius: imageSize / 2,
-                        placeholderIcon: Icons.category,
-                      ),
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              width: imageSize,
+                              height: imageSize,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stack) {
+                                print('❌ Image load error for $imageUrl: $error');
+                                return Icon(
+                                  Icons.category,
+                                  size: imageSize * 0.5,
+                                  color: Colors.grey,
+                                );
+                              },
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 2,
+                                  ),
+                                );
+                              },
+                            )
+                          : Icon(
+                              Icons.category,
+                              size: imageSize * 0.5,
+                              color: Colors.grey,
+                            ),
                     ),
                   ),
                 ),

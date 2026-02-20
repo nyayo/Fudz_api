@@ -59,19 +59,24 @@ class Category {
     final rawImages = json['category_image'] ?? 
                       json['images'] ?? 
                       json['category_images'] ??
-                      (json['image'] is List ? json['image'] : null);
+                      (json['image'] is List ? json['image'] : null) ??
+                      (json['image_url'] is List ? json['image_url'] : null);
     
     if (rawImages is List) {
       parsedImages = rawImages.map((image) {
         return CategoryImage.fromJson(image);
       }).toList();
     } else if (json['image'] is String) {
-      // If image is a direct string URL, create a single image
-      parsedImages = [CategoryImage(imageUrl: json['image'] as String)];
+      final imgUrl = json['image'] as String;
+      parsedImages = [CategoryImage(imageUrl: UrlUtils.ensureAbsoluteUrl(imgUrl) ?? '')];
+    } else if (json['image_url'] is String) {
+      // Handle image_url as a direct string URL
+      final imgUrl = json['image_url'] as String;
+      parsedImages = [CategoryImage(imageUrl: UrlUtils.ensureAbsoluteUrl(imgUrl) ?? '')];
     }
 
-    // Ensure imageUrl is absolute
-    String? finalImageUrl = json['image']?.toString();
+    // Ensure imageUrl is absolute - try multiple field names
+    String? finalImageUrl = json['image']?.toString() ?? json['image_url']?.toString();
     if (finalImageUrl != null && finalImageUrl.isNotEmpty) {
       finalImageUrl = UrlUtils.ensureAbsoluteUrl(finalImageUrl);
     }
@@ -88,15 +93,15 @@ class Category {
   }
 
   String? mapImageUrl() {
-    // First try the images array
     if (images != null && images!.isNotEmpty) {
       final firstImage = images!.first;
       if (firstImage.imageUrl.isNotEmpty) {
-        return firstImage.imageUrl;
+        return UrlUtils.ensureAbsoluteUrl(firstImage.imageUrl);
       }
     }
-    // Fallback to direct imageUrl
-    if (imageUrl != null && imageUrl!.isNotEmpty) return imageUrl;
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return UrlUtils.ensureAbsoluteUrl(imageUrl);
+    }
     return null;
   }
 
