@@ -47,39 +47,35 @@ class _SplashScreenState extends State<SplashScreen> {
       final isLoggedIn = userController.isLoggedIn;
       print('🔐 isLoggedIn: $isLoggedIn');
 
-      if (isLoggedIn && userController.user != null) {
-        print('✅ User is logged in: ${userController.user?.email}');
+      perf.end('Total Startup');
+      perf.finishStartup();
 
-        // Fire-and-forget: user services in background (don't block navigation)
-        perf.start('User services (background)');
-        _initializeUserServices(userController)
-            .then((_) {
-              perf.end('User services (background)');
-              perf.finishStartup();
-            })
-            .catchError((e) {
-              perf.end(
-                'User services (background)',
-                success: false,
-                error: '$e',
-              );
-              perf.finishStartup();
-            });
+      // Delay navigation to after build is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (isLoggedIn && userController.user != null) {
+          print('✅ User is logged in: ${userController.user?.email}');
 
-        perf.end('Total Startup');
-        Get.offAll(() => const MainTabView());
-      } else {
-        print('❌ No valid session, going to login screen');
-        perf.end('Total Startup');
-        perf.finishStartup();
-        Get.offAll(() => const GetStarted());
-      }
+          // Fire-and-forget: user services in background (don't block navigation)
+          _initializeUserServices(userController).catchError((e) {
+            print('⚠️ User services error: $e');
+          });
+
+          Get.offAll(() => const MainTabView());
+        } else {
+          print('❌ No valid session, going to login screen');
+          Get.offAll(() => const GetStarted());
+        }
+      });
     } catch (e, stackTrace) {
       print('❌ Error during app initialization: $e');
       print('Stack trace: $stackTrace');
       perf.end('Total Startup', success: false, error: '$e');
       perf.finishStartup();
-      Get.offAll(() => const GetStarted());
+      
+      // Navigate to login on error
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAll(() => const GetStarted());
+      });
     }
   }
 

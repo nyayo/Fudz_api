@@ -14,16 +14,15 @@ class CategoriesWidget extends StatefulWidget {
   State<CategoriesWidget> createState() => _CategoriesWidgetState();
 }
 
-class _CategoriesWidgetState extends State<CategoriesWidget>
-    with SingleTickerProviderStateMixin {  // Add this mixin
+class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerProviderStateMixin {
   int _selectedCategory = 0;
   final CategoryController categoryController = Get.find();
   late ScrollController _scrollController;
   int _lastCategoryCount = 0;
   bool _isSnapping = false;
-  late AnimationController _bounceController;  // Add this
+  late AnimationController _animationController;
 
-  double _itemWidth = 88.0; // computed dynamically in build
+  double _itemWidth = 88.0;
   static const double _itemSpacing = 12.0;
   static const double _horizontalPadding = 16.0;
 
@@ -31,43 +30,44 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
-    
-    // Initialize the bounce controller
-    _bounceController = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
-      lowerBound: 0.0,
-      upperBound: 1.0,
+      duration: const Duration(milliseconds: 200),
     );
-
-    // Center the initially selected category after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients && _lastCategoryCount > 0) {
-        _scrollToCenter(_selectedCategory);
-      }
-    });
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _bounceController.dispose();  // Don't forget to dispose
+    _animationController.dispose();
     super.dispose();
   }
 
-  /// Detect which category is in the center of the viewport while scrolling
+  void _onCategoryTap(int index, int categoryId, String categoryName) {
+    setState(() {
+      _selectedCategory = index;
+    });
+    _animationController.forward(from: 0);
+
+    categoryController.getCategoryDetail(categoryId);
+    Get.to(
+      () => CategoryPage(categoryId: categoryId, categoryName: categoryName),
+    )?.then((_) {
+      setState(() {
+        _selectedCategory = 0;
+      });
+    });
+  }
+
   void _onScroll() {
     if (!_scrollController.hasClients || _lastCategoryCount == 0) return;
 
     final viewportWidth = _scrollController.position.viewportDimension;
     final scrollOffset = _scrollController.offset;
 
-    // The center of the visible area in scroll-content coordinates
     final centerOfViewport =
         scrollOffset + (viewportWidth / 2) - _horizontalPadding;
 
-    // Calculate which item index falls at that center point
     final totalItemWidth = _itemWidth + _itemSpacing;
     int centerIndex = (centerOfViewport / totalItemWidth).round();
     centerIndex = centerIndex.clamp(0, _lastCategoryCount - 1);
@@ -76,29 +76,8 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
       setState(() {
         _selectedCategory = centerIndex;
       });
-      _bounceController.forward(from: 0.0);
+      _animationController.forward(from: 0);
     }
-  }
-
-  /// Snap to the nearest category center when scrolling ends
-  void _onScrollEnd() {
-    if (_isSnapping) return; // prevent recursive calls from animateTo
-    if (!_scrollController.hasClients || _lastCategoryCount == 0) return;
-    _isSnapping = true;
-    _scrollToCenter(_selectedCategory);
-  }
-
-  void _onCategoryTap(int index, int categoryId, String categoryName) {
-    setState(() {
-      _selectedCategory = index;
-    });
-    _scrollToCenter(index);
-
-    // Navigate
-    categoryController.getCategoryDetail(categoryId);
-    Get.to(
-      () => CategoryPage(categoryId: categoryId, categoryName: categoryName),
-    );
   }
 
   void _scrollToCenter(int index) {
@@ -116,6 +95,13 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
           curve: Curves.easeOutCubic,
         )
         .then((_) => _isSnapping = false);
+  }
+
+  void _onScrollEnd() {
+    if (_isSnapping) return;
+    if (!_scrollController.hasClients || _lastCategoryCount == 0) return;
+    _isSnapping = true;
+    _scrollToCenter(_selectedCategory);
   }
 
   @override
@@ -207,6 +193,11 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                         final categoryId = category.id;
                         final categoryName = category.name;
                         final imageUrl = category.mapImageUrl();
+                        
+                        // Debug output
+                        if (index == 0) {
+                          print('🎨 Category ${category.name}: imageUrl=$imageUrl, hasImage=${category.hasImage}');
+                        }
 
                         return _buildCategoryItem(
                           index: index,
@@ -248,9 +239,19 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Circle with image
-            Transform.scale(
-              scale: isSelected ? 1.0 : 0.88,
+            // Circle with image - animated scale
+            AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                final animValue = Curves.easeOut.transform(_animationController.value);
+                final scale = isSelected 
+                    ? 1.0 + (0.12 * animValue) 
+                    : 0.88 + (0.12 * (1 - animValue));
+                return Transform.scale(
+                  scale: scale,
+                  child: child,
+                );
+              },
               child: Container(
                 width: circleSize,
                 height: circleSize,
@@ -279,13 +280,38 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                     width: imageSize,
                     height: imageSize,
                     child: ClipOval(
-                      child: CachedImage(
-                        imageUrl: imageUrl,
-                        width: imageSize,
-                        height: imageSize,
-                        borderRadius: imageSize / 2,
-                        placeholderIcon: Icons.category,
-                      ),
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              width: imageSize,
+                              height: imageSize,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stack) {
+                                print('❌ Image load error for $imageUrl: $error');
+                                return Icon(
+                                  Icons.category,
+                                  size: imageSize * 0.5,
+                                  color: Colors.grey,
+                                );
+                              },
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 2,
+                                  ),
+                                );
+                              },
+                            )
+                          : Icon(
+                              Icons.category,
+                              size: imageSize * 0.5,
+                              color: Colors.grey,
+                            ),
                     ),
                   ),
                 ),

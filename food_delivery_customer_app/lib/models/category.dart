@@ -1,4 +1,6 @@
 
+import 'package:food_delivery_customer_app/utils/url_utils.dart';
+
 class CategoryImage {
   final String imageUrl;
 
@@ -7,20 +9,23 @@ class CategoryImage {
   factory CategoryImage.fromJson(dynamic json) {
     if (json is Map<String, dynamic>) {
       // Handle different possible field names from API
-      return CategoryImage(
-        imageUrl: json['image']?.toString() ?? 
-                 json['image_url']?.toString() ?? 
-                 json['imageUrl']?.toString() ?? 
-                 json['url']?.toString() ?? '',
-      );
+      String? url = json['image']?.toString() ?? 
+                   json['image_url']?.toString() ?? 
+                   json['imageUrl']?.toString() ?? 
+                   json['url']?.toString();
+      // Ensure URL is absolute
+      if (url != null && url.isNotEmpty) {
+        url = UrlUtils.ensureAbsoluteUrl(url);
+      }
+      return CategoryImage(imageUrl: url ?? '');
     } else if (json is String) {
-      return CategoryImage(imageUrl: json);
+      return CategoryImage(imageUrl: UrlUtils.ensureAbsoluteUrl(json) ?? '');
     }
     return CategoryImage(imageUrl: '');
   }
 
   Map<String, dynamic> toJson() => {
-    'image': imageUrl, // Use 'image' as key for consistency with API
+    'image': imageUrl,
   };
 
   @override
@@ -47,45 +52,56 @@ class Category {
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
-  // Parse images array
-  List<CategoryImage>? parsedImages;
-  
-  // Try multiple possible field names for images
-  final rawImages = json['category_image'] ?? 
-                    json['images'] ?? 
-                    json['category_images'] ??
-                    (json['image'] is List ? json['image'] : null);
-  
-  if (rawImages is List) {
-    parsedImages = rawImages.map((image) {
-      return CategoryImage.fromJson(image);
-    }).toList();
-  } else if (json['image'] is String) {
-    // If image is a direct string URL, create a single image
-    parsedImages = [CategoryImage(imageUrl: json['image'] as String)];
+    // Parse images array
+    List<CategoryImage>? parsedImages;
+    
+    // Try multiple possible field names for images
+    final rawImages = json['category_image'] ?? 
+                      json['images'] ?? 
+                      json['category_images'] ??
+                      (json['image'] is List ? json['image'] : null) ??
+                      (json['image_url'] is List ? json['image_url'] : null);
+    
+    if (rawImages is List) {
+      parsedImages = rawImages.map((image) {
+        return CategoryImage.fromJson(image);
+      }).toList();
+    } else if (json['image'] is String) {
+      final imgUrl = json['image'] as String;
+      parsedImages = [CategoryImage(imageUrl: UrlUtils.ensureAbsoluteUrl(imgUrl) ?? '')];
+    } else if (json['image_url'] is String) {
+      // Handle image_url as a direct string URL
+      final imgUrl = json['image_url'] as String;
+      parsedImages = [CategoryImage(imageUrl: UrlUtils.ensureAbsoluteUrl(imgUrl) ?? '')];
+    }
+
+    // Ensure imageUrl is absolute - try multiple field names
+    String? finalImageUrl = json['image']?.toString() ?? json['image_url']?.toString();
+    if (finalImageUrl != null && finalImageUrl.isNotEmpty) {
+      finalImageUrl = UrlUtils.ensureAbsoluteUrl(finalImageUrl);
+    }
+
+    return Category(
+      id: json['id'] as int,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      imageUrl: finalImageUrl,
+      isActive: json['is_active'] as bool? ?? true,
+      itemsCount: json['items_count'] as int? ?? 0,
+      images: parsedImages,
+    );
   }
 
-  return Category(
-    id: json['id'] as int,
-    name: json['name'] as String,
-    description: json['description'] as String?,
-    imageUrl: json['image'] as String?, // keep for fallback
-    isActive: json['is_active'] as bool? ?? true,
-    itemsCount: json['items_count'] as int? ?? 0,
-    images: parsedImages,
-  );
-}
-
   String? mapImageUrl() {
-    // First try the images array
     if (images != null && images!.isNotEmpty) {
       final firstImage = images!.first;
       if (firstImage.imageUrl.isNotEmpty) {
-        return firstImage.imageUrl;
+        return UrlUtils.ensureAbsoluteUrl(firstImage.imageUrl);
       }
     }
-    // Fallback to direct imageUrl
-    if (imageUrl != null && imageUrl!.isNotEmpty) return imageUrl;
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return UrlUtils.ensureAbsoluteUrl(imageUrl);
+    }
     return null;
   }
 

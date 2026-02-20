@@ -40,6 +40,18 @@ class RestaurantProfile {
   });
 
   factory RestaurantProfile.fromJson(Map<String, dynamic> json) {
+    // Try various image field names
+    String? imgUrl;
+    imgUrl ??= UrlUtils.ensureAbsoluteUrl(json['image']?.toString());
+    imgUrl ??= UrlUtils.ensureAbsoluteUrl(json['image_url']?.toString());
+    imgUrl ??= UrlUtils.ensureAbsoluteUrl(json['imageUrl']?.toString());
+    
+    // Try various logo field names
+    String? lgUrl;
+    lgUrl ??= UrlUtils.ensureAbsoluteUrl(json['logo']?.toString());
+    lgUrl ??= UrlUtils.ensureAbsoluteUrl(json['logo_url']?.toString());
+    lgUrl ??= UrlUtils.ensureAbsoluteUrl(json['logoUrl']?.toString());
+    
     return RestaurantProfile(
       id: json['id'] as int,
       restaurantName: json['restaurant_name'] as String,
@@ -60,10 +72,8 @@ class RestaurantProfile {
       phone: json['phone'],
       categories: json['categories'],
       promotions: json['promotions'],
-      imageUrl: UrlUtils.ensureAbsoluteUrl(json['image']?.toString()),
-      logoUrl: UrlUtils.ensureAbsoluteUrl(
-        json['logo']?.toString() ?? json['logo_url']?.toString(),
-      ),
+      imageUrl: imgUrl,
+      logoUrl: lgUrl,
     );
   }
 

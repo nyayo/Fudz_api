@@ -63,6 +63,15 @@ void onInit() {
           }
         }
         print('✅ Loaded ${_categoryCache.length} cached categories from storage');
+        
+        // Debug: Print image info for first cached category
+        if (_categoryCache.isNotEmpty) {
+          final firstCat = _categoryCache.values.first;
+          print('📸 First cached category: ${firstCat.name}');
+          print('📸   imageUrl: ${firstCat.imageUrl}');
+          print('📸   images: ${firstCat.images}');
+          print('📸   mapImageUrl(): ${firstCat.mapImageUrl()}');
+        }
       }
 
       // Load restaurant categories cache
@@ -207,8 +216,14 @@ Future<void> getCategoryDetail(int categoryId, {bool forceRefresh = false}) asyn
       final hasValidCache = _categoryCache.isNotEmpty && 
           _categoryCacheTimestamps.values.every((time) => 
               now.difference(time) < _cacheDuration);
+      
+      // Check if cached categories have valid images
+      final hasValidImages = _categoryCache.values.any((cat) => cat.hasImage);
+      
+      // Force refresh if cache exists but has no valid images
+      final shouldForceRefresh = forceRefresh || (hasValidCache && !hasValidImages);
 
-      if (hasValidCache && !forceRefresh) {
+      if (hasValidCache && !shouldForceRefresh) {
         // Use cached categories
         categories.value = _categoryCache.values.toList();
         print('✅ Using ${categories.length} cached categories');
@@ -238,10 +253,26 @@ Future<void> getCategoryDetail(int categoryId, {bool forceRefresh = false}) asyn
       
       print('📁 Found ${categoriesList.length} categories');
       
-      // DEBUG: Print raw JSON of first category
+      // DEBUG: Print raw JSON and all keys of first category
       if (categoriesList.isNotEmpty) {
+        final firstCat = categoriesList.first;
         print('📁 RAW FIRST CATEGORY JSON:');
-        print(JsonEncoder.withIndent('  ').convert(categoriesList.first));
+        print(JsonEncoder.withIndent('  ').convert(firstCat));
+        
+        // Print all keys to help identify image field
+        if (firstCat is Map) {
+          print('📁 AVAILABLE KEYS: ${firstCat.keys.toList()}');
+          
+          // Print all image-related fields
+          for (final key in firstCat.keys) {
+            if (key.toString().toLowerCase().contains('image') || 
+                key.toString().toLowerCase().contains('img') ||
+                key.toString().toLowerCase().contains('photo') ||
+                key.toString().toLowerCase().contains('url')) {
+              print('📸 Field "$key": ${firstCat[key]}');
+            }
+          }
+        }
       }
       
       final categoriesData = categoriesList

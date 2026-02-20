@@ -1,7 +1,6 @@
 class UrlUtils {
   static const String baseHost = 'https://unshifter.site';
 
-  // Known old hosts that should be replaced with the current baseHost
   static const List<String> _oldHosts = [
     'http://129.151.165.133',
     'https://129.151.165.133',
@@ -10,20 +9,22 @@ class UrlUtils {
   static String? ensureAbsoluteUrl(String? url) {
     if (url == null || url.isEmpty) return null;
 
-    // Normalize old IP-based URLs to use the current domain
+    String workingUrl = url;
+
     for (final oldHost in _oldHosts) {
-      if (url!.startsWith(oldHost)) {
-        url = url.replaceFirst(oldHost, baseHost);
-        return url;
+      if (workingUrl.startsWith(oldHost)) {
+        workingUrl = workingUrl.replaceFirst(oldHost, baseHost);
+        return workingUrl;
       }
     }
 
-    if (url!.startsWith('http://') || url.startsWith('https://')) return url;
-
-    // Prepend host for relative URLs
-    if (url.startsWith('/')) {
-      return '$baseHost$url';
+    if (workingUrl.startsWith('http://') || workingUrl.startsWith('https://')) {
+      return workingUrl;
     }
-    return '$baseHost/$url';
+
+    if (workingUrl.startsWith('/')) {
+      return '$baseHost$workingUrl';
+    }
+    return '$baseHost/$workingUrl';
   }
 }
