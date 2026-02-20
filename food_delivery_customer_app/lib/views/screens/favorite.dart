@@ -103,7 +103,9 @@ class _OrdersPageState extends State<OrdersPage>
           ),
         ),
       ),
-      body: Obx(() {
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Obx(() {
         // Show login prompt if user is not logged in
         if (!_userController.isLoggedIn) {
           return _buildLoginPrompt();
@@ -155,6 +157,7 @@ class _OrdersPageState extends State<OrdersPage>
           ],
         );
       }),
+      ),
     );
   }
 
