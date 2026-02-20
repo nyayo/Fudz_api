@@ -180,13 +180,13 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Obx(() {
-        if (restaurantController.isLoadingDetails.value) {
+        if (restaurantController.isLoadingDetails.value || restaurantController.selectedRestaurant.value == null) {
           return _buildLoadingState();
         }
 
         final restaurant = restaurantController.selectedRestaurant.value;
         if (restaurant == null) {
-          return _buildErrorState('Restaurant not found');
+          return _buildLoadingState();
         }
 
         // Initialize filtered items when menu items are loaded
@@ -412,12 +412,26 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
             SizedBox(
               width: 80,
               height: 80,
-              child: CachedImage(
-                imageUrl: menuItem.imageUrl,
-                width: 80,
-                height: 80,
-                borderRadius: 12,
-                placeholderIcon: Icons.fastfood,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: menuItem.imageUrl != null && menuItem.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        menuItem.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: 80,
+                        height: 80,
+                        errorBuilder: (context, error, stack) {
+                          debugPrint('❌ Menu item image load error: $error');
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Icon(Icons.fastfood, color: Colors.grey[400]),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.grey[200],
+                        child: Icon(Icons.fastfood, color: Colors.grey[400]),
+                      ),
               ),
             ),
 
