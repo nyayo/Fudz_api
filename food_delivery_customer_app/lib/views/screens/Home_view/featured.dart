@@ -7,7 +7,6 @@ import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:get/get.dart';
-import 'package:palette_generator/palette_generator.dart';
 
 class MenuItemsWidget extends StatefulWidget {
   const MenuItemsWidget({super.key});
@@ -19,17 +18,13 @@ class MenuItemsWidget extends StatefulWidget {
 class _MenuItemsWidgetState extends State<MenuItemsWidget> {
   late ScrollController _scrollController;
 
-  /// Cache of dominant colors extracted from menu item images, keyed by image URL.
-  final Map<String, Color> _dominantColors = {};
-
-  // Fallback pastel accents used while (or if) extraction fails
   static const List<Color> _fallbackAccents = [
-    Color(0xFFFFF3E0), // warm peach
-    Color(0xFFE8F5E9), // mint green
-    Color(0xFFE3F2FD), // sky blue
-    Color(0xFFFCE4EC), // rose pink
-    Color(0xFFF3E5F5), // lavender
-    Color(0xFFFFFDE7), // cream yellow
+    Color(0xFFFFF3E0),
+    Color(0xFFE8F5E9),
+    Color(0xFFE3F2FD),
+    Color(0xFFFCE4EC),
+    Color(0xFFF3E5F5),
+    Color(0xFFFFFDE7),
   ];
 
   @override
@@ -44,44 +39,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
     super.dispose();
   }
 
-  /// Extract dominant color from a network image and cache it.
-  Future<void> _extractDominantColor(String imageUrl) async {
-    if (imageUrl.isEmpty || _dominantColors.containsKey(imageUrl)) return;
-
-    try {
-      final paletteGenerator = await PaletteGenerator.fromImageProvider(
-        NetworkImage(imageUrl),
-        size: const Size(100, 100), // small size for speed
-        maximumColorCount: 6,
-      );
-
-      Color dominant =
-          paletteGenerator.dominantColor?.color ??
-          paletteGenerator.vibrantColor?.color ??
-          paletteGenerator.lightVibrantColor?.color ??
-          _fallbackAccents[imageUrl.hashCode % _fallbackAccents.length];
-
-      // Make a very light pastel version of the dominant color for the card bg
-      final hsl = HSLColor.fromColor(dominant);
-      final pastel = hsl
-          .withSaturation((hsl.saturation * 0.45).clamp(0.0, 1.0))
-          .withLightness(0.92)
-          .toColor();
-
-      if (mounted) {
-        setState(() {
-          _dominantColors[imageUrl] = pastel;
-        });
-      }
-    } catch (_) {
-      // Silently fall back
-    }
-  }
-
   Color _getAccentColor(int index, String imageUrl) {
-    if (imageUrl.isNotEmpty && _dominantColors.containsKey(imageUrl)) {
-      return _dominantColors[imageUrl]!;
-    }
     return _fallbackAccents[index % _fallbackAccents.length];
   }
 
@@ -178,14 +136,6 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
           final displayItems = restaurantController.menuItems.take(8).toList();
           if (displayItems.isEmpty) {
             return _buildEmptyWidget();
-          }
-
-          // Kick off color extraction for each item
-          for (final item in displayItems) {
-            final url = _resolveImageUrl(item);
-            if (url.isNotEmpty && !_dominantColors.containsKey(url)) {
-              _extractDominantColor(url);
-            }
           }
 
           return SizedBox(
