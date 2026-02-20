@@ -243,21 +243,7 @@ class _CategoryPageState extends State<CategoryPage> {
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final menuItem = filteredMenuItems[index];
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 400 + (index % 6) * 80),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset(0, 20 * (1 - value)),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _buildMenuItemCard(menuItem),
-                  );
+                  return _buildMenuItemCard(menuItem);
                 }, childCount: filteredMenuItems.length),
               ),
             );

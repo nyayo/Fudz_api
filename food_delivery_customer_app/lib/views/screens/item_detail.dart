@@ -23,8 +23,7 @@ class MenuItemDetailPage extends StatefulWidget {
   State<MenuItemDetailPage> createState() => _MenuItemDetailPageState();
 }
 
-class _MenuItemDetailPageState extends State<MenuItemDetailPage>
-    with SingleTickerProviderStateMixin {
+class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
   final custom_menu.MenuItemController menuController =
       Get.find<custom_menu.MenuItemController>();
   final CartController cartController = Get.find<CartController>();
@@ -34,33 +33,21 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
       Get.find<RestaurantController>();
 
   int _quantity = 1;
-  late AnimationController _animController;
-  late Animation<double> _fadeAnim;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await menuController.getMenuItemDetail(
         widget.menuItemId,
         forceRefresh: true,
       );
-      _animController.forward();
     });
   }
 
   @override
   void dispose() {
-    _animController.dispose();
     if (Get.isSnackbarOpen) {
       Get.closeCurrentSnackbar();
     }
@@ -87,12 +74,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage>
               physics: const BouncingScrollPhysics(),
               slivers: [
                 _buildImageAppBar(menuItem),
-                SliverToBoxAdapter(
-                  child: FadeTransition(
-                    opacity: _fadeAnim,
-                    child: _buildContent(menuItem),
-                  ),
-                ),
+                SliverToBoxAdapter(child: _buildContent(menuItem)),
               ],
             ),
             // Floating bottom bar

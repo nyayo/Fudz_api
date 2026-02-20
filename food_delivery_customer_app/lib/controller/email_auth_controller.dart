@@ -60,7 +60,7 @@ class EmailAuthController extends GetxController {
     }
 
     message = _stripToSingleLine(message);
-    if (message.length > 120) message = message.substring(0, 120) + '...';
+    if (message.length > 120) message = '${message.substring(0, 120)}...';
     return message;
   }
 

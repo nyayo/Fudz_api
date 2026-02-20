@@ -89,11 +89,7 @@ class _GetStartedState extends State<GetStarted> {
                         ),
                       ),
                       onPressed: () {
-                        Get.to(
-                          () => LoginScreen(),
-                          transition: Transition.rightToLeftWithFade,
-                          duration: const Duration(milliseconds: 400),
-                        );
+                        Get.to(() => LoginScreen());
                       },
                       child: Text(
                         "Get Started",

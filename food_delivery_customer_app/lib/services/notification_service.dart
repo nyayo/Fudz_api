@@ -709,9 +709,7 @@ class NotificationService {
 
   void _updateOrderController(Map<String, dynamic> data) {
     try {
-      if (_orderController == null) {
-        _orderController = Get.find<OrderController>();
-      }
+      _orderController ??= Get.find<OrderController>();
 
       final orderId = data['order_id'];
       if (orderId != null) {
@@ -853,9 +851,7 @@ class NotificationService {
 
   void refreshOrdersIfNeeded() {
     try {
-      if (_orderController == null) {
-        _orderController = Get.find<OrderController>();
-      }
+      _orderController ??= Get.find<OrderController>();
       _orderController?.refreshOrders();
     } catch (e) {
       print('❌ Error refreshing orders: $e');

@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ErrorLogViewer extends StatelessWidget {
-  const ErrorLogViewer({Key? key}) : super(key: key);
+  const ErrorLogViewer({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../constants/colors.dart';
 
 class ConnectivityService extends GetxService {
   final Connectivity _connectivity = Connectivity();

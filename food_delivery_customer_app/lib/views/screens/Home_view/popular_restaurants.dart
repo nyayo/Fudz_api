@@ -6,7 +6,6 @@ import 'package:food_delivery_customer_app/views/screens/popular_restuarant.dart
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
-
 import 'package:get/get.dart';
 
 class PopularRestaurantsWidget extends StatefulWidget {
@@ -17,33 +16,18 @@ class PopularRestaurantsWidget extends StatefulWidget {
       _PopularRestaurantsWidgetState();
 }
 
-class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
-    with TickerProviderStateMixin {
+class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
   final RestaurantController restaurantController = Get.find();
-  late AnimationController _entranceController;
-  late AnimationController _titleController;
   late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _titleController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _titleController.forward();
-    _entranceController.forward();
   }
 
   @override
   void dispose() {
-    _entranceController.dispose();
-    _titleController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -65,399 +49,346 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
         return _buildEmptyWidget();
       }
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Animated title row
-          SlideTransition(
-            position:
-                Tween<Offset>(
-                  begin: const Offset(-0.3, 0),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(
-                    parent: _titleController,
-                    curve: Curves.easeOutCubic,
-                  ),
-                ),
-            child: FadeTransition(
-              opacity: _titleController,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      return _buildRestaurantsList(popularRestaurants);
+    });
+  }
+
+  Widget _buildRestaurantsList(List popularRestaurants) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title row
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: TColor.primary,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Restaurants",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: TColor.primaryText,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: TColor.primary,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      Get.to(() => const AllRestaurantsPage());
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: TColor.primary.withAlpha(20),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "See all",
-                            style: TextStyle(
-                              color: TColor.primary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: TColor.primary,
-                            size: 16,
-                          ),
-                        ],
-                      ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Restaurants",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: TColor.primaryText,
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Restaurant cards - logo-centric layout
-          SizedBox(
-            height: 230,
-            child: ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: popularRestaurants.length,
-              itemBuilder: (context, index) {
-                final restaurant = popularRestaurants[index];
-
-                // Staggered entrance
-                final delay = (index * 0.15).clamp(0.0, 0.6);
-                final itemAnimation = Tween<double>(begin: 0, end: 1).animate(
-                  CurvedAnimation(
-                    parent: _entranceController,
-                    curve: Interval(
-                      delay,
-                      (delay + 0.4).clamp(0, 1),
-                      curve: Curves.easeOutBack,
-                    ),
+              GestureDetector(
+                onTap: () {
+                  Get.to(() => const AllRestaurantsPage());
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
                   ),
-                );
+                  decoration: BoxDecoration(
+                    color: TColor.primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "See all",
+                        style: TextStyle(
+                          color: TColor.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: TColor.primary,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
 
-                final cardWidth = (MediaQuery.of(context).size.width * 0.42)
-                    .clamp(160.0, 200.0);
+        // Restaurant cards - logo-centric layout
+        SizedBox(
+          height: 230,
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: popularRestaurants.length,
+            itemBuilder: (context, index) {
+              final restaurant = popularRestaurants[index];
+              final cardWidth = (MediaQuery.of(context).size.width * 0.42)
+                  .clamp(160.0, 200.0);
 
-                return AnimatedBuilder(
-                  animation: itemAnimation,
-                  builder: (context, child) {
-                    return Transform.translate(
-                      offset: Offset(0, 30 * (1 - itemAnimation.value)),
-                      child: Opacity(
-                        opacity: itemAnimation.value.clamp(0.0, 1.0),
-                        child: child,
+              return GestureDetector(
+                onTap: () {
+                  Get.to(
+                    () => RestaurantDetailPage(restaurantId: restaurant.id),
+                  );
+                },
+                child: Container(
+                  width: cardWidth,
+                  margin: EdgeInsets.only(
+                    right: index == popularRestaurants.length - 1 ? 0 : 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
-                    );
-                  },
-                  child: GestureDetector(
-                    onTap: () {
-                      Get.to(
-                        () => RestaurantDetailPage(restaurantId: restaurant.id),
-                        transition: Transition.cupertino,
-                      );
-                    },
-                    child: Container(
-                      width: cardWidth,
-                      margin: EdgeInsets.only(
-                        right: index == popularRestaurants.length - 1 ? 0 : 14,
-                        // bottom: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(12),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
+                    ],
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Column(
                         children: [
-                          Column(
-                            children: [
-                              // Top section with restaurant image
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: TColor.primary.withAlpha(25),
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(20),
-                                      topRight: Radius.circular(20),
+                          // Top section with restaurant image
+                          Expanded(
+                            flex: 3,
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: TColor.primary.withAlpha(25),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                ),
+                              ),
+                              child: Stack(
+                                children: [
+                                  // Background restaurant image (full)
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        topRight: Radius.circular(20),
+                                      ),
+                                      child: (restaurant.imageUrl != null &&
+                                              restaurant.imageUrl!.isNotEmpty)
+                                          ? Image.network(
+                                              restaurant.imageUrl!,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) =>
+                                                  _buildPlaceholderImage(),
+                                            )
+                                          : _buildPlaceholderImage(),
                                     ),
                                   ),
-                                  child: Stack(
-                                    children: [
-                                      // Background restaurant image (full)
-                                      Positioned.fill(
-                                        child: ClipRRect(
-                                          borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(20),
-                                            topRight: Radius.circular(20),
-                                          ),
-                                          child:
-                                              (restaurant.imageUrl != null &&
-                                                  restaurant
-                                                      .imageUrl!
-                                                      .isNotEmpty)
-                                              ? Image.network(
-                                                  restaurant.imageUrl!,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) =>
-                                                      _buildPlaceholderImage(),
-                                                )
-                                              : _buildPlaceholderImage(),
-                                        ),
+                                  // Subtle gradient overlay for badges
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        topRight: Radius.circular(20),
                                       ),
-                                      // Subtle gradient overlay for badges
-                                      Positioned.fill(
-                                        child: ClipRRect(
-                                          borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(20),
-                                            topRight: Radius.circular(20),
-                                          ),
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: [
-                                                  Colors.black.withAlpha(40),
-                                                  Colors.transparent,
-                                                  Colors.black.withAlpha(30),
-                                                ],
-                                                stops: const [0.0, 0.4, 1.0],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      // Status badge
-                                      if (restaurant.isActive)
-                                        Positioned(
-                                          top: 8,
-                                          left: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 3,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF2E7D32),
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Container(
-                                                  width: 5,
-                                                  height: 5,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color: Color(
-                                                          0xFF81C784,
-                                                        ),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                ),
-                                                const SizedBox(width: 3),
-                                                const Text(
-                                                  'Open',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 9,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      // Rating
-                                      Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withAlpha(230),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withAlpha(
-                                                  12,
-                                                ),
-                                                blurRadius: 4,
-                                              ),
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              Colors.black.withAlpha(40),
+                                              Colors.transparent,
+                                              Colors.black.withAlpha(30),
                                             ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                Icons.star_rounded,
-                                                color: Color(0xFFFFC107),
-                                                size: 13,
-                                              ),
-                                              const SizedBox(width: 2),
-                                              Text(
-                                                (restaurant.avgRating ??
-                                                        restaurant.rating)
-                                                    .toStringAsFixed(1),
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w800,
-                                                  fontSize: 11,
-                                                  color: Color(0xFF333333),
-                                                ),
-                                              ),
-                                            ],
+                                            stops: const [0.0, 0.4, 1.0],
                                           ),
                                         ),
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ),
-                              // Bottom info section (extra top padding for logo overlap)
-                              Expanded(
-                                flex: 2,
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    12,
-                                    28,
-                                    12,
-                                    8,
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        restaurant.restaurantName,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: TColor.primaryText,
-                                          letterSpacing: -0.2,
-                                          height: 1.2,
+                                  // Status badge
+                                  if (restaurant.isActive)
+                                    Positioned(
+                                      top: 8,
+                                      left: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF2E7D32),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 5,
+                                              height: 5,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF81C784),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            const Text(
+                                              'Open',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      
-                                    ],
+                                    ),
+                                  // Rating
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(230),
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withAlpha(12),
+                                            blurRadius: 4,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.star_rounded,
+                                            color: Color(0xFFFFC107),
+                                            size: 13,
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            (restaurant.avgRating ??
+                                                    restaurant.rating)
+                                                .toStringAsFixed(1),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 11,
+                                              color: Color(0xFF333333),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                          // Logo overlapping the image/info boundary
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            // Image is flex:3, info is flex:2 => boundary at 60%
-                            // Logo (56px) centered on boundary: top = 60% of height - 28
-                            top: 230 * 0.6 - 28,
-                            child: Center(
-                              child: Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 3,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withAlpha(25),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
+                          // Bottom info section (extra top padding for logo overlap)
+                          Expanded(
+                            flex: 2,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                12,
+                                28,
+                                12,
+                                8,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    restaurant.restaurantName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: TColor.primaryText,
+                                      letterSpacing: -0.2,
+                                      height: 1.2,
                                     ),
-                                  ],
-                                ),
-                                child: ClipOval(
-                                  child:
-                                      (restaurant.logoUrl != null &&
-                                          restaurant.logoUrl!.isNotEmpty)
-                                      ? CachedImage(
-                                          imageUrl: restaurant.logoUrl,
-                                          width: 56,
-                                          height: 56,
-                                          borderRadius: 28,
-                                          placeholderIcon: Icons.restaurant,
-                                        )
-                                      : Icon(
-                                          Icons.restaurant_rounded,
-                                          color: TColor.primary,
-                                          size: 26,
-                                        ),
-                                ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 4),
+                                ],
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
+                      // Logo overlapping the image/info boundary
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 230 * 0.6 - 28,
+                        child: Center(
+                          child: Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 3,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(25),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: (restaurant.logoUrl != null &&
+                                      restaurant.logoUrl!.isNotEmpty)
+                                  ? CachedImage(
+                                      imageUrl: restaurant.logoUrl,
+                                      width: 56,
+                                      height: 56,
+                                      borderRadius: 28,
+                                      placeholderIcon: Icons.restaurant,
+                                    )
+                                  : Icon(
+                                      Icons.restaurant_rounded,
+                                      color: TColor.primary,
+                                      size: 26,
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-        ],
-      );
-    });
+        ),
+      ],
+    );
   }
 
   Widget _buildInfoChip(IconData icon, String text) {
@@ -502,39 +433,42 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 120,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(6),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 120,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            Container(
-              width: 70,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(14),
+                ],
               ),
-            ),
-          ],
+              Container(
+                width: 70,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -542,6 +476,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             itemCount: 3,
             itemBuilder: (context, index) {
               return _buildShimmerCard(index);
@@ -553,98 +488,88 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
   }
 
   Widget _buildShimmerCard(int index) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.4, end: 1.0),
-      duration: Duration(milliseconds: 800 + (index * 200)),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Container(
-            width: 180,
-            margin: EdgeInsets.only(right: index == 2 ? 0 : 14, bottom: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(8),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+    return Container(
+      width: 180,
+      margin: EdgeInsets.only(right: index == 2 ? 0 : 14, bottom: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
+              ),
+              child: Center(
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
                   ),
                 ),
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 100,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              width: 30,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        );
-      },
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 30,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -652,94 +577,100 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 24,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: TColor.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Restaurants",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: TColor.primaryText,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => restaurantController.refreshRestaurants(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: TColor.primary,
-                    borderRadius: BorderRadius.circular(2),
+                    color: TColor.primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  "Restaurants",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: TColor.primaryText,
-                  ),
-                ),
-              ],
-            ),
-            GestureDetector(
-              onTap: () => restaurantController.refreshRestaurants(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: TColor.primary.withAlpha(20),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "Retry",
-                  style: TextStyle(
-                    color: TColor.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                  child: Text(
+                    "Retry",
+                    style: TextStyle(
+                      color: TColor.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 16),
-        Container(
-          height: 180,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.wifi_off_rounded, color: Colors.grey[400], size: 44),
-                const SizedBox(height: 10),
-                Text(
-                  sanitizeErrorMessage(restaurantController.error.value),
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => restaurantController.refreshRestaurants(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: TColor.primary,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Try Again',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.wifi_off_rounded, color: Colors.grey[400], size: 44),
+                  const SizedBox(height: 10),
+                  Text(
+                    sanitizeErrorMessage(restaurantController.error.value),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () => restaurantController.refreshRestaurants(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: TColor.primary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Try Again',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -751,49 +682,55 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 24,
-              decoration: BoxDecoration(
-                color: TColor.primary,
-                borderRadius: BorderRadius.circular(2),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: TColor.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              "Restaurants",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: TColor.primaryText,
+              const SizedBox(width: 8),
+              Text(
+                "Restaurants",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: TColor.primaryText,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 16),
-        Container(
-          height: 180,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.restaurant_menu_rounded,
-                  color: Colors.grey[300],
-                  size: 48,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'No restaurants available',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 15),
-                ),
-              ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.restaurant_menu_rounded,
+                    color: Colors.grey[300],
+                    size: 48,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'No restaurants available',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 15),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

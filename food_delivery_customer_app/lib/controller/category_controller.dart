@@ -230,7 +230,7 @@ Future<void> getCategoryDetail(int categoryId, {bool forceRefresh = false}) asyn
       } else if (response is Map && response.containsKey('results')) {
         categoriesList = response['results'] ?? [];
       } else if (response is Map) {
-        final possibleLists = response.values.where((value) => value is List).toList();
+        final possibleLists = response.values.whereType<List>().toList();
         if (possibleLists.isNotEmpty) {
           categoriesList = possibleLists.first;
         }
@@ -305,7 +305,7 @@ Future<void> getCategoryDetail(int categoryId, {bool forceRefresh = false}) asyn
       } else if (response is Map && response.containsKey('results')) {
         categoriesList = response['results'] ?? [];
       } else if (response is Map) {
-        final possibleLists = response.values.where((value) => value is List).toList();
+        final possibleLists = response.values.whereType<List>().toList();
         if (possibleLists.isNotEmpty) {
           categoriesList = possibleLists.first;
         }

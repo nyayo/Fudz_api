@@ -523,7 +523,9 @@ class ApiService extends GetxService {
         '$baseUrl/$endpoint',
       ).replace(queryParameters: params);
       print('API GET: $uri');
-      return await client.get(uri, headers: await getHeaders());
+      return await client
+          .get(uri, headers: await getHeaders())
+          .timeout(const Duration(seconds: 15));
     }, endpoint: endpoint);
   }
 

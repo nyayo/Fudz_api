@@ -78,8 +78,7 @@ class _MainTabViewState extends State<MainTabView> {
       onTap: () => _onItemTapped(1),
       child: Stack(
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          Container(
             padding: EdgeInsets.symmetric(
               horizontal: isSelected ? 24 : 12,
               vertical: 10,
@@ -156,8 +155,7 @@ class _MainTabViewState extends State<MainTabView> {
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isSelected ? 24 : 12,
           vertical: 10,
@@ -201,8 +199,7 @@ class _MainTabViewState extends State<MainTabView> {
       onTap: () => _onItemTapped(2),
       child: Stack(
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          Container(
             padding: EdgeInsets.symmetric(
               horizontal: isSelected ? 24 : 12,
               vertical: 10,

@@ -49,7 +49,7 @@ class RestaurantProfile {
       rating: json['rating'] != null
           ? double.parse(json['rating'].toString())
           : 0.0,
-      avgRating: json['avg_rating'] != null 
+      avgRating: json['avg_rating'] != null
           ? double.parse(json['avg_rating'].toString())
           : null,
       isApproved: json['is_approved'] ?? false,
@@ -61,9 +61,33 @@ class RestaurantProfile {
       categories: json['categories'],
       promotions: json['promotions'],
       imageUrl: UrlUtils.ensureAbsoluteUrl(json['image']?.toString()),
-      logoUrl: UrlUtils.ensureAbsoluteUrl(json['logo']?.toString() ?? json['logo_url']?.toString()),
+      logoUrl: UrlUtils.ensureAbsoluteUrl(
+        json['logo']?.toString() ?? json['logo_url']?.toString(),
+      ),
     );
   }
 
   bool get isOpen => isActive && isApproved;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'restaurant_name': restaurantName,
+      'address': address,
+      'business_license': businessLicense,
+      'opening_hours': openingHours,
+      'rating': rating,
+      'avg_rating': avgRating,
+      'is_approved': isApproved,
+      'is_active': isActive,
+      'menu_items_count': menuItemsCount,
+      'categories_count': categoriesCount,
+      'owner_name': ownerName,
+      'phone': phone,
+      'categories': categories,
+      'promotions': promotions,
+      'image': imageUrl,
+      'logo': logoUrl,
+    };
+  }
 }

@@ -4,6 +4,7 @@ import 'package:food_delivery_customer_app/controller/menu_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/restaurant.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
+import 'package:food_delivery_customer_app/services/cache_service.dart';
 
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -66,35 +67,177 @@ class RestaurantController extends GetxController {
   }
 
   Future<void> _initializeData() async {
-    final hasLoadedBefore = _storage.read(_hasLoadedDataKey) ?? false;
-    final currentSession = _storage.read(_userSessionKey);
+    // ── 1. Load from local cache INSTANTLY (synchronous) ──
+    final hasCachedData = _loadFromCacheSync();
 
-    final shouldShowLoading = !hasLoadedBefore || currentSession == null;
-
-    if (shouldShowLoading) {
+    // If no cache at all, show loading indicator
+    if (!hasCachedData) {
       isInitialLoading.value = true;
     }
 
+    // ── 2. Fire-and-forget: Sync from API in BACKGROUND (non-blocking) ──
+    // This ensures UI loads instantly while data syncs in background
+    _syncDataInBackground();
+  }
+
+  /// Load all data from local cache SYNCHRONOUSLY (instant).
+  /// Returns true if any data was loaded.
+  bool _loadFromCacheSync() {
+    bool hasData = false;
+
+    // Restaurants
+    final cachedRestaurants = CacheService.getRestaurants();
+    if (cachedRestaurants != null && cachedRestaurants.isNotEmpty) {
+      final parsed = cachedRestaurants
+          .map((json) => RestaurantProfile.fromJson(json))
+          .toList();
+      restaurants.value = parsed;
+      popularRestaurants.value = parsed.take(5).toList();
+      hasData = true;
+      print('📦 Loaded ${parsed.length} restaurants from cache');
+    }
+
+    // Menu items
+    final cachedMenuItems = CacheService.getMenuItems();
+    if (cachedMenuItems != null && cachedMenuItems.isNotEmpty) {
+      final parsed = cachedMenuItems
+          .map((json) => MenuItem.fromJson(json))
+          .toList();
+      allMenuItems.value = parsed;
+      menuItems.value = parsed;
+      hasData = true;
+      print('📦 Loaded ${parsed.length} menu items from cache');
+    }
+
+    // Featured items with promotions
+    final cachedFeatured = CacheService.getFeaturedItems();
+    if (cachedFeatured != null && cachedFeatured.isNotEmpty) {
+      final parsed = cachedFeatured
+          .map((json) => MenuItem.fromJson(json))
+          .toList();
+      featuredItemsWithPromotions.value = parsed;
+      hasData = true;
+      print('📦 Loaded ${parsed.length} featured items from cache');
+    }
+
+    return hasData;
+  }
+
+  /// Sync data from API in BACKGROUND (fire-and-forget, non-blocking)
+  Future<void> _syncDataInBackground() async {
     try {
-      await Future.wait([
-        getRestaurants(showLoading: shouldShowLoading),
-        getMenuItems(showLoading: shouldShowLoading),
-        getFeaturedItemsWithPromotions(showLoading: shouldShowLoading),
-      ]);
-
-      // Preload data in background (fire-and-forget, non-blocking)
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        preloadPopularRestaurantsDetails();
-        preloadPopularMenuItems();
-        final categoryController = Get.find<CategoryController>();
-        categoryController.preloadPopularCategories();
+      // Run all syncs in parallel but don't await them
+      // This ensures the splash screen loads instantly
+      Future.wait([
+        _syncRestaurants(),
+        _syncMenuItems(),
+        _syncFeaturedItems(),
+      ]).then((_) {
+        // Clear loading flag after background sync completes
+        isInitialLoading.value = false;
+        
+        // Preload extra data after main sync completes
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          preloadPopularRestaurantsDetails();
+          preloadPopularMenuItems();
+          if (Get.isRegistered<CategoryController>()) {
+            final categoryController = Get.find<CategoryController>();
+            categoryController.preloadPopularCategories();
+          }
+        });
+        _storage.write(_hasLoadedDataKey, true);
+      }).catchError((e) {
+        // Also clear loading flag on error so UI can show content
+        isInitialLoading.value = false;
+        print('❌ Background sync error: $e');
       });
-
-      if (shouldShowLoading) {
-        await _storage.write(_hasLoadedDataKey, true);
-      }
-    } finally {
+    } catch (e) {
+      // Clear loading flag on setup error
       isInitialLoading.value = false;
+      print('❌ Background sync setup error: $e');
+    }
+  }
+
+  /// Fetch restaurants from API and update cache + reactive lists.
+  Future<void> _syncRestaurants() async {
+    try {
+      final response = await _apiService.get('restaurants/restaurants/');
+      List<dynamic> restaurantsList = [];
+
+      if (response is List) {
+        restaurantsList = response;
+      } else if (response is Map) {
+        restaurantsList = response['results'] ?? response['data'] ?? [];
+      }
+
+      final newRestaurants = restaurantsList
+          .map(
+            (json) => RestaurantProfile.fromJson(json as Map<String, dynamic>),
+          )
+          .toList();
+
+      // Update reactive lists (Obx widgets rebuild automatically)
+      restaurants.value = newRestaurants;
+      popularRestaurants.value = newRestaurants.take(5).toList();
+
+      // Persist to cache
+      final jsonList = newRestaurants.map((r) => r.toJson()).toList();
+      await CacheService.saveRestaurants(jsonList);
+      print('✅ Synced ${newRestaurants.length} restaurants from API');
+    } catch (e) {
+      print('❌ Sync restaurants error: $e');
+      // Cache was already loaded — UI still shows data
+    }
+  }
+
+  /// Fetch menu items from API and update cache + reactive lists.
+  Future<void> _syncMenuItems() async {
+    try {
+      final response = await _apiService.get('restaurants/items/');
+      List<dynamic> menuItemsList = [];
+
+      if (response is List) {
+        menuItemsList = response;
+      } else if (response is Map) {
+        menuItemsList = response['results'] ?? response['data'] ?? [];
+      }
+
+      final newList = menuItemsList
+          .map((json) => MenuItem.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      allMenuItems.value = newList;
+      menuItems.value = newList;
+
+      // Persist to cache
+      final jsonList = newList.map((m) => m.toJson()).toList();
+      await CacheService.saveMenuItems(jsonList);
+      print('✅ Synced ${newList.length} menu items from API');
+    } catch (e) {
+      print('❌ Sync menu items error: $e');
+    }
+  }
+
+  /// Fetch featured promo items from API and update cache + reactive lists.
+  Future<void> _syncFeaturedItems() async {
+    try {
+      // Wait for menu items to be synced first if needed
+      if (allMenuItems.isEmpty) {
+        await _syncMenuItems();
+      }
+
+      final featuredItems = allMenuItems.where((item) {
+        return item.hasActivePromotions && item.isAvailable;
+      }).toList();
+
+      featuredItemsWithPromotions.value = featuredItems;
+
+      // Persist to cache
+      final jsonList = featuredItems.map((m) => m.toJson()).toList();
+      await CacheService.saveFeaturedItems(jsonList);
+      print('✅ Synced ${featuredItems.length} featured promo items');
+    } catch (e) {
+      print('❌ Sync featured items error: $e');
     }
   }
 
@@ -102,18 +245,18 @@ class RestaurantController extends GetxController {
   Future<void> onUserLogin(String userId) async {
     final previousSession = _storage.read(_userSessionKey);
 
-    // If this is a new session, show loading indicator
     if (previousSession != userId) {
       await _storage.write(_userSessionKey, userId);
       await _storage.write(_hasLoadedDataKey, false);
+      await CacheService.clearAll();
 
-      // Reload data with loading indicator
+      // Load fresh data with cache-first strategy
       isInitialLoading.value = true;
       try {
         await Future.wait([
-          getRestaurants(showLoading: true),
-          getMenuItems(showLoading: true),
-          getFeaturedItemsWithPromotions(showLoading: true),
+          _syncRestaurants(),
+          _syncMenuItems(),
+          _syncFeaturedItems(),
         ]);
         await _storage.write(_hasLoadedDataKey, true);
       } finally {
@@ -126,8 +269,8 @@ class RestaurantController extends GetxController {
   Future<void> onUserLogout() async {
     await _storage.remove(_userSessionKey);
     await _storage.write(_hasLoadedDataKey, false);
+    await CacheService.clearAll();
 
-    // Clear data
     restaurants.clear();
     popularRestaurants.clear();
     menuItems.clear();
@@ -391,7 +534,7 @@ class RestaurantController extends GetxController {
         menuItemsList = response['results'] ?? [];
       } else if (response is Map) {
         final possibleLists = response.values
-            .where((value) => value is List)
+            .whereType<List>()
             .toList();
         if (possibleLists.isNotEmpty) {
           menuItemsList = possibleLists.first;
@@ -429,7 +572,7 @@ class RestaurantController extends GetxController {
         menuItemsList = response['results'] ?? [];
       } else if (response is Map) {
         final possibleLists = response.values
-            .where((value) => value is List)
+            .whereType<List>()
             .toList();
         if (possibleLists.isNotEmpty) {
           menuItemsList = possibleLists.first;

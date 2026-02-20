@@ -15,15 +15,15 @@ class CategoriesWidget extends StatefulWidget {
 }
 
 class _CategoriesWidgetState extends State<CategoriesWidget>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {  // Add this mixin
   int _selectedCategory = 0;
   final CategoryController categoryController = Get.find();
-  late AnimationController _entranceController;
-  late AnimationController _bounceController;
   late ScrollController _scrollController;
   int _lastCategoryCount = 0;
+  bool _isSnapping = false;
+  late AnimationController _bounceController;  // Add this
 
-  static const double _itemWidth = 88.0;
+  double _itemWidth = 88.0; // computed dynamically in build
   static const double _itemSpacing = 12.0;
   static const double _horizontalPadding = 16.0;
 
@@ -31,23 +31,28 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
-    _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
+    
+    // Initialize the bounce controller
     _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 500),
       vsync: this,
+      duration: const Duration(milliseconds: 300),
+      lowerBound: 0.0,
+      upperBound: 1.0,
     );
-    _entranceController.forward();
+
+    // Center the initially selected category after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients && _lastCategoryCount > 0) {
+        _scrollToCenter(_selectedCategory);
+      }
+    });
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
-    _entranceController.dispose();
-    _bounceController.dispose();
     _scrollController.dispose();
+    _bounceController.dispose();  // Don't forget to dispose
     super.dispose();
   }
 
@@ -75,11 +80,18 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     }
   }
 
+  /// Snap to the nearest category center when scrolling ends
+  void _onScrollEnd() {
+    if (_isSnapping) return; // prevent recursive calls from animateTo
+    if (!_scrollController.hasClients || _lastCategoryCount == 0) return;
+    _isSnapping = true;
+    _scrollToCenter(_selectedCategory);
+  }
+
   void _onCategoryTap(int index, int categoryId, String categoryName) {
     setState(() {
       _selectedCategory = index;
     });
-    _bounceController.forward(from: 0.0);
     _scrollToCenter(index);
 
     // Navigate
@@ -97,15 +109,21 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
         (screenWidth / 2) +
         (_itemWidth / 2) +
         _horizontalPadding;
-    _scrollController.animateTo(
-      targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
-    );
+    _scrollController
+        .animateTo(
+          targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeOutCubic,
+        )
+        .then((_) => _isSnapping = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Compute item width so exactly 3 categories are visible at a time
+    final screenWidth = MediaQuery.of(context).size.width;
+    _itemWidth = (screenWidth - 2 * _horizontalPadding - 2 * _itemSpacing) / 3;
+
     return Obx(() {
       final categories = categoryController.categories;
 
@@ -171,53 +189,34 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
 
                 // Category items
                 Positioned.fill(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: _horizontalPadding,
-                    ),
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      final categoryId = category.id;
-                      final categoryName = category.name;
-                      final imageUrl = category.mapImageUrl();
+                  child: NotificationListener<ScrollEndNotification>(
+                    onNotification: (notification) {
+                      _onScrollEnd();
+                      return false;
+                    },
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: _horizontalPadding,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        final categoryId = category.id;
+                        final categoryName = category.name;
+                        final imageUrl = category.mapImageUrl();
 
-                      // Staggered entrance animation
-                      final entrance = Tween<double>(begin: 0.0, end: 1.0)
-                          .animate(
-                            CurvedAnimation(
-                              parent: _entranceController,
-                              curve: Interval(
-                                (index / categories.length) * 0.4,
-                                0.4 + (index / categories.length) * 0.6,
-                                curve: Curves.easeOutBack,
-                              ),
-                            ),
-                          );
-
-                      return AnimatedBuilder(
-                        animation: entrance,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(0, 30 * (1 - entrance.value)),
-                            child: Opacity(
-                              opacity: entrance.value.clamp(0.0, 1.0),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: _buildCategoryItem(
+                        return _buildCategoryItem(
                           index: index,
                           categoryId: categoryId,
                           categoryName: categoryName,
                           imageUrl: imageUrl ?? '',
                           isLast: index == categories.length - 1,
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -238,8 +237,8 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
     final isSelected = _selectedCategory == index;
 
     // Circle sizes — bigger pop on selected
-    final double circleSize = isSelected ? 100 : 80;
-    final double imageSize = isSelected ? 70 : 50;
+    final double circleSize = isSelected ? _itemWidth * 0.88 : _itemWidth * 0.7;
+    final double imageSize = isSelected ? _itemWidth * 0.6 : _itemWidth * 0.45;
 
     return GestureDetector(
       onTap: () => _onCategoryTap(index, categoryId, categoryName),
@@ -249,14 +248,10 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Animated circle with image — bounce scale on selection
-            AnimatedScale(
+            // Circle with image
+            Transform.scale(
               scale: isSelected ? 1.0 : 0.88,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutBack,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeOutBack,
+              child: Container(
                 width: circleSize,
                 height: circleSize,
                 decoration: BoxDecoration(
@@ -280,8 +275,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
                   ),
                 ),
                 child: Center(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
+                  child: SizedBox(
                     width: imageSize,
                     height: imageSize,
                     child: ClipOval(
@@ -301,8 +295,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
             const SizedBox(height: 8),
 
             // Category name
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 250),
+            DefaultTextStyle(
               style: TextStyle(
                 fontSize: isSelected ? 13 : 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -320,9 +313,7 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
             const SizedBox(height: 6),
 
             // Selection indicator pill
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
+            Container(
               width: isSelected ? 28 : 0,
               height: 4,
               decoration: BoxDecoration(
@@ -372,39 +363,31 @@ class _CategoriesWidgetState extends State<CategoriesWidget>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: 5,
             itemBuilder: (context, index) {
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.4, end: 1.0),
-                duration: Duration(milliseconds: 800 + (index * 150)),
-                curve: Curves.easeInOut,
-                builder: (context, value, child) {
-                  return Opacity(opacity: value, child: child);
-                },
-                child: Container(
-                  width: 88,
-                  margin: EdgeInsets.only(right: index == 4 ? 0 : 12),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        width: 66,
-                        height: 66,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          shape: BoxShape.circle,
-                        ),
+              return Container(
+                width: _itemWidth,
+                margin: EdgeInsets.only(right: index == 4 ? 0 : 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      width: 66,
+                      height: 66,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 10),
-                      Container(
-                        width: 56,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 56,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ),
               );
             },
