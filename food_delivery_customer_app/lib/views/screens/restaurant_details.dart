@@ -683,22 +683,25 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           fit: StackFit.expand,
           children: [
             restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty
-                ? Image.network(
-                    restaurant.imageUrl!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 250,
-                    errorBuilder: (context, error, stack) {
-                      debugPrint('❌ Restaurant image load error: $error');
-                      return Container(
-                        color: Colors.grey[300],
-                        child: Icon(
-                          Icons.restaurant,
-                          color: Colors.grey[500],
-                          size: 80,
-                        ),
-                      );
-                    },
+                ? Hero(
+                    tag: 'restaurant_image_${restaurant.id}',
+                    child: Image.network(
+                      restaurant.imageUrl!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 250,
+                      errorBuilder: (context, error, stack) {
+                        debugPrint('❌ Restaurant image load error: $error');
+                        return Container(
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.restaurant,
+                            color: Colors.grey[500],
+                            size: 80,
+                          ),
+                        );
+                      },
+                    ),
                   )
                 : Container(
                     color: Colors.grey[300],
