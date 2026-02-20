@@ -194,12 +194,26 @@ class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerPr
                         final categoryName = category.name;
                         final imageUrl = category.mapImageUrl();
 
-                        return _buildCategoryItem(
-                          index: index,
-                          categoryId: categoryId,
-                          categoryName: categoryName,
-                          imageUrl: imageUrl ?? '',
-                          isLast: index == categories.length - 1,
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: Duration(milliseconds: 300 + (index * 50)),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 20 * (1 - value)),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: _buildCategoryItem(
+                            index: index,
+                            categoryId: categoryId,
+                            categoryName: categoryName,
+                            imageUrl: imageUrl ?? '',
+                            isLast: index == categories.length - 1,
+                          ),
                         );
                       },
                     ),

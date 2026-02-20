@@ -137,13 +137,26 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
               final cardWidth = (MediaQuery.of(context).size.width * 0.42)
                   .clamp(160.0, 200.0);
 
-              return GestureDetector(
-                onTap: () {
-                  Get.to(
-                    () => RestaurantDetailPage(restaurantId: restaurant.id),
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 400 + (index * 80)),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(30 * (1 - value), 0),
+                      child: child,
+                    ),
                   );
                 },
-                child: Container(
+                child: GestureDetector(
+                  onTap: () {
+                    Get.to(
+                      () => RestaurantDetailPage(restaurantId: restaurant.id),
+                    );
+                  },
+                  child: Container(
                   width: cardWidth,
                   margin: EdgeInsets.only(
                     right: index == popularRestaurants.length - 1 ? 0 : 14,
@@ -187,13 +200,19 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                                       ),
                                       child: (restaurant.imageUrl != null &&
                                               restaurant.imageUrl!.isNotEmpty)
-                                          ? Image.network(
-                                              restaurant.imageUrl!,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) =>
-                                                  _buildPlaceholderImage(),
+                                          ? Hero(
+                                              tag: 'restaurant_image_${restaurant.id}',
+                                              child: Image.network(
+                                                restaurant.imageUrl!,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) =>
+                                                    _buildPlaceholderImage(),
+                                              ),
                                             )
-                                          : _buildPlaceholderImage(),
+                                          : Hero(
+                                              tag: 'restaurant_image_${restaurant.id}',
+                                              child: _buildPlaceholderImage(),
+                                            ),
                                     ),
                                   ),
                                   // Subtle gradient overlay for badges
