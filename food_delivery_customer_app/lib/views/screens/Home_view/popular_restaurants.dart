@@ -362,26 +362,26 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                               ],
                             ),
                             child: ClipOval(
-                              child: (restaurant.logoUrl != null &&
-                                      restaurant.logoUrl!.isNotEmpty)
-                                  ? (() {
-                                      debugPrint('🏪 Restaurant logo: ${restaurant.restaurantName} -> ${restaurant.logoUrl}');
-                                      return CachedImage(
-                                        imageUrl: restaurant.logoUrl,
-                                        width: 56,
-                                        height: 56,
-                                        borderRadius: 28,
-                                        placeholderIcon: Icons.restaurant,
-                                      );
-                                    })()
-                                  : (() {
-                                      debugPrint('🏪 Restaurant NO logo: ${restaurant.restaurantName}');
-                                      return Icon(
-                                        Icons.restaurant_rounded,
-                                        color: TColor.primary,
-                                        size: 26,
-                                      );
-                                    })(),
+                              child: restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty
+                                  ? Image.network(
+                                      restaurant.logoUrl!,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stack) {
+                                        debugPrint('❌ Logo load error for ${restaurant.restaurantName}: $error');
+                                        return Icon(
+                                          Icons.restaurant_rounded,
+                                          color: TColor.primary,
+                                          size: 26,
+                                        );
+                                      },
+                                    )
+                                  : Icon(
+                                      Icons.restaurant_rounded,
+                                      color: TColor.primary,
+                                      size: 26,
+                                    ),
                             ),
                           ),
                         ),
