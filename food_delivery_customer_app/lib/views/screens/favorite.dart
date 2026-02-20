@@ -24,11 +24,21 @@ class _OrdersPageState extends State<OrdersPage>
   final CartController _cartController = Get.find<CartController>();
 
   late TabController _tabController;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _animationController.forward();
 
     // Load orders when page initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -40,6 +50,7 @@ class _OrdersPageState extends State<OrdersPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
