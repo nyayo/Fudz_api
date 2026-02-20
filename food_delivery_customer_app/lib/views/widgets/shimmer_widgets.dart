@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:food_delivery_customer_app/constants/colors.dart';
 
 class AppShimmer extends StatelessWidget {
   final Widget child;

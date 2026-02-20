@@ -5,9 +5,9 @@ import 'package:food_delivery_customer_app/controller/restaurant_controller.dart
 import 'package:food_delivery_customer_app/controller/review_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
-import 'package:food_delivery_customer_app/models/promo.dart';
 import 'package:food_delivery_customer_app/models/restaurant.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
+import 'package:food_delivery_customer_app/views/screens/Home_view/promo.dart';
 
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
 
@@ -378,21 +378,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
       return SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
           final menuItem = _filteredMenuItems[index];
-          return TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 400 + (index % 8) * 80),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 20 * (1 - value)),
-                  child: child,
-                ),
-              );
-            },
-            child: _buildMenuItemCard(menuItem),
-          );
+          return _buildMenuItemCard(menuItem);
         }, childCount: _filteredMenuItems.length),
       );
     });
@@ -775,20 +761,25 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.amber.withOpacity(0.3)),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.star, color: Colors.amber, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        (restaurant.avgRating ?? restaurant.rating)
-                            .toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                  child: Obx(() {
+                    final calcRating = _reviewController.averageRating;
+                    final displayRating = calcRating > 0
+                        ? calcRating
+                        : (restaurant.avgRating ?? restaurant.rating);
+                    return Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          displayRating.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  }),
                 ),
                 const SizedBox(width: 12),
                 Container(
@@ -831,9 +822,11 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               ],
             ),
             const SizedBox(height: 20),
-            // Show promotion banner if restaurant has active promotions,
-            // otherwise show nothing (stats/address removed)
-            ..._buildPromotionBanners(restaurant),
+            // Show promotion banner if restaurant has active promotions
+            if (_getRestaurantPromoItems().isNotEmpty)
+              PromoBannerWidget(
+                featuredItemsWithPromotions: _getRestaurantPromoItems(),
+              ),
           ],
         ),
       ),
@@ -889,7 +882,11 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                   ),
                   TextButton.icon(
                     onPressed: () => _showRatingDialog(restaurant.id),
-                    icon: Icon(Icons.rate_review, size: 18, color: TColor.primary),
+                    icon: Icon(
+                      Icons.rate_review,
+                      size: 18,
+                      color: TColor.primary,
+                    ),
                     label: Text(
                       'Rate',
                       style: TextStyle(
@@ -928,9 +925,10 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                               return Icon(
                                 index < rating.floor()
                                     ? Icons.star
-                                    : (index < rating.ceil() && rating % 1 >= 0.5)
-                                        ? Icons.star_half
-                                        : Icons.star_border,
+                                    : (index < rating.ceil() &&
+                                          rating % 1 >= 0.5)
+                                    ? Icons.star_half
+                                    : Icons.star_border,
                                 color: Colors.amber,
                                 size: 16,
                               );
@@ -952,8 +950,12 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                         child: Column(
                           children: List.generate(5, (index) {
                             final star = 5 - index;
-                            final count = reviews.where((r) => r.rating == star).length;
-                            final percent = reviews.isNotEmpty ? count / reviews.length : 0.0;
+                            final count = reviews
+                                .where((r) => r.rating == star)
+                                .length;
+                            final percent = reviews.isNotEmpty
+                                ? count / reviews.length
+                                : 0.0;
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 2),
                               child: Row(
@@ -966,7 +968,11 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.star, size: 12, color: Colors.amber),
+                                  const Icon(
+                                    Icons.star,
+                                    size: 12,
+                                    color: Colors.amber,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: ClipRRect(
@@ -974,7 +980,10 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                                       child: LinearProgressIndicator(
                                         value: percent,
                                         backgroundColor: Colors.grey[200],
-                                        valueColor: const AlwaysStoppedAnimation(Colors.amber),
+                                        valueColor:
+                                            const AlwaysStoppedAnimation(
+                                              Colors.amber,
+                                            ),
                                         minHeight: 6,
                                       ),
                                     ),
@@ -1018,16 +1027,26 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.rate_review_outlined, size: 40, color: Colors.grey[400]),
+                        Icon(
+                          Icons.rate_review_outlined,
+                          size: 40,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           'No reviews yet',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Be the first to rate this restaurant!',
-                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -1058,40 +1077,18 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: TColor.primary.withOpacity(0.1),
-                    child: Text(
-                      review.customerName.isNotEmpty
-                          ? review.customerName[0].toUpperCase()
-                          : '?',
-                      style: TextStyle(
-                        color: TColor.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    review.customerName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
                 children: List.generate(
                   5,
                   (index) => Icon(
                     index < review.rating ? Icons.star : Icons.star_border,
                     color: Colors.amber,
-                    size: 14,
+                    size: 16,
                   ),
                 ),
+              ),
+              Text(
+                _formatDate(review.createdAt),
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
               ),
             ],
           ),
@@ -1108,14 +1105,6 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          const SizedBox(height: 6),
-          Text(
-            _formatDate(review.createdAt),
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 11,
-            ),
-          ),
         ],
       ),
     );
@@ -1282,136 +1271,25 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
 
   String _getRatingLabel(int rating) {
     switch (rating) {
-      case 1: return 'Poor';
-      case 2: return 'Fair';
-      case 3: return 'Good';
-      case 4: return 'Very Good';
-      case 5: return 'Excellent';
-      default: return '';
+      case 1:
+        return 'Poor';
+      case 2:
+        return 'Fair';
+      case 3:
+        return 'Good';
+      case 4:
+        return 'Very Good';
+      case 5:
+        return 'Excellent';
+      default:
+        return '';
     }
   }
 
-  List<Widget> _buildPromotionBanners(RestaurantProfile restaurant) {
-    if (restaurant.promotions == null || restaurant.promotions!.isEmpty) {
-      return [];
-    }
-
-    final activePromos = restaurant.promotions!
-        .map((p) => p is Map<String, dynamic> ? Promotion.fromJson(p) : null)
-        .where((p) => p != null && p.isCurrentlyActive)
-        .cast<Promotion>()
-        .toList();
-
-    if (activePromos.isEmpty) return [];
-
-    return activePromos.map((promo) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              TColor.primary,
-              TColor.primary.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: TColor.primary.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Background pattern
-            Positioned(
-              right: -20,
-              top: -20,
-              child: Icon(
-                Icons.local_offer,
-                size: 100,
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        promo.formattedDiscount,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          promo.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          promo.description,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 13,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'SAVE ${promo.formattedDiscount}',
-                      style: TextStyle(
-                        color: TColor.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+  /// Get menu items from this restaurant that have active promotions.
+  List<MenuItem> _getRestaurantPromoItems() {
+    return _restaurantMenuItems.where((item) {
+      return item.hasActivePromotions && item.isAvailable;
     }).toList();
   }
 

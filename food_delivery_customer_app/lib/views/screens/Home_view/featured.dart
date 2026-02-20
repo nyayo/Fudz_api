@@ -16,10 +16,7 @@ class MenuItemsWidget extends StatefulWidget {
   State<MenuItemsWidget> createState() => _MenuItemsWidgetState();
 }
 
-class _MenuItemsWidgetState extends State<MenuItemsWidget>
-    with TickerProviderStateMixin {
-  late AnimationController _entranceController;
-  late AnimationController _titleController;
+class _MenuItemsWidgetState extends State<MenuItemsWidget> {
   late ScrollController _scrollController;
 
   /// Cache of dominant colors extracted from menu item images, keyed by image URL.
@@ -39,22 +36,10 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 1400),
-      vsync: this,
-    );
-    _titleController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _titleController.forward();
-    _entranceController.forward();
   }
 
   @override
   void dispose() {
-    _entranceController.dispose();
-    _titleController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -110,92 +95,76 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Animated title
-        SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(-0.3, 0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(
-                  parent: _titleController,
-                  curve: Curves.easeOutCubic,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            TColor.primary,
+                            TColor.primary.withAlpha(150),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Popular Menu Items',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: TColor.primaryText,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-          child: FadeTransition(
-            opacity: _titleController,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                TColor.primary,
-                                TColor.primary.withAlpha(150),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Popular Menu Items',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: TColor.primaryText,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
+              GestureDetector(
+                onTap: () => Get.to(() => AllMenuItemsPage()),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
                   ),
-                  GestureDetector(
-                    onTap: () => Get.to(() => AllMenuItemsPage()),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: TColor.primary.withAlpha(20),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'See all',
-                            style: TextStyle(
-                              color: TColor.primary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: TColor.primary,
-                            size: 16,
-                          ),
-                        ],
-                      ),
-                    ),
+                  decoration: BoxDecoration(
+                    color: TColor.primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'See all',
+                        style: TextStyle(
+                          color: TColor.primary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: TColor.primary,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -245,12 +214,14 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
   }
 
   String _resolveImageUrl(dynamic item) {
-    if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+    if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
       return item.imageUrl!;
+    }
     if (item.images != null &&
         item.images.isNotEmpty &&
-        item.images.first.imageUrl.isNotEmpty)
+        item.images.first.imageUrl.isNotEmpty) {
       return item.images.first.imageUrl;
+    }
     if (item.image != null && item.image.isNotEmpty) return item.image;
     return '';
   }
@@ -262,35 +233,12 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
     UserController userController,
     WishlistController wishlistController,
   ) {
-    // Staggered pop-in entrance
-    final delay = (index * 0.1).clamp(0.0, 0.5);
-    final popAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: Interval(
-          delay,
-          (delay + 0.5).clamp(0, 1),
-          curve: Curves.elasticOut,
-        ),
-      ),
-    );
-
-    return AnimatedBuilder(
-      animation: popAnim,
-      builder: (context, child) {
-        final scale = 0.3 + (0.7 * popAnim.value.clamp(0.0, 1.0));
-        return Transform.scale(
-          scale: scale,
-          child: Opacity(opacity: popAnim.value.clamp(0.0, 1.0), child: child),
-        );
-      },
-      child: _buildBlobCard(
-        index,
-        item,
-        cartController,
-        userController,
-        wishlistController,
-      ),
+    return _buildBlobCard(
+      index,
+      item,
+      cartController,
+      userController,
+      wishlistController,
     );
   }
 
@@ -324,9 +272,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
               left: 0,
               right: 0,
               bottom: 0,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeOutCubic,
+              child: Container(
                 decoration: BoxDecoration(
                   color: accentColor,
                   borderRadius: BorderRadius.circular(24),
@@ -422,9 +368,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
                                     );
                                   } catch (_) {}
                                 },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
+                          child: Container(
                             height: 32,
                             decoration: BoxDecoration(
                               gradient: isInCart
@@ -500,9 +444,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
             Positioned(
               top: 0,
               left: 160 / 2 - 48,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeOutCubic,
+              child: Container(
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
@@ -658,45 +600,37 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget>
         padding: const EdgeInsets.only(left: 4, bottom: 8),
         itemCount: 4,
         itemBuilder: (context, index) {
-          return TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.4, end: 1.0),
-            duration: Duration(milliseconds: 700 + (index * 180)),
-            curve: Curves.easeInOut,
-            builder: (context, value, child) {
-              return Opacity(opacity: value, child: child);
-            },
-            child: Container(
-              width: 160,
-              margin: const EdgeInsets.only(right: 16),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned(
-                    top: 50,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(24),
-                      ),
+          return Container(
+            width: 160,
+            margin: const EdgeInsets.only(right: 16),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  top: 50,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  Positioned(
-                    top: 0,
-                    left: 160 / 2 - 48,
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey[200],
-                      ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 160 / 2 - 48,
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.grey[200],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

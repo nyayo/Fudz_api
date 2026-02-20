@@ -155,8 +155,9 @@ class LocationController extends GetxController {
   }
 
   Future<void> calculateDeliveryRoute() async {
-    if (_currentLocation.value == null || _selectedLocation.value == null)
+    if (_currentLocation.value == null || _selectedLocation.value == null) {
       return;
+    }
 
     try {
       isLoading.value = true;

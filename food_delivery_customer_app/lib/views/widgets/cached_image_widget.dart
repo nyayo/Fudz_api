@@ -34,11 +34,10 @@ class CachedImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
-        placeholder: (context, url) => showLoader 
-            ? _buildLoader() 
-            : _buildPlaceholder(isSubtle: true),
+        placeholder: (context, url) =>
+            showLoader ? _buildLoader() : _buildPlaceholder(isSubtle: true),
         errorWidget: (context, url, error) => _buildPlaceholder(),
-        fadeInDuration: const Duration(milliseconds: 300),
+        fadeInDuration: Duration.zero,
         // Use a 30-day cache duration for images
         cacheKey: imageUrl,
         maxWidthDiskCache: 1000,
@@ -74,9 +73,7 @@ class CachedImage extends StatelessWidget {
         child: SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
     );

@@ -328,7 +328,7 @@ class WishlistPage extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            '${menuItem.activePromotions.first.formattedDiscount}',
+                            menuItem.activePromotions.first.formattedDiscount,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -440,19 +440,28 @@ class WishlistPage extends StatelessWidget {
 
                               if (isInCart) {
                                 // Show quantity counter
-                                final quantity = _cartController.getItemQuantity(menuItem.id);
-                                final cartItemId = _cartController.getCartItemId(menuItem.id);
-                                final isUpdating = _cartController.isItemProcessing('${cartItemId}_update');
+                                final quantity = _cartController
+                                    .getItemQuantity(menuItem.id);
+                                final cartItemId = _cartController
+                                    .getCartItemId(menuItem.id);
+                                final isUpdating = _cartController
+                                    .isItemProcessing('${cartItemId}_update');
 
                                 return Container(
                                   decoration: BoxDecoration(
                                     color: TColor.primary.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(25),
-                                    border: Border.all(color: TColor.primary.withOpacity(0.3)),
+                                    border: Border.all(
+                                      color: TColor.primary.withOpacity(0.3),
+                                    ),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       // Decrease / Remove button
                                       SizedBox(
@@ -461,19 +470,29 @@ class WishlistPage extends StatelessWidget {
                                         child: IconButton(
                                           padding: EdgeInsets.zero,
                                           icon: Icon(
-                                            quantity <= 1 ? Icons.delete_outline : Icons.remove,
-                                            color: quantity <= 1 ? Colors.red : TColor.primary,
+                                            quantity <= 1
+                                                ? Icons.delete_outline
+                                                : Icons.remove,
+                                            color: quantity <= 1
+                                                ? Colors.red
+                                                : TColor.primary,
                                             size: 18,
                                           ),
-                                          onPressed: isUpdating ? null : () {
-                                            if (cartItemId != null) {
-                                              _cartController.updateQuantity(
-                                                itemId: cartItemId,
-                                                quantity: quantity - 1,
-                                                accessToken: _userController.accessToken,
-                                              );
-                                            }
-                                          },
+                                          onPressed: isUpdating
+                                              ? null
+                                              : () {
+                                                  if (cartItemId != null) {
+                                                    _cartController
+                                                        .updateQuantity(
+                                                          itemId: cartItemId,
+                                                          quantity:
+                                                              quantity - 1,
+                                                          accessToken:
+                                                              _userController
+                                                                  .accessToken,
+                                                        );
+                                                  }
+                                                },
                                         ),
                                       ),
                                       // Quantity display
@@ -504,15 +523,21 @@ class WishlistPage extends StatelessWidget {
                                             color: TColor.primary,
                                             size: 18,
                                           ),
-                                          onPressed: isUpdating ? null : () {
-                                            if (cartItemId != null) {
-                                              _cartController.updateQuantity(
-                                                itemId: cartItemId,
-                                                quantity: quantity + 1,
-                                                accessToken: _userController.accessToken,
-                                              );
-                                            }
-                                          },
+                                          onPressed: isUpdating
+                                              ? null
+                                              : () {
+                                                  if (cartItemId != null) {
+                                                    _cartController
+                                                        .updateQuantity(
+                                                          itemId: cartItemId,
+                                                          quantity:
+                                                              quantity + 1,
+                                                          accessToken:
+                                                              _userController
+                                                                  .accessToken,
+                                                        );
+                                                  }
+                                                },
                                         ),
                                       ),
                                     ],

@@ -34,6 +34,9 @@ class UserController extends GetxController {
   final RxBool isRefreshingToken = false.obs;
   final RxString error = ''.obs;
 
+  // Guard against duplicate service initialization
+  bool _servicesInitialized = false;
+
   // Reactive access token
   final RxString _accessToken = ''.obs;
 
@@ -44,10 +47,10 @@ class UserController extends GetxController {
     if (Get.isRegistered<ErrorLoggerService>()) {
       _errorLogger = Get.find<ErrorLoggerService>();
     }
-    // Initialize token immediately and check auth
+    // Only sync token from storage on init.
+    // checkAuthStatus() is called by SplashScreen to avoid duplicate work.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await syncTokenFromStorage();
-      await checkAuthStatus();
     });
   }
 
@@ -112,7 +115,7 @@ class UserController extends GetxController {
 
       // CRITICAL FIX: If we have token, also get user data
       if (_accessToken.value.isNotEmpty) {
-        final cachedUser = await _tokenService.getUserData();
+        final cachedUser = _tokenService.getUserData();
         if (cachedUser != null) {
           _user.value = cachedUser;
         }
@@ -139,7 +142,8 @@ class UserController extends GetxController {
       print('🔐 Starting Google authentication process...');
 
       // Get Google user account
-      final GoogleSignInAccount? googleUser = await _googleSignInService.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignInService
+          .signIn();
       if (googleUser == null) {
         _errorLogger?.logAuthWarning('Google Sign-in cancelled by user');
         _showSafeSnackbar('Sign-In Cancelled', 'Google Sign-In was cancelled');
@@ -179,7 +183,7 @@ class UserController extends GetxController {
       };
 
       print('📤 Sending to backend: ${authDataForBackend.keys}');
-      
+
       _errorLogger?.logAuthInfo(
         'Sending Google auth data to backend',
         metadata: {
@@ -197,7 +201,8 @@ class UserController extends GetxController {
       // Store Google user data for later use if registration is needed
       final googleUserData = {
         'access_token': googleAuth.accessToken!,
-        'id_token': googleAuth.idToken, // Keep for potential secondary verification
+        'id_token':
+            googleAuth.idToken, // Keep for potential secondary verification
         'user_type': 'customer',
         'email': googleUser.email,
         'first_name': firstName,
@@ -311,8 +316,8 @@ class UserController extends GetxController {
           'access': response['access'] ?? response['access_token'],
           'refresh': response['refresh'] ?? response['refresh_token'],
         };
-      } else      tokens = Map<String, dynamic>.from(response);
-    
+      } else
+        tokens = Map<String, dynamic>.from(response);
 
       if (tokens['access'] == null) {
         throw Exception('No access token received from server');
@@ -368,9 +373,9 @@ class UserController extends GetxController {
 
       // FIXED: Only treat as error if we have error indicators AND no tokens
       // Backend may send 'message' field with success messages like "Login successful."
-      bool hasError = !hasTokens &&
-          (response.containsKey('detail') ||
-          response.containsKey('error'));
+      bool hasError =
+          !hasTokens &&
+          (response.containsKey('detail') || response.containsKey('error'));
 
       print(
         'Analysis - hasTokens: $hasTokens, needsRegistration: $needsRegistration, hasError: $hasError',
@@ -379,16 +384,14 @@ class UserController extends GetxController {
       if (hasError) {
         // Handle error response
         final errorMessage =
-            response['detail'] ??
-            response['error'] ??
-            'Authentication failed';
-        
+            response['detail'] ?? response['error'] ?? 'Authentication failed';
+
         _errorLogger?.logBackendError(
           message: 'Backend returned error during Google auth',
           endpoint: 'users/auth/google/',
           responseBody: errorMessage,
         );
-        
+
         throw Exception(errorMessage);
       } else if (hasTokens) {
         // SUCCESS: User authenticated successfully (existing or newly registered)
@@ -400,7 +403,8 @@ class UserController extends GetxController {
         if (response.containsKey('tokens') && response['tokens'] is Map) {
           final tokensMap = Map<String, dynamic>.from(response['tokens']);
           tokens['access'] = tokensMap['access'] ?? tokensMap['access_token'];
-          tokens['refresh'] = tokensMap['refresh'] ?? tokensMap['refresh_token'];
+          tokens['refresh'] =
+              tokensMap['refresh'] ?? tokensMap['refresh_token'];
         } else {
           if (response.containsKey('access_token')) {
             tokens['access'] = response['access_token'];
@@ -470,7 +474,7 @@ class UserController extends GetxController {
       }
     } catch (e) {
       print('❌ Error handling Google auth response: $e');
-      throw e; // Re-throw to be handled by calling method
+      rethrow; // Re-throw to be handled by calling method
     }
   }
 
@@ -647,7 +651,7 @@ class UserController extends GetxController {
       await _initializeToken();
 
       // Then get cached user
-      final cachedUser = await _tokenService.getUserData();
+      final cachedUser = _tokenService.getUserData();
       if (cachedUser != null) {
         _user.value = cachedUser;
         print('✅ User loaded from cache: ${_user.value?.email}');
@@ -839,22 +843,18 @@ class UserController extends GetxController {
   }
 
   Future<void> _initializeUserServices() async {
+    // Prevent duplicate initialization
+    if (_servicesInitialized) {
+      print('⏭️ User services already initialized, skipping');
+      return;
+    }
+
     try {
       // CRITICAL FIX: First ensure token is synced
       await syncTokenFromStorage();
 
       if (!isLoggedIn) {
         print('❌ Cannot initialize services: User not logged in');
-
-        // Debug info
-        final tokenFromStorage = GetStorage().read(TokenService.accessTokenKey);
-        print(
-          '🔍 Storage token: ${tokenFromStorage != null ? "exists" : "null"}',
-        );
-        print(
-          '🔍 Reactive token: ${_accessToken.value.isNotEmpty ? "exists" : "empty"}',
-        );
-
         return;
       }
 
@@ -865,36 +865,54 @@ class UserController extends GetxController {
       }
 
       final userId = _user.value?.id.toString() ?? '';
-      if (userId.isEmpty) {
-        print('⚠️ No user ID available for restaurant controller');
-      }
-
       print('🔄 Initializing all user services...');
-      print('🔐 Using token: ${token.substring(0, 20)}...');
 
-      // Initialize RestaurantController with user login
-      final restaurantController = Get.find<RestaurantController>();
+      // Run all service initializations in PARALLEL for speed
+      final futures = <Future>[];
+
+      // Cart
+      final cartController = Get.find<CartController>();
+      futures.add(
+        cartController.initializeCart(accessToken: token).catchError((e) {
+          print('⚠️ Cart init error: $e');
+        }),
+      );
+
+      // Wishlist
+      final wishlistController = Get.find<WishlistController>();
+      futures.add(
+        wishlistController.loadWishlist(token).catchError((e) {
+          print('⚠️ Wishlist init error: $e');
+        }),
+      );
+
+      // Orders
+      final orderController = Get.find<OrderController>();
+      futures.add(
+        orderController.initializeOrders(accessToken: token).catchError((e) {
+          print('⚠️ Orders init error: $e');
+        }),
+      );
+
+      // Restaurant user login (only if different session)
       if (userId.isNotEmpty) {
-        await restaurantController.onUserLogin(userId);
+        final restaurantController = Get.find<RestaurantController>();
+        futures.add(
+          restaurantController.onUserLogin(userId).catchError((e) {
+            print('⚠️ Restaurant login error: $e');
+          }),
+        );
       }
 
-      // Initialize Cart
-      final cartController = Get.find<CartController>();
-      print('🛒 Initializing cart...');
-      await cartController.initializeCart(accessToken: token);
+      // Wait for all in parallel
+      await Future.wait(futures);
 
-      // Initialize Wishlist
-      final wishlistController = Get.find<WishlistController>();
-      print('❤️ Initializing wishlist...');
-      await wishlistController.loadWishlist(token);
+      // Notifications setup (non-critical, fire-and-forget)
+      _setupNotificationTopics().catchError((e) {
+        print('⚠️ Notification setup error: $e');
+      });
 
-      // Initialize Order Controller
-      final orderController = Get.find<OrderController>();
-      await orderController.initializeOrders(accessToken: token);
-
-      // Setup notification topics based on user preferences
-      await _setupNotificationTopics();
-
+      _servicesInitialized = true;
       print('✅ All user services initialized successfully');
     } catch (e) {
       print('⚠️ Error initializing user services: $e');
@@ -914,7 +932,7 @@ class UserController extends GetxController {
         await notificationService.subscribeToTopic('user_${_user.value!.id}');
         await notificationService.subscribeToTopic('customer_notifications');
       }
-      
+
       print('✅ Notification topics and device token registered successfully');
     } catch (e) {
       print('❌ Error setting up notification topics: $e');
@@ -941,8 +959,8 @@ class UserController extends GetxController {
           }
         }
 
-        // CRITICAL FIX: Try to get user data directly
-        final cachedUser = await _tokenService.getUserData();
+        // Load user data from cache (fast, no network)
+        final cachedUser = _tokenService.getUserData();
         if (cachedUser != null) {
           _user.value = cachedUser;
           print('✅ User loaded from cache: ${_user.value?.email}');
@@ -956,10 +974,9 @@ class UserController extends GetxController {
           }
         }
 
-        // CRITICAL FIX: Initialize services after auth check
-        if (isLoggedIn) {
-          await _initializeUserServices();
-        }
+        // NOTE: _initializeUserServices() is NOT called here to avoid
+        // duplicate initialization. It is called by SplashScreen and
+        // HomePage separately.
       } else {
         print('❌ No valid token found');
       }
@@ -997,7 +1014,7 @@ class UserController extends GetxController {
       }
 
       if (fromCache) {
-        final cachedUser = await _tokenService.getUserData();
+        final cachedUser = _tokenService.getUserData();
         if (cachedUser != null) {
           _user.value = cachedUser;
           return;
@@ -1155,6 +1172,7 @@ class UserController extends GetxController {
     _accessToken.value = '';
     _tokenService.clearTokens();
     error.value = '';
+    _servicesInitialized = false; // Reset service init guard on logout
   }
 
   Future<bool> needsReauthentication() async {
@@ -1162,6 +1180,46 @@ class UserController extends GetxController {
 
     final isExpired = await _tokenService.isAccessTokenExpired();
     return isExpired;
+  }
+
+  /// Fast cache-only check for splash screen (non-blocking)
+  void checkAuthStatusFromCache() {
+    try {
+      // Sync token from storage synchronously if needed
+      if (_accessToken.value.isEmpty) {
+        final tokenFromStorage = GetStorage().read(TokenService.accessTokenKey);
+        if (tokenFromStorage != null && tokenFromStorage is String && tokenFromStorage.isNotEmpty) {
+          _accessToken.value = tokenFromStorage;
+        }
+      }
+
+      if (isLoggedIn) {
+        // Load user from cache (fast, no network)
+        final cachedUser = _tokenService.getUserData();
+        if (cachedUser != null) {
+          _user.value = cachedUser;
+        }
+        
+        // Background: refresh token if expired and sync profile
+        _refreshTokenIfNeeded();
+      }
+    } catch (e) {
+      print('❌ Cache auth check error: $e');
+    }
+  }
+
+  /// Background token refresh (fire-and-forget)
+  Future<void> _refreshTokenIfNeeded() async {
+    try {
+      final isExpired = await _tokenService.isAccessTokenExpired();
+      if (isExpired) {
+        refreshAuthToken();
+      }
+      // Also try to refresh profile in background
+      getProfile();
+    } catch (e) {
+      // Silently fail - user can still use cached data
+    }
   }
 
   Future<String?> getAccessTokenAsync() async {

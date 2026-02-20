@@ -354,7 +354,7 @@ class WishlistController extends GetxController {
       }
 
       print(
-        '🛍️ Wishlist loaded successfully. Item count: ${wishlistItemCount}',
+        '🛍️ Wishlist loaded successfully. Item count: $wishlistItemCount',
       );
     } catch (e) {
       error.value = 'Error loading wishlist: $e';

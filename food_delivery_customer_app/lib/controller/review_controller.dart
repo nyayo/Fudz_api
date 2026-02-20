@@ -16,11 +16,14 @@ class ReviewController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      final response = await _apiService.get('reviews/', params: {
-        'restaurant': restaurantId.toString(),
-      });
+      final response = await _apiService.get(
+        'reviews/',
+        params: {'restaurant': restaurantId.toString()},
+      );
 
-      final List<dynamic> data = response is List ? response : (response['results'] ?? []);
+      final List<dynamic> data = response is List
+          ? response
+          : (response['results'] ?? []);
       reviews.value = data.map((json) => Review.fromJson(json)).toList();
 
       // Find current user's review if exists

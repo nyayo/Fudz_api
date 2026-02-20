@@ -29,16 +29,13 @@ class Review {
           ? json['rating']
           : int.tryParse(json['rating'].toString()) ?? 0,
       comment: json['comment']?.toString() ?? '',
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
           DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'restaurant': restaurant,
-      'rating': rating,
-      'comment': comment,
-    };
+    return {'restaurant': restaurant, 'rating': rating, 'comment': comment};
   }
 }

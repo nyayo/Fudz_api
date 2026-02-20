@@ -11,7 +11,6 @@ import 'package:food_delivery_customer_app/views/screens/location_selection.dart
 import 'package:food_delivery_customer_app/views/screens/payment_selection.dart';
 
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 

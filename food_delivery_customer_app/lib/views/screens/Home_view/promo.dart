@@ -7,7 +7,6 @@ import 'package:food_delivery_customer_app/models/promo.dart';
 import 'package:food_delivery_customer_app/views/screens/promotion_detail_screen.dart';
 
 import 'package:get/get.dart';
-import 'package:food_delivery_customer_app/utils/text_styles.dart';
 
 class PromoBannerWidget extends StatefulWidget {
   final List<MenuItem> featuredItemsWithPromotions;
@@ -23,12 +22,10 @@ class PromoBannerWidget extends StatefulWidget {
   State<PromoBannerWidget> createState() => _PromoBannerWidgetState();
 }
 
-class _PromoBannerWidgetState extends State<PromoBannerWidget>
-    with SingleTickerProviderStateMixin {
+class _PromoBannerWidgetState extends State<PromoBannerWidget> {
   int _currentBanner = 0;
   final PageController _pageController = PageController(viewportFraction: 0.92);
   Timer? _timer;
-  late AnimationController _entranceController;
 
   /// Group items by their promotion and return a list of
   /// {promotion, items, bestImage}
@@ -59,11 +56,6 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
   @override
   void initState() {
     super.initState();
-    _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 900),
-      vsync: this,
-    );
-    _entranceController.forward();
     if (groupedPromotions.isNotEmpty) {
       _startAutoScroll();
     }
@@ -84,7 +76,6 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
-    _entranceController.dispose();
     super.dispose();
   }
 
@@ -117,10 +108,7 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
     final promotion = promo['promotion'] as Promotion;
     final items = promo['items'] as List<MenuItem>;
 
-    Get.to(
-      () => PromotionDetailScreen(promotion: promotion, items: items),
-      transition: Transition.cupertino,
-    );
+    Get.to(() => PromotionDetailScreen(promotion: promotion, items: items));
   }
 
   @override
@@ -131,283 +119,225 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget>
       return const SizedBox.shrink();
     }
 
-    return FadeTransition(
-      opacity: CurvedAnimation(
-        parent: _entranceController,
-        curve: Curves.easeOut,
-      ),
-      child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
-            .animate(
-              CurvedAnimation(
-                parent: _entranceController,
-                curve: Curves.easeOutCubic,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12, left: 10, right: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section title
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12, left: 10, right: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Hot Deals',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: TColor.primaryText,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.local_fire_department_rounded,
-                    color: Colors.deepOrange,
-                    size: 22,
-                  ),
-                ],
+              const SizedBox(width: 8),
+              Text(
+                'Hot Deals',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: TColor.primaryText,
+                  letterSpacing: -0.3,
+                ),
               ),
-            ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.local_fire_department_rounded,
+                color: Colors.deepOrange,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
 
-            SizedBox(
-              height: 180,
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: promos.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentBanner = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final promo = promos[index];
-                  final promotion = promo['promotion'] as Promotion;
-                  final items = promo['items'] as List<MenuItem>;
-                  final bestImage = promo['bestImage'] as String?;
+        SizedBox(
+          height: 180,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: promos.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentBanner = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final promo = promos[index];
+              final promotion = promo['promotion'] as Promotion;
+              final items = promo['items'] as List<MenuItem>;
+              final bestImage = promo['bestImage'] as String?;
 
-                  return AnimatedBuilder(
-                    animation: _pageController,
-                    builder: (context, child) {
-                      double value = 1.0;
-                      if (_pageController.position.haveDimensions) {
-                        value = (_pageController.page! - index).abs().clamp(
-                          0.0,
-                          1.0,
-                        );
-                      }
-                      final scale = 1.0 - (value * 0.06);
-                      final opacity = 1.0 - (value * 0.3);
-
-                      return Transform.scale(
-                        scale: scale,
-                        child: Opacity(
-                          opacity: opacity.clamp(0.0, 1.0),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: GestureDetector(
-                      onTap: () => _onBannerTap(index),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF363636),
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(70),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(22),
-                          child: Row(
-                            children: [
-                              // Left side - Text content
-                              Expanded(
-                                flex: 3,
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    20,
-                                    18,
-                                    8,
-                                    18,
+              return GestureDetector(
+                onTap: () => _onBannerTap(index),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF363636),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Row(
+                      children: [
+                        // Left side - Text content
+                        Expanded(
+                          flex: 3,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 18, 8, 18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Discount badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Discount badge
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '${promotion.formattedDiscount} OFF',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.3,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${promotion.formattedDiscount} OFF',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
 
-                                      // Promo name
-                                      Text(
-                                        promotion.name,
-                                        style: const TextStyle(
+                                // Promo name
+                                Text(
+                                  promotion.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.2,
+                                    letterSpacing: -0.3,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Items count + view
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.restaurant_menu_rounded,
+                                      color: Colors.white.withAlpha(160),
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${items.length} items',
+                                      style: TextStyle(
+                                        color: Colors.white.withAlpha(160),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(30),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text(
+                                        'View all',
+                                        style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          height: 1.2,
-                                          letterSpacing: -0.3,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
                                         ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 8),
+                                    ),
+                                  ],
+                                ),
 
-                                      // Items count + view
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.restaurant_menu_rounded,
-                                            color: Colors.white.withAlpha(160),
-                                            size: 14,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${items.length} items',
-                                            style: TextStyle(
-                                              color: Colors.white.withAlpha(
-                                                160,
-                                              ),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const Spacer(),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withAlpha(30),
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: const Text(
-                                              'View all',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                // Time remaining
+                                if (promotion.endDate.isAfter(
+                                  DateTime.now(),
+                                )) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.timer_outlined,
+                                        color: Colors.redAccent.withAlpha(200),
+                                        size: 13,
                                       ),
-
-                                      // Time remaining
-                                      if (promotion.endDate.isAfter(
-                                        DateTime.now(),
-                                      )) ...[
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.timer_outlined,
-                                              color: Colors.redAccent.withAlpha(
-                                                200,
-                                              ),
-                                              size: 13,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '${_getDaysRemaining(promotion.endDate)}d left',
-                                              style: TextStyle(
-                                                color: Colors.redAccent
-                                                    .withAlpha(200),
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${_getDaysRemaining(promotion.endDate)}d left',
+                                        style: TextStyle(
+                                          color: Colors.redAccent.withAlpha(
+                                            200,
+                                          ),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
                                         ),
-                                      ],
+                                      ),
                                     ],
                                   ),
-                                ),
-                              ),
-
-                              // Right side - Food image with curved left edge
-                              Expanded(
-                                flex: 2,
-                                child: ClipPath(
-                                  clipper: _LeftCurveClipper(),
-                                  child: _buildPromotionImage(bestImage, items),
-                                ),
-                              ),
-                            ],
+                                ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 12),
 
-            // Page indicators
-            if (promos.length > 1)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(promos.length, (index) {
-                  final isActive = _currentBanner == index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 350),
-                    curve: Curves.easeInOut,
-                    width: isActive ? 26 : 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      color: isActive ? TColor.primary : Colors.grey[300],
+                        // Right side - Food image with curved left edge
+                        Expanded(
+                          flex: 2,
+                          child: ClipPath(
+                            clipper: _LeftCurveClipper(),
+                            child: _buildPromotionImage(bestImage, items),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                }),
-              ),
-          ],
+                  ),
+                ),
+              );
+            },
+          ),
         ),
-      ),
+        const SizedBox(height: 12),
+
+        // Page indicators
+        if (promos.length > 1)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(promos.length, (index) {
+              final isActive = _currentBanner == index;
+              return Container(
+                width: isActive ? 26 : 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: isActive ? TColor.primary : Colors.grey[300],
+                ),
+              );
+            }),
+          ),
+      ],
     );
   }
 

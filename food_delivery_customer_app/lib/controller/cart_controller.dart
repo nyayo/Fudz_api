@@ -238,7 +238,7 @@ class CartController extends GetxController {
         ? menuItem.discountedPrice
         : menuItem.price;
 
-    print('🛒 Using Unit Price: \$${unitPrice}');
+    print('🛒 Using Unit Price: \$$unitPrice');
 
     final existingItemIndex = _localCart.value!.items.indexWhere(
       (item) => item.menuItem.id == menuItem.id,

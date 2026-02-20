@@ -78,18 +78,21 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
 
       // Search in description
       if (item.description != null &&
-          item.description!.toLowerCase().contains(searchLower))
+          item.description!.toLowerCase().contains(searchLower)) {
         return true;
+      }
 
       // Search in restaurant name
       if (item.restaurantName != null &&
-          item.restaurantName!.toLowerCase().contains(searchLower))
+          item.restaurantName!.toLowerCase().contains(searchLower)) {
         return true;
+      }
 
       // Search in dietary info
       if (item.dietaryInfo != null &&
-          item.dietaryInfo!.toLowerCase().contains(searchLower))
+          item.dietaryInfo!.toLowerCase().contains(searchLower)) {
         return true;
+      }
 
       return false;
     }).toList();
@@ -295,21 +298,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final item = items[index];
-        return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 400 + (index % 8) * 80),
-          curve: Curves.easeOutCubic,
-          builder: (context, value, child) {
-            return Opacity(
-              opacity: value,
-              child: Transform.translate(
-                offset: Offset(0, 20 * (1 - value)),
-                child: child,
-              ),
-            );
-          },
-          child: _buildMenuItemCard(item, index == items.length - 1),
-        );
+        return _buildMenuItemCard(item, index == items.length - 1);
       }, childCount: items.length),
     );
   }
@@ -380,7 +369,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                             ),
                           ),
                           child: Text(
-                            '${item.activePromotions.first.formattedDiscount}',
+                            item.activePromotions.first.formattedDiscount,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -496,10 +485,12 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                               ? () async {
                                   if (cartController.isItemProcessing(
                                     '${item.id}_add',
-                                  ))
+                                  )) {
                                     return;
-                                  if (cartController.isItemInCart(item.id))
+                                  }
+                                  if (cartController.isItemInCart(item.id)) {
                                     return;
+                                  }
 
                                   if (!userController.isLoggedIn) {
                                     Get.snackbar(
