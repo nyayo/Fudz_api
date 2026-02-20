@@ -193,11 +193,6 @@ class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerPr
                         final categoryId = category.id;
                         final categoryName = category.name;
                         final imageUrl = category.mapImageUrl();
-                        
-                        // Debug output
-                        if (index == 0) {
-                          print('🎨 Category ${category.name}: imageUrl=$imageUrl, hasImage=${category.hasImage}');
-                        }
 
                         return _buildCategoryItem(
                           index: index,

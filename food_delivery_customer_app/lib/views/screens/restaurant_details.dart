@@ -668,13 +668,23 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            restaurant.imageUrl != null
-                ? CachedImage(
-                    imageUrl: restaurant.imageUrl,
+            restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty
+                ? Image.network(
+                    restaurant.imageUrl!,
+                    fit: BoxFit.cover,
                     width: double.infinity,
                     height: 250,
-                    borderRadius: 0,
-                    placeholderIcon: Icons.restaurant,
+                    errorBuilder: (context, error, stack) {
+                      debugPrint('❌ Restaurant image load error: $error');
+                      return Container(
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.restaurant,
+                          color: Colors.grey[500],
+                          size: 80,
+                        ),
+                      );
+                    },
                   )
                 : Container(
                     color: Colors.grey[300],
@@ -702,15 +712,24 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                 children: [
                   Row(
                     children: [
-                      if (restaurant.logoUrl != null)
+                      if (restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(right: 12),
-                          child: CachedImage(
-                            imageUrl: restaurant.logoUrl,
-                            width: 50,
-                            height: 50,
-                            borderRadius: 25,
-                            placeholderIcon: Icons.restaurant,
+                          child: ClipOval(
+                            child: Image.network(
+                              restaurant.logoUrl!,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stack) {
+                                debugPrint('❌ Logo load error for ${restaurant.restaurantName}: $error');
+                                return Icon(
+                                  Icons.restaurant,
+                                  color: Colors.white,
+                                  size: 40,
+                                );
+                              },
+                            ),
                           ),
                         ),
                       Expanded(
