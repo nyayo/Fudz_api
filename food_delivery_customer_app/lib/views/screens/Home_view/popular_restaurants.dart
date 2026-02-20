@@ -364,18 +364,24 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                             child: ClipOval(
                               child: (restaurant.logoUrl != null &&
                                       restaurant.logoUrl!.isNotEmpty)
-                                  ? CachedImage(
-                                      imageUrl: restaurant.logoUrl,
-                                      width: 56,
-                                      height: 56,
-                                      borderRadius: 28,
-                                      placeholderIcon: Icons.restaurant,
-                                    )
-                                  : Icon(
-                                      Icons.restaurant_rounded,
-                                      color: TColor.primary,
-                                      size: 26,
-                                    ),
+                                  ? (() {
+                                      debugPrint('🏪 Restaurant logo: ${restaurant.restaurantName} -> ${restaurant.logoUrl}');
+                                      return CachedImage(
+                                        imageUrl: restaurant.logoUrl,
+                                        width: 56,
+                                        height: 56,
+                                        borderRadius: 28,
+                                        placeholderIcon: Icons.restaurant,
+                                      );
+                                    })()
+                                  : (() {
+                                      debugPrint('🏪 Restaurant NO logo: ${restaurant.restaurantName}');
+                                      return Icon(
+                                        Icons.restaurant_rounded,
+                                        color: TColor.primary,
+                                        size: 26,
+                                      );
+                                    })(),
                             ),
                           ),
                         ),

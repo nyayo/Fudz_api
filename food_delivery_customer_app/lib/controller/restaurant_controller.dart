@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/controller/category_controller.dart';
 import 'package:food_delivery_customer_app/controller/menu_controller.dart';
@@ -95,6 +97,12 @@ class RestaurantController extends GetxController {
       popularRestaurants.value = parsed.take(5).toList();
       hasData = true;
       print('📦 Loaded ${parsed.length} restaurants from cache');
+      
+      // Debug: Print first cached restaurant logo
+      if (parsed.isNotEmpty) {
+        final first = parsed.first;
+        print('🏪 Cached restaurant: ${first.restaurantName}, logoUrl: ${first.logoUrl}');
+      }
     }
 
     // Menu items
@@ -170,11 +178,38 @@ class RestaurantController extends GetxController {
         restaurantsList = response['results'] ?? response['data'] ?? [];
       }
 
+      // Debug: Print raw JSON of first restaurant
+      if (restaurantsList.isNotEmpty) {
+        final firstRestaurantJson = restaurantsList.first;
+        print('🏪 RAW FIRST RESTAURANT JSON:');
+        print(JsonEncoder.withIndent('  ').convert(firstRestaurantJson));
+        
+        // Print all keys
+        if (firstRestaurantJson is Map) {
+          print('🏪 AVAILABLE KEYS: ${firstRestaurantJson.keys.toList()}');
+          // Print image-related fields
+          for (final key in firstRestaurantJson.keys) {
+            if (key.toString().toLowerCase().contains('logo') || 
+                key.toString().toLowerCase().contains('image')) {
+              print('🏪 Field "$key": ${firstRestaurantJson[key]}');
+            }
+          }
+        }
+      }
+
       final newRestaurants = restaurantsList
           .map(
             (json) => RestaurantProfile.fromJson(json as Map<String, dynamic>),
           )
           .toList();
+
+      // Debug: Print first restaurant logo info
+      if (newRestaurants.isNotEmpty) {
+        final firstRestaurant = newRestaurants.first;
+        print('🏪 First restaurant: ${firstRestaurant.restaurantName}');
+        print('🏪   logoUrl: ${firstRestaurant.logoUrl}');
+        print('🏪   imageUrl: ${firstRestaurant.imageUrl}');
+      }
 
       // Update reactive lists (Obx widgets rebuild automatically)
       restaurants.value = newRestaurants;
