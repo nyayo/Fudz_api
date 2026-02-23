@@ -24,23 +24,27 @@ from .helpers import get_tokens_for_user, register_social_user
 from .models import (
     EmailVerification,
     NotificationPreference,
+    PhoneVerification,
     RestaurantStaffProfile,
     User,
 )
 from .serializers import (
     GoogleSignInSerializer,
+    LinkGoogleAccountSerializer,
     LogoutUserSerializer,
     NotificationPreferenceSerializer,
     PasswordResetRequestSerializer,
     RegistrationSerializer,
     RequestOTPSerializer,
+    RequestPhoneOTPSerializer,
     RestaurantStaffSerializer,
     SetNewPasswordSerializer,
     UserProfileSerializer,
     VerifyOTPSerializer,
+    VerifyPhoneOTPSerializer,
 )
-from .services import OTPService, PlunkEmailService
-from .tasks import send_push_notification_to_user, send_templated_email_task
+from .services import OTPService, PlunkEmailService, SMSService
+from .tasks import send_push_notification_to_user, send_sms_otp_task, send_templated_email_task
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +100,88 @@ class RequestOTPView(GenericAPIView):
             )
 
 
+class RequestPhoneOTPView(GenericAPIView):
+    """Request OTP for phone number authentication"""
+    serializer_class = RequestPhoneOTPSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = [OTPRateThrottle]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        phone = serializer.validated_data.get("phone")
+
+        try:
+            otp_obj, created = PhoneVerification.objects.get_or_create(
+                phone=phone,
+                is_verified=False,
+                defaults={
+                    "expires_at": timezone.now() + timezone.timedelta(minutes=10)
+                },
+            )
+
+            if not created:
+                otp_obj.is_verified = False
+                otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+            otp_obj.generate_otp()
+
+            # Send OTP via SMS asynchronously using Celery
+            send_sms_otp_task.delay(phone, otp_obj.otp)
+
+            return Response(
+                {"message": "OTP sent successfully to your phone number"},
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to send phone OTP: {str(e)}")
+            return Response(
+                {"message": "Failed to generate OTP", "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class VerifyPhoneOTPView(generics.CreateAPIView):
+    """Verify phone OTP and authenticate or prompt registration"""
+    serializer_class = VerifyPhoneOTPSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = [OTPRateThrottle]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+
+        if result["user_exists"]:
+            user = User.objects.get(phone=result["phone"])
+            tokens = get_tokens_for_user(user)
+            return Response(
+                {
+                    "message": "Login successful",
+                    "verified": True,
+                    "user_exists": True,
+                    "requires_registration": False,
+                    "user": UserProfileSerializer(user).data,
+                    "tokens": tokens,
+                    "can_link_google": not bool(user.google_id),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {
+                "message": "Phone verified. Please complete registration.",
+                "verified": True,
+                "user_exists": False,
+                "requires_registration": True,
+                "phone": result["phone"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class VerifyOTPView(generics.CreateAPIView):
     serializer_class = VerifyOTPSerializer
     permission_classes = [AllowAny]
@@ -117,6 +203,7 @@ class VerifyOTPView(generics.CreateAPIView):
                     "requires_registration": False,
                     "user": UserProfileSerializer(user).data,
                     "tokens": tokens,
+                    "can_link_google": not bool(user.google_id),
                 },
                 status=status.HTTP_200_OK,
             )
@@ -147,6 +234,7 @@ class RegisterView(generics.CreateAPIView):
                 "message": "Registration successful.",
                 "user": UserProfileSerializer(user).data,
                 "tokens": tokens,
+                "can_link_google": True,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -170,6 +258,7 @@ class GoogleOauthSignInview(generics.GenericAPIView):
             last_name=google_data["last_name"],
             user_type=google_data["user_type"],
             profile_data=google_data["profile_data"],
+            google_id=google_data["google_id"],
         )
 
         return Response(response.data, status=response.status_code)
@@ -464,3 +553,91 @@ class NotificationPreferenceView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         obj, _ = NotificationPreference.objects.get_or_create(user=self.request.user)
         return obj
+
+
+class LinkGoogleAccountView(generics.GenericAPIView):
+    """
+    Link a Google account to an existing user account.
+    
+    This allows users who registered with phone/email to also login via Google.
+    POST: Link Google account using Google access token
+    DELETE: Unlink Google account
+    """
+    serializer_class = LinkGoogleAccountSerializer
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=LinkGoogleAccountSerializer,
+        responses={
+            200: inline_serializer(
+                name="LinkGoogleAccountResponse",
+                fields={
+                    "message": drf_serializers.CharField(),
+                    "google_linked": drf_serializers.BooleanField(),
+                },
+            )
+        },
+    )
+    def post(self, request):
+        """Link a Google account to the current user"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(
+            {
+                "message": "Google account linked successfully",
+                "google_linked": True,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        responses={
+            200: inline_serializer(
+                name="UnlinkGoogleAccountResponse",
+                fields={
+                    "message": drf_serializers.CharField(),
+                    "google_linked": drf_serializers.BooleanField(),
+                },
+            )
+        },
+    )
+    def delete(self, request):
+        """Unlink Google account from the current user"""
+        user = request.user
+        
+        if not user.google_id:
+            return Response(
+                {"message": "No Google account linked"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Prevent unlinking if Google is the only auth method
+        if user.auth_provider == 'google' and not user.has_usable_password():
+            return Response(
+                {"message": "Cannot unlink Google account as it's your only login method. Set a password first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        user.google_id = None
+        user.save(update_fields=['google_id'])
+        
+        return Response(
+            {
+                "message": "Google account unlinked successfully",
+                "google_linked": False,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def get(self, request):
+        """Check Google account linking status"""
+        user = request.user
+        return Response(
+            {
+                "google_linked": bool(user.google_id),
+                "can_unlink": user.google_id and (user.auth_provider != 'google' or user.has_usable_password()),
+            },
+            status=status.HTTP_200_OK,
+        )

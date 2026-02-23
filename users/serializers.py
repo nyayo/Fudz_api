@@ -13,12 +13,68 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
 
-from .models import CourierProfile, CustomerProfile, User, RestaurantProfile, EmailVerification, RestaurantStaffProfile, NotificationPreference
+from .models import CourierProfile, CustomerProfile, User, RestaurantProfile, EmailVerification, PhoneVerification, RestaurantStaffProfile, NotificationPreference
 from .services import send_normal_email
 
 
 class RequestOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class RequestPhoneOTPSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=17)
+    
+    def validate_phone(self, value):
+        import re
+        pattern = r'^\+?[1-9]\d{1,14}$'
+        if not re.match(pattern, value):
+            raise serializers.ValidationError(
+                "Phone number must be in international format (e.g., +254712345678)"
+            )
+        return value
+
+
+class VerifyPhoneOTPSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=17)
+    otp = serializers.CharField(max_length=6, write_only=True)
+    user_exists = serializers.BooleanField(read_only=True)
+    requires_registration = serializers.BooleanField(read_only=True)
+
+    def validate(self, data):
+        try:
+            record = PhoneVerification.objects.get(
+                phone=data["phone"], 
+                otp=data["otp"],
+                is_verified=False
+            )
+        except PhoneVerification.DoesNotExist:
+            raise serializers.ValidationError("Invalid OTP or phone number.")
+        
+        if record.is_expired():
+            raise serializers.ValidationError("OTP expired.")
+        
+        user_exists = User.objects.filter(phone=data["phone"]).exists()
+        data['user_exists'] = user_exists
+        data['requires_registration'] = not user_exists
+        
+        return data
+
+    def create(self, validated_data):
+        record = PhoneVerification.objects.get(
+            phone=validated_data["phone"], 
+            otp=validated_data["otp"]
+        )
+        record.is_verified = True
+        record.save()
+        
+        user_exists = User.objects.filter(phone=validated_data["phone"]).exists()
+        
+        return {
+            "phone": validated_data["phone"], 
+            "verified": True,
+            "user_exists": user_exists,
+            "requires_registration": not user_exists
+        }
 
 
 class VerifyOTPSerializer(serializers.Serializer):
@@ -221,6 +277,7 @@ class GoogleSignInSerializer(serializers.Serializer):
         first_name = user_data['given_name']
         last_name = user_data['family_name']
         provider = 'google'
+        google_id = user_data['sub']
 
         profile_data = {}
         profile_fields = {
@@ -239,7 +296,8 @@ class GoogleSignInSerializer(serializers.Serializer):
             'last_name': last_name,
             'provider': provider,
             'user_type': user_type,
-            'profile_data': profile_data
+            'profile_data': profile_data,
+            'google_id': google_id
         }
         
         return attrs
@@ -429,6 +487,59 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
             "review_reminders",
         ]
         read_only_fields = ["id"]
+
+
+class LinkGoogleAccountSerializer(serializers.Serializer):
+    """Serializer for linking a Google account to an existing user"""
+    access_token = serializers.CharField(min_length=6)
+
+    def validate(self, attrs):
+        from .helpers import Google
+        
+        access_token = attrs.get('access_token')
+        user = self.context.get('request').user
+
+        # Validate Google token
+        user_data = Google.validate(access_token)
+        try:
+            user_data['sub']
+        except:
+            raise serializers.ValidationError("This token has expired or is invalid, please try again")
+        
+        if user_data['aud'] != settings.GOOGLE_CLIENT_ID:
+            raise serializers.ValidationError('Could not verify Google account.')
+        
+        google_id = user_data['sub']
+        google_email = user_data['email']
+        
+        # Check if this Google account is already linked to another user
+        existing_user = User.objects.filter(google_id=google_id).exclude(id=user.id).first()
+        if existing_user:
+            raise serializers.ValidationError(
+                "This Google account is already linked to another user."
+            )
+        
+        # Check if another user exists with Google as auth provider and same email
+        google_auth_user = User.objects.filter(
+            email=google_email, 
+            auth_provider='google'
+        ).exclude(id=user.id).first()
+        if google_auth_user:
+            raise serializers.ValidationError(
+                "A user with this Google email already exists. Please login with Google instead."
+            )
+        
+        attrs['google_id'] = google_id
+        attrs['google_email'] = google_email
+        attrs['google_name'] = f"{user_data.get('given_name', '')} {user_data.get('family_name', '')}".strip()
+        
+        return attrs
+
+    def save(self):
+        user = self.context.get('request').user
+        user.google_id = self.validated_data['google_id']
+        user.save(update_fields=['google_id'])
+        return user
 
 
 

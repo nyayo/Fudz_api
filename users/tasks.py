@@ -511,6 +511,58 @@ def notify_restaurant_order_status(order_id: int, old_status: str, new_status: s
         return {'error': str(e)}
 
 
+# ============================================================
+# SMS TASKS - Async SMS sending via Celery
+# ============================================================
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_sms_otp_task(self, phone: str, otp: str):
+    """
+    Send OTP via SMS asynchronously using TextBee API
+    
+    Args:
+        phone: Phone number in international format (e.g., +254712345678)
+        otp: The OTP code to send
+    """
+    from .services import SMSService
+    
+    try:
+        result = SMSService.send_otp(phone, otp)
+        if result:
+            logger.info(f"SMS OTP sent successfully to {phone}")
+            return {'success': True, 'phone': phone}
+        else:
+            logger.warning(f"SMS sending returned False for {phone}")
+            raise self.retry(exc=Exception("SMS sending failed"))
+    except Exception as e:
+        logger.error(f"Error sending SMS to {phone}: {str(e)}")
+        raise self.retry(exc=e)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_sms_task(self, phone: str, message: str):
+    """
+    Send generic SMS asynchronously
+    
+    Args:
+        phone: Phone number in international format
+        message: The message to send
+    """
+    from .services import SMSService
+    
+    try:
+        result = SMSService.send_bulk_sms([phone], message)
+        if result.get('success'):
+            logger.info(f"SMS sent successfully to {phone}")
+            return {'success': True, 'phone': phone}
+        else:
+            logger.warning(f"SMS sending failed for {phone}: {result.get('error')}")
+            raise self.retry(exc=Exception(result.get('error', 'SMS sending failed')))
+    except Exception as e:
+        logger.error(f"Error sending SMS to {phone}: {str(e)}")
+        raise self.retry(exc=e)
+
+
 @shared_task
 def notify_restaurant_order_cancelled(order_id: int, reason: str = None):
     """

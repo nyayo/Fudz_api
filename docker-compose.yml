@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: fudz
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: fudz_delivery
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - db
+
+  websocket:
+    build: .
+    command: uv run daphne -b 0.0.0.0 -p 8001 Fudz_api.asgi:application
+    volumes:
+      - .:/app
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: .
+    command: uv run celery -A Fudz_api worker --loglevel=info
+    volumes:
+      - .:/app
+
+  celery-beat:
+    build: .
+    command: uv run celery -A Fudz_api beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  postgres_data:

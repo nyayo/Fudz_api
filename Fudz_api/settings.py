@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -65,6 +66,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 TEMPLATES = [
@@ -88,10 +92,10 @@ WSGI_APPLICATION = "Fudz_api.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "food_delivery",
-        "USER": "neondb_owner",
-        "PASSWORD": "npg_5Ok1uzovVgbZ",
-        "HOST": "ep-withered-surf-a4thi8j0-pooler.us-east-1.aws.neon.tech",
+        "NAME": "fudz_delivery",
+        "USER": "fudz",
+        "PASSWORD": "password",
+        "HOST": "db",
         "PORT": 5432,
     }
 }
@@ -122,7 +126,8 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -186,7 +191,7 @@ REST_FRAMEWORK = {
     },
 }
 
-REDIS_URL = "redis://localhost:6379/1"
+REDIS_URL = "redis://redis:6379/1"
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
@@ -200,7 +205,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)],
+            "hosts": [("redis", 6379)],
         },
     },
 }
@@ -208,7 +213,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://localhost:6379/1",
+        "LOCATION": "redis://redis:6379/1",
     }
 }
 
@@ -236,6 +241,10 @@ DEFAULT_FROM_EMAIL = "info@henryjwtauth.com"
 EMAIL_USE_TLS = True
 EMAIL_PORT = 2525
 EMAIL_PLUNK_API_KEY = "sk_2f4f1a3140079af8c4d647fdfc09945f74b390414d6e1e02"
+
+TEXTBEE_API_KEY = "64c4f426-7220-4f53-8912-e4bcbf54980f"
+TEXTBEE_DEVICE_ID = "6998f03216d1a8061f91462a"
+
 
 R2_ACCOUNT_ID = "9f582a41da5edb96b1d7aa0d56dac0b1"
 R2_ACCESS_KEY_ID = "5de5dff55055eb06d7462fa81ad724fa"

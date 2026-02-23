@@ -37,7 +37,22 @@ def create_user_profile(user, user_type, profile_data):
     elif user_type == 'courier':
         CourierProfile.objects.create(user=user, **profile_data)
 
-def register_social_user(provider, email, first_name, last_name, user_type, profile_data):
+def register_social_user(provider, email, first_name, last_name, user_type, profile_data, google_id=None):
+    # First, check if there's a user with this google_id linked
+    if google_id:
+        linked_user = User.objects.filter(google_id=google_id).first()
+        if linked_user:
+            # User has linked their Google account - allow login
+            tokens = get_tokens_for_user(linked_user)
+            return Response(
+                {
+                    "message": "Login successful via linked Google account.",
+                    "user": UserProfileSerializer(linked_user).data,
+                    "tokens": tokens,
+                },
+                status=status.HTTP_200_OK,
+            )
+    
     old_user=User.objects.filter(email=email)
     if old_user.exists():
         if provider == old_user[0].auth_provider:
@@ -53,6 +68,17 @@ def register_social_user(provider, email, first_name, last_name, user_type, prof
                 status=status.HTTP_201_CREATED,
             )
         else:
+            # Check if user has linked Google account
+            if old_user[0].google_id == google_id:
+                tokens = get_tokens_for_user(old_user[0])
+                return Response(
+                    {
+                        "message": "Login successful via linked Google account.",
+                        "user": UserProfileSerializer(old_user[0]).data,
+                        "tokens": tokens,
+                    },
+                    status=status.HTTP_200_OK,
+                )
             raise AuthenticationFailed(
                 detail=f"please continue your login with {old_user[0].auth_provider}"
             )
@@ -71,6 +97,8 @@ def register_social_user(provider, email, first_name, last_name, user_type, prof
         user = User.objects.create_user(**new_user)
         user.auth_provider = provider
         user.is_verified = True
+        if google_id:
+            user.google_id = google_id
         user.save()
         
         create_user_profile(user, user_type, profile_data)

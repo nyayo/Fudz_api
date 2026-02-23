@@ -13,6 +13,7 @@ from .managers import UserManager
 
 AUTH_PROVIDERS = {
     "email": "email",
+    "phone": "phone",
     "google": "google",
     "github": "github",
     "linkedin": "linkedin",
@@ -49,6 +50,13 @@ class User(AbstractUser, PermissionsMixin):
         blank=False,
         null=False,
         default=AUTH_PROVIDERS.get("email"),
+    )
+    google_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text="Google account ID for linked accounts",
     )
     username = models.CharField(max_length=150, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -99,6 +107,25 @@ class EmailVerification(models.Model):
 
     def __str__(self):
         return f"{self.email} - {self.otp}"
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def generate_otp(self):
+        self.otp = "".join(random.choices(string.digits, k=6))
+        self.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+        self.save()
+
+
+class PhoneVerification(models.Model):
+    phone = models.CharField(max_length=17)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.phone} - {self.otp}"
 
     def is_expired(self):
         return timezone.now() > self.expires_at
