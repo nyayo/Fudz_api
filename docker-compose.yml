@@ -1,7 +1,8 @@
 services:
   db:
-    image: postgis/postgis:16-3.4
+    image: imresamu/postgis:16-3.4
     container_name: postgres_db
+    platform: linux/arm64
     environment:
       POSTGRES_USER: fudz
       POSTGRES_PASSWORD: password
@@ -19,6 +20,8 @@ services:
   websocket:
     build: .
     command: uv run daphne -b 0.0.0.0 -p 8001 Fudz_api.asgi:application
+    ports:
+      - "8001:8001"
     volumes:
       - .:/app
 

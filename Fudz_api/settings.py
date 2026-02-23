@@ -12,9 +12,6 @@ SECRET_KEY = "django-insecure-kg!c-z-901tmp@)+aw^z!q$(=!@m$m2vp3@_dsl93mh%x6%bqf
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
-
 INSTALLED_APPS = [
     "daphne",
     "django.contrib.admin",
@@ -58,12 +55,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "Fudz_api.urls"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "www.unshifter.site", "unshifter.site"]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
