@@ -57,6 +57,11 @@ ROOT_URLCONF = "Fudz_api.urls"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "www.unshifter.site", "unshifter.site"]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://www.unshifter.site",
+    "https://unshifter.site",
+]
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 
