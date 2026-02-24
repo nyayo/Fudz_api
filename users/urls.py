@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     GoogleOauthSignInview,
     LinkGoogleAccountView,
+    LogoutApiView,
     NotificationPreferenceView,
     PasswordResetConfirm,
     PasswordResetRequestView,
@@ -40,6 +41,7 @@ urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="register"),
     path("auth/google/", GoogleOauthSignInview.as_view(), name="google"),
     path("auth/profile/", UserProfileView.as_view(), name="profile"),
+    path("auth/logout/", LogoutApiView.as_view(), name="logout"),
     path(
         "auth/password-reset/",
         PasswordResetRequestView.as_view(),
@@ -68,4 +70,3 @@ urlpatterns = [
     ),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ] + routers.urls
-

@@ -55,11 +55,18 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "Fudz_api.urls"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "www.unshifter.site", "unshifter.site"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "www.unshifter.site",
+    "unshifter.site",
+    "129.151.165.133",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://www.unshifter.site",
     "https://unshifter.site",
+    "https://129.151.165.133",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -85,6 +92,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "Fudz_api.wsgi.application"
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.contrib.gis.db.backends.postgis",
+#         "NAME": "food_delivery",
+#         "USER": "neondb_owner",
+#         "PASSWORD": "npg_5Ok1uzovVgbZ",
+#         "HOST": "ep-withered-surf-a4thi8j0-pooler.us-east-1.aws.neon.tech",
+#         "PORT": 5432,
+#     }
+# }
 
 DATABASES = {
     "default": {
