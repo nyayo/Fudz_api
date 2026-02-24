@@ -263,9 +263,9 @@ class GoogleSignInSerializer(serializers.Serializer):
         if user_data["aud"] != settings.GOOGLE_CLIENT_ID:
             raise AuthenticationFailed("Could not verify user.")
 
-        if user_type == "customer" and not attrs.get("phone"):
-            raise serializers.ValidationError("Phone number is required for customers")
-        elif user_type == "restaurant" and not all(
+        # if user_type == "customer" and not attrs.get("phone"):
+        #     raise serializers.ValidationError("Phone number is required for customers")
+        if user_type == "restaurant" and not all(
             [
                 attrs.get("restaurant_name"),
                 attrs.get("business_license"),
@@ -290,7 +290,7 @@ class GoogleSignInSerializer(serializers.Serializer):
 
         profile_data = {}
         profile_fields = {
-            "customer": ["phone"],
+            # "customer": ["phone"],
             "restaurant": ["restaurant_name", "business_license", "address"],
             "courier": ["username", "license_number", "vehicle_type"],
         }
@@ -534,16 +534,16 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
 class LinkGoogleAccountSerializer(serializers.Serializer):
     """Serializer for linking a Google account to an existing user"""
 
-    access_token = serializers.CharField(min_length=6)
+    id_token = serializers.CharField()
 
     def validate(self, attrs):
         from .helpers import Google
 
-        access_token = attrs.get("access_token")
+        id_token = attrs.get("id_token")
         user = self.context.get("request").user
 
         # Validate Google token
-        user_data = Google.validate(access_token)
+        user_data = Google.validate(id_token)
         try:
             user_data["sub"]
         except:
