@@ -278,7 +278,7 @@ STORAGES = {
 }
 
 GOOGLE_CLIENT_ID = (
-    "55727848133-6tp3tfrqc9bkjski9mk0v6309egomf6o.apps.googleusercontent.com"
+    "420175212968-lqga32ger8fcfrve7jp99259ljrd0elm.apps.googleusercontent.com"
 )
-GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_CLIENT_SECRET = "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"
 SOCIAL_AUTH_PASSWORD = "Fudz@12345"

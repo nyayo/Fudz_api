@@ -1,9 +1,5 @@
-from datetime import timedelta
-
-import requests
 from django.conf import settings
 from django.contrib.auth import authenticate
-from django.utils import timezone
 from google.auth.transport import requests
 from google.oauth2 import id_token
 from rest_framework import status
@@ -19,7 +15,9 @@ class Google:
     @staticmethod
     def validate(access_token):
         try:
-            id_info = id_token.verify_oauth2_token(access_token, requests.Request())
+            id_info = id_token.verify_oauth2_token(
+                access_token, requests.Request(), audience=None
+            )
             if "accounts.google.com" in id_info["iss"]:
                 return id_info
         except Exception as e:
