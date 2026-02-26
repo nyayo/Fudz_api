@@ -927,136 +927,143 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
           Row(
             children: [
               // Quantity selector
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    _quantityButton(Icons.remove, () {
-                      if (_quantity > 1) setState(() => _quantity--);
-                    }),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        '$_quantity',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: TColor.primaryText,
-                        ),
-                      ),
-                    ),
-                    _quantityButton(Icons.add, () {
-                      setState(() => _quantity++);
-                    }),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Add to cart button or quantity counter
-              Expanded(
-                child: Obx(() {
-                  final isInCart = cartController.isItemInCart(menuItem.id);
-
-                  if (isInCart) {
-                    return QuantityCounter(
-                      cartController: cartController,
-                      menuItem: menuItem,
-                      accessToken: userController.isLoggedIn
-                          ? userController.accessToken
-                          : null,
-                      height: 50,
-                    );
-                  }
-
-                  final isAdding = cartController.isItemProcessing(
-                    '${menuItem.id}_add',
+              Obx(() {
+                final isInCart = cartController.isItemInCart(menuItem.id);
+                
+                if (isInCart) {
+                  return QuantityCounter(
+                    cartController: cartController,
+                    menuItem: menuItem,
+                    accessToken: userController.isLoggedIn
+                        ? userController.accessToken
+                        : null,
+                    height: 50,
                   );
+                }
 
-                  return ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: !menuItem.isAvailable
-                          ? Colors.grey[400]
-                          : TColor.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                // Show quantity selector and add to cart button when not in cart
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: menuItem.isAvailable ? 2 : 0,
-                    ),
-                    onPressed: !menuItem.isAvailable
-                        ? null
-                        : () async {
-                            try {
-                              await cartController.addToCart(
-                                menuItem: menuItem,
-                                quantity: _quantity,
-                                accessToken: userController.accessToken,
-                              );
-                            } catch (_) {}
-                          },
-                    child: isAdding
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                !menuItem.isAvailable
-                                    ? 'Unavailable'
-                                    : 'Add to Cart',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                      child: Row(
+                        children: [
+                          _quantityButton(Icons.remove, () {
+                            if (_quantity > 1) setState(() => _quantity--);
+                          }),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              '$_quantity',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: TColor.primaryText,
                               ),
-                              if (menuItem.isAvailable) ...[
-                                const SizedBox(height: 2),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                            ),
+                          ),
+                          _quantityButton(Icons.add, () {
+                            setState(() => _quantity++);
+                          }),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: Obx(() {
+                        final isAdding = cartController.isItemProcessing(
+                          '${menuItem.id}_add',
+                        );
+
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: !menuItem.isAvailable
+                                ? Colors.grey[400]
+                                : TColor.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: menuItem.isAvailable ? 2 : 0,
+                          ),
+                          onPressed: !menuItem.isAvailable
+                              ? null
+                              : () async {
+                                  try {
+                                    await cartController.addToCart(
+                                      menuItem: menuItem,
+                                      quantity: _quantity,
+                                      accessToken: userController.accessToken,
+                                    );
+                                  } catch (_) {}
+                                },
+                          child: isAdding
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      CurrencyFormatter.format(totalPrice),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white.withOpacity(0.9),
+                                      !menuItem.isAvailable
+                                          ? 'Unavailable'
+                                          : 'Add to Cart',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
                                       ),
                                     ),
-                                    if (hasPromo) ...[
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        CurrencyFormatter.format(
-                                          menuItem.price * _quantity,
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.white.withOpacity(0.6),
-                                          decoration:
-                                              TextDecoration.lineThrough,
-                                          decorationColor: Colors.white
-                                              .withOpacity(0.6),
-                                        ),
+                                    if (menuItem.isAvailable) ...[
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            CurrencyFormatter.format(totalPrice),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withOpacity(0.9),
+                                            ),
+                                          ),
+                                          if (hasPromo) ...[
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              CurrencyFormatter.format(
+                                                menuItem.price * _quantity,
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.white.withOpacity(0.6),
+                                                decoration:
+                                                    TextDecoration.lineThrough,
+                                                decorationColor: Colors.white
+                                                    .withOpacity(0.6),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ],
                                   ],
                                 ),
-                              ],
-                            ],
-                          ),
-                  );
-                }),
-              ),
+                        );
+                      }),
+                    ),
+                  ],
+                );
+              }),
             ],
           ),
         ],
