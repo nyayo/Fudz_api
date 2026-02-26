@@ -18,7 +18,7 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final OrderController _orderController = Get.find<OrderController>();
   final UserController _userController = Get.find<UserController>();
   final CartController _cartController = Get.find<CartController>();
