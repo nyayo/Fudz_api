@@ -440,74 +440,14 @@ class _AddToCartButton extends StatelessWidget {
     final cartController = Get.find<CartController>();
     final userController = Get.find<UserController>();
 
-    return Obx(() {
-      final isInCart = cartController.isItemInCart(item.id);
-      final isProcessing = cartController.isItemProcessing('${item.id}_add');
-
-      return GestureDetector(
-        onTap: isInCart || isProcessing
-            ? null
-            : () {
-                if (!userController.isLoggedIn) {
-                  Get.snackbar(
-                    'Login Required',
-                    'Please login to add items to cart',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.orange,
-                    colorText: Colors.white,
-                  );
-                  return;
-                }
-                cartController.addToCart(
-                  menuItem: item,
-                  quantity: 1,
-                  accessToken: userController.accessToken,
-                );
-                Get.snackbar(
-                  'Added to Cart',
-                  '${item.title} added to cart',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: TColor.primary,
-                  colorText: Colors.white,
-                  duration: const Duration(seconds: 2),
-                );
-              },
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: isProcessing
-                ? Colors.grey[300]
-                : isInCart
-                ? Colors.grey[400]
-                : TColor.primary,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: isInCart
-                ? []
-                : [
-                    BoxShadow(
-                      color: TColor.primary.withOpacity(0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-          ),
-          child: isProcessing
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Icon(
-                  isInCart ? Icons.check : Icons.add,
-                  color: Colors.white,
-                  size: 20,
-                ),
-        ),
-      );
-    });
+    return QuantityCounter(
+      cartController: cartController,
+      menuItem: item,
+      accessToken: userController.isLoggedIn
+          ? userController.accessToken
+          : null,
+      height: 40,
+      compact: true,
+    );
   }
 }
