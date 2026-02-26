@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 
 class AllMenuItemsPage extends StatefulWidget {
   const AllMenuItemsPage({super.key});
@@ -511,18 +512,12 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     }
     
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return Image.network(
-        imageUrl,
+      return CachedImage(
+        imageUrl: imageUrl,
         width: 100,
         height: 100,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          debugPrint('❌ Menu item image load error: $error, url: $imageUrl');
-          return Container(
-            color: Colors.grey[200],
-            child: Icon(Icons.fastfood, color: Colors.grey[400], size: 40),
-          );
-        },
+        placeholderIcon: Icons.fastfood,
       );
     }
     
