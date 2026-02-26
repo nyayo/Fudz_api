@@ -341,16 +341,10 @@ class _CategoryPageState extends State<CategoryPage> {
                       height: double.infinity,
                       color: Colors.grey[100],
                       child: menuItem.imageUrl != null
-                          ? Image.network(
-                              menuItem.imageUrl!,
+                          ? CachedImage(
+                              imageUrl: menuItem.imageUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.fastfood,
-                                  color: Colors.grey[400],
-                                  size: 50,
-                                );
-                              },
+                              placeholderIcon: Icons.fastfood,
                             )
                           : Icon(
                               Icons.fastfood,
