@@ -430,8 +430,9 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
             ),
           ],
         ),
-        child: Row(
-          children: [
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             // Restaurant icon
             Container(
               padding: const EdgeInsets.all(10),
@@ -652,14 +653,14 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                     Text(
                       menuItem.formattedDiscountedPrice,
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: TColor.primary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 20),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -679,8 +680,22 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                     ),
                   ],
                 ),
-                const Spacer(),
-                Container(
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                'Expires ${DateFormat('MMM dd, yyyy').format(promo.endDate.toLocal())}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[500],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              Spacer(),
+              Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 6,
@@ -698,17 +713,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Expires ${DateFormat('MMM dd, yyyy').format(promo.endDate.toLocal())}',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[500],
-              fontStyle: FontStyle.italic,
-            ),
+            ],
           ),
         ],
       ),
@@ -985,7 +990,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                             backgroundColor: !menuItem.isAvailable
                                 ? Colors.grey[400]
                                 : TColor.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 30),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -1026,36 +1031,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                                     ),
                                     if (menuItem.isAvailable) ...[
                                       const SizedBox(height: 2),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            CurrencyFormatter.format(totalPrice),
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white.withOpacity(0.9),
-                                            ),
-                                          ),
-                                          if (hasPromo) ...[
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              CurrencyFormatter.format(
-                                                menuItem.price * _quantity,
-                                              ),
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.white.withOpacity(0.6),
-                                                decoration:
-                                                    TextDecoration.lineThrough,
-                                                decorationColor: Colors.white
-                                                    .withOpacity(0.6),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
+                                      
                                     ],
                                   ],
                                 ),
