@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from users.models import CourierProfile
 from orders.models import Order
-from .models import DeliveryRequest
+from .models import DeliveryRequest, DeliveryStatus
 
 @shared_task
 def auto_assign_courier(delivery_id):
@@ -30,7 +30,7 @@ def auto_assign_courier(delivery_id):
         return "No courier found"
     
     delivery.courier = nearest
-    delivery.status = "assigned"
+    delivery.status = DeliveryStatus.ASSIGNED
     delivery.assigned_at = timezone.now()
     delivery.save()
     
@@ -40,8 +40,5 @@ def auto_assign_courier(delivery_id):
 
     nearest.is_available = False
     nearest.save()
-
-    # (Optional) Send notification
-    # send_courier_notification(nearest.user, f"New delivery assigned (#{delivery.id})")
 
     return f"Assigned courier {nearest.user.username} to delivery {delivery.id}"

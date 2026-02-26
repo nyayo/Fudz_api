@@ -5,20 +5,37 @@ from django.utils import timezone
 from users.models import CourierProfile
 from orders.models import Order
 
-class DeliveryRequest(models.Model):
-    STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("assigned", "Assigned"),
-        ("accepted", "Accepted"),
-        ("declined", "Declined"),
-        ("picked_up", "Picked Up"),
-        ("delivered", "Delivered"),
-        ("cancelled", "Cancelled"),
+
+class DeliveryStatus:
+    """Constants for delivery status values"""
+    PENDING = "pending"
+    ASSIGNED = "assigned"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    PICKED_UP = "picked_up"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+    
+    CHOICES = [
+        (PENDING, "Pending"),
+        (ASSIGNED, "Assigned"),
+        (ACCEPTED, "Accepted"),
+        (DECLINED, "Declined"),
+        (PICKED_UP, "Picked Up"),
+        (DELIVERED, "Delivered"),
+        (CANCELLED, "Cancelled"),
     ]
+    
+    COMPLETED_STATUSES = [DELIVERED, CANCELLED]
+    IN_PROGRESS_STATUSES = [ACCEPTED, PICKED_UP]
+
+
+class DeliveryRequest(models.Model):
+    STATUS_CHOICES = DeliveryStatus.CHOICES
 
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="delivery_request")
     courier = models.ForeignKey(CourierProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name="deliveries")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DeliveryStatus.PENDING)
 
     pickup_location = gis_models.PointField(geography=True, null=True, blank=True)
     dropoff_location = gis_models.PointField(geography=True, null=True, blank=True)
@@ -38,6 +55,13 @@ class DeliveryRequest(models.Model):
     def mark_status(self, status):
         self.status = status
         self.save()
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["assigned_at"]),
+        ]
     
     
     
