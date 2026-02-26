@@ -4,7 +4,6 @@ import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/popular_restuarant.dart';
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
-import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
 import 'package:get/get.dart';
 
