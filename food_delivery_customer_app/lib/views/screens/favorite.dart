@@ -6,6 +6,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/cart.dart';
 import 'package:food_delivery_customer_app/utils/url_utils.dart';
 import 'package:food_delivery_customer_app/views/screens/order_detail.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:intl/intl.dart';
