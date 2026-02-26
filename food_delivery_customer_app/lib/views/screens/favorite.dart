@@ -223,18 +223,12 @@ class _OrdersPageState extends State<OrdersPage>
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: imageUrl != null && imageUrl.isNotEmpty
-                            ? Image.network(
-                                imageUrl,
+                            ? CachedImage(
+                                imageUrl: imageUrl,
                                 width: 76,
                                 height: 76,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.fastfood,
-                                    color: Colors.grey[400],
-                                    size: 30,
-                                  );
-                                },
+                                placeholderIcon: Icons.fastfood,
                               )
                             : Icon(
                                 Icons.fastfood,
