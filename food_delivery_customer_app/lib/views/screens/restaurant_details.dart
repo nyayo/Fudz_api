@@ -13,7 +13,6 @@ import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.da
 
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
-import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 
 class RestaurantDetailPage extends StatefulWidget {
   final int restaurantId;
