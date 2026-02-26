@@ -290,19 +290,12 @@ class _CategoriesWidgetState extends State<CategoriesWidget> with SingleTickerPr
                     height: imageSize,
                     child: ClipOval(
                       child: imageUrl.isNotEmpty
-                          ? Image.network(
-                              imageUrl,
+                          ? CachedImage(
+                              imageUrl: imageUrl,
                               width: imageSize,
                               height: imageSize,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stack) {
-                                print('❌ Image load error for $imageUrl: $error');
-                                return Icon(
-                                  Icons.category,
-                                  size: imageSize * 0.5,
-                                  color: Colors.grey,
-                                );
-                              },
+                              placeholderIcon: Icons.category,
                             )
                           : Icon(
                               Icons.category,
