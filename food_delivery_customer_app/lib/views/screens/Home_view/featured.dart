@@ -330,13 +330,12 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                 ),
                 child: ClipOval(
                   child: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
+                      ? CachedImage(
+                          imageUrl: imageUrl,
                           fit: BoxFit.cover,
                           width: 96,
                           height: 96,
-                          errorBuilder: (_, __, ___) =>
-                              _buildPlaceholderIcon(accentColor),
+                          placeholderIcon: Icons.fastfood,
                         )
                       : _buildPlaceholderIcon(accentColor),
                 ),
