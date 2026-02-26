@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/category_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/category_page.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 
 import 'package:get/get.dart';
 
