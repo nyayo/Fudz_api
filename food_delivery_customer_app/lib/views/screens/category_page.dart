@@ -7,6 +7,7 @@ import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
 import 'package:get/get.dart';
 
