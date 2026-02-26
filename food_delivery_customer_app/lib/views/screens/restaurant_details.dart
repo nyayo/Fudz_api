@@ -514,46 +514,6 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                           height: 36,
                           compact: true,
                         ),
-                                      size: (cardWidth * 0.10).clamp(
-                                        18.0,
-                                        24.0,
-                                      ),
-                                    ),
-                              padding: EdgeInsets.zero,
-                              constraints: BoxConstraints(
-                                minWidth: cardWidth * 0.16,
-                                minHeight: cardWidth * 0.16,
-                              ),
-                              onPressed: (isProcessing || isInCart)
-                                  ? null
-                                  : () async {
-                                      final userController =
-                                          Get.find<UserController>();
-                                      if (!userController.isLoggedIn) {
-                                        Get.snackbar(
-                                          'Login Required',
-                                          'Please login to add items to cart',
-                                          snackPosition: SnackPosition.TOP,
-                                          backgroundColor: Colors.orange,
-                                          colorText: Colors.white,
-                                        );
-                                        return;
-                                      }
-
-                                      try {
-                                        await cartController.addToCart(
-                                          menuItem: menuItem,
-                                          quantity: 1,
-                                          accessToken:
-                                              userController.accessToken,
-                                        );
-                                      } catch (e) {
-                                        // Error handled by controller
-                                      }
-                                    },
-                            );
-                          }),
-                        ),
                     ],
                   ),
                 ],
