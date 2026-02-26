@@ -10,6 +10,7 @@ import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/promo.dart';
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 
@@ -414,18 +415,12 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: menuItem.imageUrl != null && menuItem.imageUrl!.isNotEmpty
-                    ? Image.network(
-                        menuItem.imageUrl!,
+                    ? CachedImage(
+                        imageUrl: menuItem.imageUrl,
                         fit: BoxFit.cover,
                         width: 80,
                         height: 80,
-                        errorBuilder: (context, error, stack) {
-                          debugPrint('❌ Menu item image load error: $error');
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Icon(Icons.fastfood, color: Colors.grey[400]),
-                          );
-                        },
+                        placeholderIcon: Icons.fastfood,
                       )
                     : Container(
                         color: Colors.grey[200],
@@ -621,22 +616,12 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
             restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty
                 ? Hero(
                     tag: 'restaurant_image_${restaurant.id}',
-                    child: Image.network(
-                      restaurant.imageUrl!,
+                    child: CachedImage(
+                      imageUrl: restaurant.imageUrl,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: 250,
-                      errorBuilder: (context, error, stack) {
-                        debugPrint('❌ Restaurant image load error: $error');
-                        return Container(
-                          color: Colors.grey[300],
-                          child: Icon(
-                            Icons.restaurant,
-                            color: Colors.grey[500],
-                            size: 80,
-                          ),
-                        );
-                      },
+                      placeholderIcon: Icons.restaurant,
                     ),
                   )
                 : Container(
@@ -669,19 +654,12 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                         Padding(
                           padding: const EdgeInsets.only(right: 12),
                           child: ClipOval(
-                            child: Image.network(
-                              restaurant.logoUrl!,
+                            child: CachedImage(
+                              imageUrl: restaurant.logoUrl,
                               width: 50,
                               height: 50,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stack) {
-                                debugPrint('❌ Logo load error for ${restaurant.restaurantName}: $error');
-                                return Icon(
-                                  Icons.restaurant,
-                                  color: Colors.white,
-                                  size: 40,
-                                );
-                              },
+                              placeholderIcon: Icons.restaurant,
                             ),
                           ),
                         ),
