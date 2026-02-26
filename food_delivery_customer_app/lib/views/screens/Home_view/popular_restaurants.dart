@@ -5,6 +5,7 @@ import 'package:food_delivery_customer_app/controller/restaurant_controller.dart
 import 'package:food_delivery_customer_app/views/screens/popular_restuarant.dart';
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 
 class PopularRestaurantsWidget extends StatefulWidget {
@@ -188,11 +189,10 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                                               restaurant.imageUrl!.isNotEmpty)
                                           ? Hero(
                                               tag: 'restaurant_image_${restaurant.id}',
-                                              child: Image.network(
-                                                restaurant.imageUrl!,
+                                              child: CachedImage(
+                                                imageUrl: restaurant.imageUrl,
                                                 fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) =>
-                                                    _buildPlaceholderImage(),
+                                                placeholderIcon: Icons.restaurant,
                                               ),
                                             )
                                           : Hero(
