@@ -368,19 +368,12 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                             ),
                             child: ClipOval(
                               child: restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty
-                                  ? Image.network(
-                                      restaurant.logoUrl!,
+                                  ? CachedImage(
+                                      imageUrl: restaurant.logoUrl,
                                       width: 56,
                                       height: 56,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stack) {
-                                        debugPrint('❌ Logo load error for ${restaurant.restaurantName}: $error');
-                                        return Icon(
-                                          Icons.restaurant_rounded,
-                                          color: TColor.primary,
-                                          size: 26,
-                                        );
-                                      },
+                                      placeholderIcon: Icons.restaurant_rounded,
                                     )
                                   : Icon(
                                       Icons.restaurant_rounded,
