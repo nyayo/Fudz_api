@@ -136,10 +136,19 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
             Hero(
               tag: 'menu_item_${menuItem.id}',
               child: (menuItem.imageUrl ?? '').isNotEmpty
-                  ? CachedImage(
-                      imageUrl: menuItem.imageUrl,
+                  ? Image.network(
+                      menuItem.imageUrl!,
                       fit: BoxFit.cover,
-                      placeholderIcon: Icons.fastfood,
+                      errorBuilder: (context, error, stack) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.fastfood,
+                            color: Colors.grey[500],
+                            size: 80,
+                          ),
+                        );
+                      },
                     )
                   : Container(
                       color: Colors.grey[300],

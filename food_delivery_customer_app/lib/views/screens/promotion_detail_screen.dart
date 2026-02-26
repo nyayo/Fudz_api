@@ -55,10 +55,10 @@ class PromotionDetailScreen extends StatelessWidget {
                 children: [
                   // Banner image or gradient
                   if (promotion.hasBanner)
-                    CachedImage(
-                      imageUrl: promotion.banner,
+                    Image.network(
+                      promotion.banner!,
                       fit: BoxFit.cover,
-                      placeholderIcon: Icons.local_offer,
+                      errorBuilder: (_, __, ___) => _buildGradientBanner(),
                     )
                   else
                     _buildGradientBanner(),
@@ -321,10 +321,10 @@ class _PromotionItemCard extends StatelessWidget {
                 width: 90,
                 height: 90,
                 child: item.hasImage
-                    ? CachedImage(
-                        imageUrl: item.safeImageUrl,
+                    ? Image.network(
+                        item.safeImageUrl,
                         fit: BoxFit.cover,
-                        placeholderIcon: Icons.fastfood,
+                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
                       )
                     : _buildPlaceholder(),
               ),
