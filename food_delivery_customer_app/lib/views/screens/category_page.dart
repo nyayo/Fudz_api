@@ -6,7 +6,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
-
+import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
 import 'package:get/get.dart';
 
@@ -445,80 +445,15 @@ class _CategoryPageState extends State<CategoryPage> {
                           ],
                         ),
 
-                        Obx(() {
-                          final isProcessing = _cartController.isItemProcessing(
-                            '${menuItem.id}_add',
-                          );
-                          final isInCart = _cartController.isItemInCart(
-                            menuItem.id,
-                          );
-
-                          return GestureDetector(
-                            onTap: (isProcessing || isInCart)
-                                ? null
-                                : () async {
-                                    if (!_userController.isLoggedIn) {
-                                      Get.snackbar(
-                                        'Login Required',
-                                        'Please login to add items to cart',
-                                        snackPosition: SnackPosition.TOP,
-                                        backgroundColor: Colors.orange,
-                                        colorText: Colors.white,
-                                      );
-                                      return;
-                                    }
-                                    try {
-                                      await _cartController.addToCart(
-                                        menuItem: menuItem,
-                                        quantity: 1,
-                                        accessToken:
-                                            _userController.accessToken,
-                                      );
-                                    } catch (e) {
-                                      // Error handled by controller
-                                    }
-                                  },
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: isInCart ? Colors.grey : TColor.primary,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        (isInCart
-                                                ? Colors.grey
-                                                : TColor.primary)
-                                            .withOpacity(0.3),
-                                    spreadRadius: 1,
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: isProcessing
-                                  ? const Center(
-                                      child: SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      ),
-                                    )
-                                  : Icon(
-                                      isInCart ? Icons.check : Icons.add,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                            ),
-                          );
-                        }),
+                        QuantityCounter(
+                          cartController: _cartController,
+                          menuItem: menuItem,
+                          accessToken: _userController.isLoggedIn
+                              ? _userController.accessToken
+                              : null,
+                          height: 36,
+                          compact: true,
+                        ),
                       ],
                     ),
                   ],
