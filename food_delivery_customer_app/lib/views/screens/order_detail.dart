@@ -343,14 +343,10 @@ class OrderDetailPage extends StatelessWidget {
                     item.menuItem.imageUrl!.trim().isNotEmpty
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      item.menuItem.imageUrl!.trim(),
+                    child: CachedImage(
+                      imageUrl: item.menuItem.imageUrl!.trim(),
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.fastfood,
-                        color: Colors.grey[400],
-                        size: 24,
-                      ),
+                      placeholderIcon: Icons.fastfood,
                     ),
                   )
                 : Icon(Icons.fastfood, color: Colors.grey[400], size: 24),
