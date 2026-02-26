@@ -384,6 +384,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
 
   Widget _buildMenuItemCard(MenuItem menuItem) {
     final cartController = Get.find<CartController>();
+    final userController = Get.find<UserController>();
     final cardWidth = MediaQuery.of(context).size.width - 40;
     return GestureDetector(
       onTap: () {
