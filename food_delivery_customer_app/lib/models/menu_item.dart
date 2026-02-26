@@ -54,7 +54,7 @@ class MenuItem {
   });
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
-    print('🛍️ Creating MenuItem from JSON keys: ${json.keys.take(5)}');
+    print('🛍️ Creating MenuItem from JSON keys: ${json.keys.toList()}');
 
     // Handle restaurant information - more robust parsing
     String? restaurantName;
@@ -84,10 +84,12 @@ class MenuItem {
 
     // Handle images array
     List<MenuItemImage> images = [];
+    print('🔍 JSON contains images key: ${json.containsKey("images")}, type: ${json["images"]?.runtimeType}');
     if (json['images'] is List) {
       images = (json['images'] as List).map((image) {
         return MenuItemImage.fromJson(image);
       }).toList();
+      print('🔍 Parsed ${images.length} images from array');
     }
 
     // Handle promotions array
@@ -107,11 +109,19 @@ class MenuItem {
       // - 'imageUrl' (from local storage via toJson)
       // - 'image_url' (from API)
       // - 'image' (alternative API format)
+      // - 'image_link' (another possible format)
+      // - 'photo' (another possible format)
       mainImageUrl = UrlUtils.ensureAbsoluteUrl(
         json['imageUrl']?.toString() ?? 
         json['image_url']?.toString() ?? 
-        json['image']?.toString()
+        json['image']?.toString() ??
+        json['image_link']?.toString() ??
+        json['photo']?.toString()
       );
+      
+      if (mainImageUrl == null || mainImageUrl.isEmpty) {
+        print('🔍 No image found in standard fields, checking JSON keys: ${json.keys.where((k) => k.toString().toLowerCase().contains("image") || k.toString().toLowerCase().contains("photo")).toList()}');
+      }
       
       // If still no image, try to look up from cached menu items
       if ((mainImageUrl == null || mainImageUrl.isEmpty) && json['id'] != null) {
