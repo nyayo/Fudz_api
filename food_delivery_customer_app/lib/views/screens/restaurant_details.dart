@@ -622,12 +622,22 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
             restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty
                 ? Hero(
                     tag: 'restaurant_image_${restaurant.id}',
-                    child: CachedImage(
-                      imageUrl: restaurant.imageUrl,
+                    child: Image.network(
+                      restaurant.imageUrl!,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: 250,
-                      placeholderIcon: Icons.restaurant,
+                      errorBuilder: (context, error, stack) {
+                        debugPrint('❌ Restaurant image load error: $error');
+                        return Container(
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.restaurant,
+                            color: Colors.grey[500],
+                            size: 80,
+                          ),
+                        );
+                      },
                     ),
                   )
                 : Container(
