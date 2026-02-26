@@ -415,12 +415,18 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: menuItem.imageUrl != null && menuItem.imageUrl!.isNotEmpty
-                    ? CachedImage(
-                        imageUrl: menuItem.imageUrl,
+                    ? Image.network(
+                        menuItem.imageUrl!,
                         fit: BoxFit.cover,
                         width: 80,
                         height: 80,
-                        placeholderIcon: Icons.fastfood,
+                        errorBuilder: (context, error, stack) {
+                          debugPrint('❌ Menu item image load error: $error');
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Icon(Icons.fastfood, color: Colors.grey[400]),
+                          );
+                        },
                       )
                     : Container(
                         color: Colors.grey[200],
