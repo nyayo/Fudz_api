@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/models/cart.dart';
-
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 
 import 'package:intl/intl.dart';
