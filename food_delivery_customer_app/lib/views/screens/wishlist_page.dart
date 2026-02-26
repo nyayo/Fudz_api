@@ -12,6 +12,7 @@ import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart'
 import 'package:food_delivery_customer_app/views/screens/get_started.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 
 class WishlistPage extends StatelessWidget {
@@ -293,16 +294,10 @@ class WishlistPage extends StatelessWidget {
                               menuItem.imageUrl!.isNotEmpty
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                menuItem.imageUrl!,
+                              child: CachedImage(
+                                imageUrl: menuItem.imageUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.fastfood,
-                                    color: Colors.grey[400],
-                                    size: 30,
-                                  );
-                                },
+                                placeholderIcon: Icons.fastfood,
                               ),
                             )
                           : Icon(
