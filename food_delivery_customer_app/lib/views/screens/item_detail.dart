@@ -955,26 +955,38 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                 ),
               ),
               const SizedBox(width: 16),
-              // Add to cart button
+              // Add to cart button or quantity counter
               Expanded(
                 child: Obx(() {
+                  final isInCart = cartController.isItemInCart(menuItem.id);
+
+                  if (isInCart) {
+                    return QuantityCounter(
+                      cartController: cartController,
+                      menuItem: menuItem,
+                      accessToken: userController.isLoggedIn
+                          ? userController.accessToken
+                          : null,
+                      height: 50,
+                    );
+                  }
+
                   final isAdding = cartController.isItemProcessing(
                     '${menuItem.id}_add',
                   );
-                  final isInCart = cartController.isItemInCart(menuItem.id);
 
                   return ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isInCart
+                      backgroundColor: !menuItem.isAvailable
                           ? Colors.grey[400]
                           : TColor.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      elevation: isInCart ? 0 : 2,
+                      elevation: menuItem.isAvailable ? 2 : 0,
                     ),
-                    onPressed: (!menuItem.isAvailable || isInCart)
+                    onPressed: !menuItem.isAvailable
                         ? null
                         : () async {
                             try {
@@ -1000,8 +1012,6 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                               Text(
                                 !menuItem.isAvailable
                                     ? 'Unavailable'
-                                    : isInCart
-                                    ? 'In Cart'
                                     : 'Add to Cart',
                                 style: const TextStyle(
                                   fontSize: 15,
@@ -1009,7 +1019,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                                   color: Colors.white,
                                 ),
                               ),
-                              if (menuItem.isAvailable && !isInCart) ...[
+                              if (menuItem.isAvailable) ...[
                                 const SizedBox(height: 2),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
