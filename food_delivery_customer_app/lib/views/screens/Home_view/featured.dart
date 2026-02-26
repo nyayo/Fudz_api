@@ -6,6 +6,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
+import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:get/get.dart';
 
 class MenuItemsWidget extends StatefulWidget {
@@ -290,100 +291,16 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      // Add to cart button
-                      Obx(() {
-                        final isProcessing = cartController.isItemProcessing(
-                          '${item.id}_add',
-                        );
-                        final isInCart = cartController.isItemInCart(item.id);
-                        return GestureDetector(
-                          onTap: (isProcessing || isInCart)
-                              ? null
-                              : () async {
-                                  if (!userController.isLoggedIn) {
-                                    Get.snackbar(
-                                      'Login Required',
-                                      'Please login to add items to cart',
-                                      snackPosition: SnackPosition.TOP,
-                                      backgroundColor: Colors.orange,
-                                      colorText: Colors.white,
-                                    );
-                                    return;
-                                  }
-                                  try {
-                                    await cartController.addToCart(
-                                      menuItem: item,
-                                      quantity: 1,
-                                      accessToken: userController.accessToken,
-                                    );
-                                  } catch (_) {}
-                                },
-                          child: Container(
-                            height: 32,
-                            decoration: BoxDecoration(
-                              gradient: isInCart
-                                  ? null
-                                  : LinearGradient(
-                                      colors: [
-                                        TColor.primary,
-                                        TColor.primary.withAlpha(200),
-                                      ],
-                                    ),
-                              color: isInCart ? Colors.grey[200] : null,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: isInCart
-                                  ? null
-                                  : [
-                                      BoxShadow(
-                                        color: TColor.primary.withAlpha(50),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                            ),
-                            child: Center(
-                              child: isProcessing
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation(
-                                          Colors.white,
-                                        ),
-                                      ),
-                                    )
-                                  : Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          isInCart
-                                              ? Icons.check_rounded
-                                              : Icons.add_rounded,
-                                          color: isInCart
-                                              ? Colors.grey[500]
-                                              : Colors.white,
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          isInCart ? 'Added' : 'Add',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: isInCart
-                                                ? Colors.grey[500]
-                                                : Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ),
-                        );
-                      }),
+                      // Add to cart button with quantity counter
+                      QuantityCounter(
+                        cartController: cartController,
+                        menuItem: item,
+                        accessToken: userController.isLoggedIn
+                            ? userController.accessToken
+                            : null,
+                        height: 32,
+                        compact: true,
+                      ),
                     ],
                   ),
                 ),
