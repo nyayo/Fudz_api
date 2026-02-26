@@ -321,10 +321,10 @@ class _PromotionItemCard extends StatelessWidget {
                 width: 90,
                 height: 90,
                 child: item.hasImage
-                    ? Image.network(
-                        item.safeImageUrl,
+                    ? CachedImage(
+                        imageUrl: item.safeImageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        placeholderIcon: Icons.fastfood,
                       )
                     : _buildPlaceholder(),
               ),
