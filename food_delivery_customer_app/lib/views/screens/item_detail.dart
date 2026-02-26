@@ -8,6 +8,7 @@ import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/controller/menu_controller.dart'
     as menu_controller;
@@ -135,7 +136,11 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
             Hero(
               tag: 'menu_item_${menuItem.id}',
               child: (menuItem.imageUrl ?? '').isNotEmpty
-                  ? Image.network(menuItem.imageUrl!, fit: BoxFit.cover)
+                  ? CachedImage(
+                      imageUrl: menuItem.imageUrl,
+                      fit: BoxFit.cover,
+                      placeholderIcon: Icons.fastfood,
+                    )
                   : Container(
                       color: Colors.grey[300],
                       child: Icon(
