@@ -9,6 +9,7 @@ import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
+import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 
 class AllMenuItemsPage extends StatefulWidget {
   const AllMenuItemsPage({super.key});
@@ -462,98 +463,32 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       const SizedBox(height: 12),
-                      // Add to Cart Button
+                      // Add to Cart Button with Quantity Counter
                       SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.35,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: item.isAvailable
-                                ? TColor.primary
-                                : Colors.grey[400],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          onPressed: item.isAvailable
-                              ? () async {
-                                  if (cartController.isItemProcessing(
-                                    '${item.id}_add',
-                                  )) {
-                                    return;
-                                  }
-                                  if (cartController.isItemInCart(item.id)) {
-                                    return;
-                                  }
-
-                                  if (!userController.isLoggedIn) {
-                                    Get.snackbar(
-                                      'Login Required',
-                                      'Please login to add items to cart',
-                                      snackPosition: SnackPosition.TOP,
-                                      backgroundColor: Colors.orange,
-                                      colorText: Colors.white,
-                                    );
-                                    return;
-                                  }
-
-                                  try {
-                                    await cartController.addToCart(
-                                      menuItem: item,
-                                      quantity: 1,
-                                      accessToken: userController.accessToken,
-                                    );
-                                  } catch (e) {
-                                    // Error is handled by CartController via SnackbarService
-                                  }
-                                }
-                              : null,
-                          child: Obx(() {
-                            final isProcessing = cartController
-                                .isItemProcessing('${item.id}_add');
-                            final isInCart = cartController.isItemInCart(
-                              item.id,
-                            );
-
-                            if (isProcessing) {
-                              return const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation(
-                                    Colors.white,
+                        width: MediaQuery.of(context).size.width * 0.4,
+                        child: item.isAvailable
+                            ? QuantityCounter(
+                                cartController: cartController,
+                                menuItem: item,
+                                accessToken: userController.isLoggedIn
+                                    ? userController.accessToken
+                                    : null,
+                                height: 40,
+                                compact: true,
+                              )
+                            : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[400],
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
+                                  elevation: 0,
                                 ),
-                              );
-                            }
-
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isInCart
-                                      ? Icons.check_circle
-                                      : Icons.shopping_cart,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isInCart ? 'Added' : 'Add to Cart',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: isInCart
-                                        ? Colors.white70
-                                        : Colors.white,
-                                  ),
-                                ),
-                              ],
-                            );
-                          }),
-                        ),
+                                onPressed: null,
+                                child: const Text('Unavailable'),
+                              ),
                       ),
                     ],
                   ),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
+import 'package:food_delivery_customer_app/models/menu_item.dart';
 
 class QuantityCounter extends StatelessWidget {
   final CartController cartController;
-  final int menuItemId;
+  final MenuItem menuItem;
   final String? accessToken;
   final double height;
   final bool compact;
@@ -12,7 +14,7 @@ class QuantityCounter extends StatelessWidget {
   const QuantityCounter({
     super.key,
     required this.cartController,
-    required this.menuItemId,
+    required this.menuItem,
     this.accessToken,
     this.height = 40,
     this.compact = false,
@@ -21,12 +23,12 @@ class QuantityCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final quantity = cartController.getItemQuantity(menuItemId);
-      final cartItemId = cartController.getCartItemId(menuItemId);
+      final quantity = cartController.getItemQuantity(menuItem.id);
+      final cartItemId = cartController.getCartItemId(menuItem.id);
       final isUpdating = cartItemId != null 
           ? cartController.isItemProcessing('${cartItemId}_update')
           : false;
-      final isInCart = cartController.isItemInCart(menuItemId);
+      final isInCart = cartController.isItemInCart(menuItem.id);
 
       if (!isInCart) {
         return _buildAddButton();
@@ -52,16 +54,15 @@ class QuantityCounter extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        onPressed: () async {
-          if (accessToken == null || accessToken!.isEmpty) {
-            return;
-          }
-          await cartController.addToCart(
-            menuItemId: menuItemId,
-            quantity: 1,
-            accessToken: accessToken,
-          );
-        },
+        onPressed: accessToken == null || accessToken!.isEmpty
+            ? null
+            : () async {
+                await cartController.addToCart(
+                  menuItem: menuItem,
+                  quantity: 1,
+                  accessToken: accessToken,
+                );
+              },
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -101,7 +102,6 @@ class QuantityCounter extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Decrease / Remove button
           SizedBox(
             width: buttonSize,
             height: buttonSize,
@@ -123,7 +123,6 @@ class QuantityCounter extends StatelessWidget {
                     },
             ),
           ),
-          // Quantity display
           Container(
             constraints: BoxConstraints(minWidth: compact ? 24 : 32),
             child: isUpdating
@@ -145,7 +144,6 @@ class QuantityCounter extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
           ),
-          // Increase button
           SizedBox(
             width: buttonSize,
             height: buttonSize,
@@ -170,99 +168,5 @@ class QuantityCounter extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class AddToCartButton extends StatelessWidget {
-  final CartController cartController;
-  final int menuItemId;
-  final String? accessToken;
-  final VoidCallback? onAddToCart;
-  final double height;
-  final bool compact;
-
-  const AddToCartButton({
-    super.key,
-    required this.cartController,
-    required this.menuItemId,
-    this.accessToken,
-    this.onAddToCart,
-    this.height = 40,
-    this.compact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final isProcessing = cartController.isItemProcessing('${menuItemId}_add');
-      final isInCart = cartController.isItemInCart(menuItemId);
-
-      if (isInCart) {
-        return QuantityCounter(
-          cartController: cartController,
-          menuItemId: menuItemId,
-          accessToken: accessToken,
-          height: height,
-          compact: compact,
-        );
-      }
-
-      return SizedBox(
-        height: height,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: TColor.primary,
-            foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 12 : 20,
-              vertical: 8,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(compact ? 8 : 12),
-            ),
-            elevation: 0,
-          ),
-          onPressed: isProcessing || accessToken == null || accessToken!.isEmpty
-              ? null
-              : () async {
-                  if (onAddToCart != null) {
-                    onAddToCart!();
-                  } else {
-                    await cartController.addToCart(
-                      menuItemId: menuItemId,
-                      quantity: 1,
-                      accessToken: accessToken,
-                    );
-                  }
-                },
-          child: isProcessing
-              ? SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.shopping_cart,
-                      size: compact ? 16 : 18,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Add to Cart',
-                      style: TextStyle(
-                        fontSize: compact ? 12 : 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      );
-    });
   }
 }
