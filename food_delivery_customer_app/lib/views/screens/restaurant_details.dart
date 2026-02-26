@@ -8,9 +8,8 @@ import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/restaurant.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/promo.dart';
-
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
-
+import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 
@@ -506,38 +505,15 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                         ),
                       ),
                       if (menuItem.isAvailable)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: TColor.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Obx(() {
-                            final isProcessing = cartController
-                                .isItemProcessing('${menuItem.id}_add');
-                            final isInCart = cartController.isItemInCart(
-                              menuItem.id,
-                            );
-
-                            return IconButton(
-                              icon: isProcessing
-                                  ? SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              TColor.primary,
-                                            ),
-                                      ),
-                                    )
-                                  : Icon(
-                                      isInCart
-                                          ? Icons.check_circle
-                                          : Icons.add_circle,
-                                      color: isInCart
-                                          ? Colors.grey
-                                          : TColor.primary,
+                        QuantityCounter(
+                          cartController: cartController,
+                          menuItem: menuItem,
+                          accessToken: userController.isLoggedIn
+                              ? userController.accessToken
+                              : null,
+                          height: 36,
+                          compact: true,
+                        ),
                                       size: (cardWidth * 0.10).clamp(
                                         18.0,
                                         24.0,
