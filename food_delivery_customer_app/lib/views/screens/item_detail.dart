@@ -23,8 +23,8 @@ class MenuItemDetailPage extends StatefulWidget {
 }
 
 class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
-  final custom_menu.MenuItemController menuController =
-      Get.find<custom_menu.MenuItemController>();
+  final menu_controller.MenuItemController menuController =
+      Get.find<menu_controller.MenuItemController>();
   final CartController cartController = Get.find<CartController>();
   final UserController userController = Get.find<UserController>();
   final WishlistController wishlistController = Get.find<WishlistController>();
