@@ -925,6 +925,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
               ),
             ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Quantity selector
               Obx(() {
