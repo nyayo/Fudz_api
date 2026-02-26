@@ -5,6 +5,7 @@ import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/promo.dart';
 import 'package:food_delivery_customer_app/views/screens/promotion_detail_screen.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 
 import 'package:get/get.dart';
 
@@ -357,10 +358,10 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget> {
       return Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            imageUrl,
+          CachedImage(
+            imageUrl: imageUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+            placeholderIcon: Icons.local_offer,
           ),
           // Subtle left-edge gradient so text doesn't clip into image
           Positioned.fill(

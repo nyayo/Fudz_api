@@ -7,6 +7,7 @@ import 'package:food_delivery_customer_app/models/cart.dart';
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
 import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/screens/location_selection.dart';
 import 'package:food_delivery_customer_app/views/screens/payment_selection.dart';
 
@@ -306,20 +307,12 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
                               );
                             }
 
-                            return Image.network(
-                              imageUrl,
+                            return CachedImage(
+                              imageUrl: imageUrl,
                               width: 64,
                               height: 64,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey[400],
-                                    size: 24,
-                                  ),
-                                );
-                              },
+                              placeholderIcon: Icons.fastfood,
                             );
                           },
                         ),
