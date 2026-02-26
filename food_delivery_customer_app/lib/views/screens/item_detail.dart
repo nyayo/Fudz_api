@@ -7,11 +7,10 @@ import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
-
+import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/controller/menu_controller.dart'
-    as custom_menu;
-
+    as menu_controller;
 import 'package:intl/intl.dart';
 
 class MenuItemDetailPage extends StatefulWidget {
