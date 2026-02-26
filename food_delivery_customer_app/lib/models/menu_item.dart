@@ -54,8 +54,6 @@ class MenuItem {
   });
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
-    print('🛍️ Creating MenuItem from JSON keys: ${json.keys.take(5)}');
-
     // Handle restaurant information - more robust parsing
     String? restaurantName;
     int? restaurantId;
@@ -107,10 +105,14 @@ class MenuItem {
       // - 'imageUrl' (from local storage via toJson)
       // - 'image_url' (from API)
       // - 'image' (alternative API format)
+      // - 'image_link' (another possible format)
+      // - 'photo' (another possible format)
       mainImageUrl = UrlUtils.ensureAbsoluteUrl(
         json['imageUrl']?.toString() ?? 
         json['image_url']?.toString() ?? 
-        json['image']?.toString()
+        json['image']?.toString() ??
+        json['image_link']?.toString() ??
+        json['photo']?.toString()
       );
       
       // If still no image, try to look up from cached menu items
@@ -118,11 +120,6 @@ class MenuItem {
         final menuItemId = _parseInt(json['id']);
         if (menuItemId != null) {
           mainImageUrl = _getCachedMenuItemImage(menuItemId);
-          if (mainImageUrl != null) {
-            print('📸 Retrieved cached image for menu item $menuItemId');
-          } else {
-            print('⚠️ No image found for menu item $menuItemId (not in cache)');
-          }
         }
       }
     }
