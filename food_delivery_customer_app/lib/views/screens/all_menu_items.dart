@@ -9,7 +9,6 @@ import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
-import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 
 class AllMenuItemsPage extends StatefulWidget {
   const AllMenuItemsPage({super.key});
@@ -344,12 +343,9 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                     SizedBox(
                       width: 100,
                       height: 100,
-                      child: CachedImage(
-                        imageUrl: item.safeImageUrl,
-                        width: 100,
-                        height: 100,
-                        borderRadius: 12,
-                        placeholderIcon: Icons.fastfood,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildMenuItemImage(item),
                       ),
                     ),
                     if (hasPromotion)
@@ -567,6 +563,37 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMenuItemImage(MenuItem item) {
+    String? imageUrl;
+    
+    if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
+      imageUrl = item.imageUrl;
+    } else if (item.images.isNotEmpty && item.images.first.imageUrl.isNotEmpty) {
+      imageUrl = item.images.first.imageUrl;
+    }
+    
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('❌ Menu item image load error: $error, url: $imageUrl');
+          return Container(
+            color: Colors.grey[200],
+            child: Icon(Icons.fastfood, color: Colors.grey[400], size: 40),
+          );
+        },
+      );
+    }
+    
+    return Container(
+      color: Colors.grey[200],
+      child: Icon(Icons.fastfood, color: Colors.grey[400], size: 40),
     );
   }
 

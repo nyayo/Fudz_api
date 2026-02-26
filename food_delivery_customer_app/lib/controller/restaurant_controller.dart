@@ -238,11 +238,7 @@ class RestaurantController extends GetxController {
       }
 
       final newList = menuItemsList
-          .map((json) {
-            final item = MenuItem.fromJson(json as Map<String, dynamic>);
-            print('📸 MenuItem ${item.id} "${item.title}" - imageUrl: "${item.imageUrl}"');
-            return item;
-          })
+          .map((json) => MenuItem.fromJson(json as Map<String, dynamic>))
           .toList();
 
       allMenuItems.value = newList;

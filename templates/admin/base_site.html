@@ -1,6 +1,30 @@
 {% extends "admin/base.html" %}
 {% block extrahead %}
 {{ block.super }}
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDlKg_R2lJnzTkxKpWJBAdyjEqJdBWKVWA",
+    authDomain: "fudz-91926.firebaseapp.com",
+    projectId: "fudz-91926",
+    storageBucket: "fudz-91926.firebasestorage.app",
+    messagingSenderId: "445202996690",
+    appId: "1:445202996690:web:01bc289d38b97d9a8dfc0b",
+    measurementId: "G-59K3J8DKKT"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 <script>
 function getCookie(name) {
     let cookieValue = null;

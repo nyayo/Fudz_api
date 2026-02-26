@@ -7,35 +7,24 @@ class UrlUtils {
   ];
 
   static String? ensureAbsoluteUrl(String? url) {
-    if (url == null || url.isEmpty) {
-      print('⚠️ ensureAbsoluteUrl received null/empty URL');
-      return null;
-    }
+    if (url == null || url.isEmpty) return null;
 
     String workingUrl = url;
-    print('🔍 ensureAbsoluteUrl processing: "$workingUrl"');
 
     for (final oldHost in _oldHosts) {
       if (workingUrl.startsWith(oldHost)) {
         workingUrl = workingUrl.replaceFirst(oldHost, baseHost);
-        print('🔍 Replaced old host, result: "$workingUrl"');
         return workingUrl;
       }
     }
 
     if (workingUrl.startsWith('http://') || workingUrl.startsWith('https://')) {
-      print('🔍 URL already absolute, returning: "$workingUrl"');
       return workingUrl;
     }
 
     if (workingUrl.startsWith('/')) {
-      final result = '$baseHost$workingUrl';
-      print('🔍 Made URL absolute: "$result"');
-      return result;
+      return '$baseHost$workingUrl';
     }
-    
-    final result = '$baseHost/$workingUrl';
-    print('🔍 Made URL absolute (added slash): "$result"');
-    return result;
+    return '$baseHost/$workingUrl';
   }
 }

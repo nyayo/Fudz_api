@@ -4,12 +4,14 @@ from rest_framework.response import Response
 
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
+from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from .models import DeliveryRequest, CourierEarnings
-from .serializers import DeliveryRequestSerializer, DeliveryStatusUpdateSerializer, CourierEarningsSerializer
+from .models import DeliveryRequest, DeliveryTracking, DeliveryStatus, CourierEarnings
+from .serializers import DeliveryRequestSerializer, DeliveryStatusUpdateSerializer, DeliveryTrackingSerializer, CourierEarningsSerializer
 from users.models import CourierProfile
+from orders.models import OrderStatus
 
 class DeliveryRequestViewSet(viewsets.ModelViewSet):
     queryset = DeliveryRequest.objects.select_related("order", "courier").all()
@@ -19,7 +21,6 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         if hasattr(user, "customer_profile"):
             return self.queryset.filter(order__customer=user.customer_profile)
         elif hasattr(user, "courier_profile"):
-            print(f"Courier {user.username} accessing their deliveries")
             return self.queryset.filter(courier=user.courier_profile)
         elif user.is_staff:
             return self.queryset
@@ -59,7 +60,7 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
 
         point = Point(float(lng), float(lat), srid=4326)
         deliveries = (
-            DeliveryRequest.objects.filter(status="pending")
+            DeliveryRequest.objects.filter(status=DeliveryStatus.PENDING)
             .annotate(distance=Distance("pickup_location", point))
             .order_by("distance")[:10]
         )
@@ -73,10 +74,10 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         delivery = self.get_object()
         courier = request.user.courier_profile
 
-        if delivery.status != "assigned" or delivery.courier != courier:
+        if delivery.status != DeliveryStatus.ASSIGNED or delivery.courier != courier:
             return Response({"error": "You are not assigned to this delivery"}, status=403)
 
-        delivery.mark_status("accepted")
+        delivery.mark_status(DeliveryStatus.ACCEPTED)
         return Response({"message": "Delivery accepted"}, status=200)
 
     @action(detail=True, methods=["post"], url_path="decline")
@@ -85,10 +86,10 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         delivery = self.get_object()
         courier = request.user.courier_profile
 
-        if delivery.status != "assigned" or delivery.courier != courier:
+        if delivery.status != DeliveryStatus.ASSIGNED or delivery.courier != courier:
             return Response({"error": "You are not assigned to this delivery"}, status=403)
 
-        delivery.mark_status("declined")
+        delivery.mark_status(DeliveryStatus.DECLINED)
         delivery.courier = None
         delivery.save()
 
@@ -101,14 +102,67 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         serializer = DeliveryStatusUpdateSerializer(delivery, data=request.data, partial=True)
         if serializer.is_valid():
             new_status = serializer.validated_data["status"]
-            serializer.save()
+            
+            with transaction.atomic():
+                serializer.save()
+                
+                # Update order status to match delivery status
+                if new_status == DeliveryStatus.PICKED_UP:
+                    delivery.order.status = OrderStatus.PICKED_UP
+                    delivery.order.save()
+                elif new_status == DeliveryStatus.DELIVERED:
+                    delivery.order.status = OrderStatus.DELIVERED
+                    delivery.order.save()
+                elif new_status == DeliveryStatus.CANCELLED:
+                    delivery.order.status = OrderStatus.CANCELLED
+                    delivery.order.save()
 
-            if new_status in ["delivered", "cancelled"] and delivery.courier:
-                delivery.courier.is_available = True
-                delivery.courier.save()
+                # Reset courier availability when delivery is completed or cancelled
+                if new_status in DeliveryStatus.COMPLETED_STATUSES and delivery.courier:
+                    delivery.courier.is_available = True
+                    if new_status == DeliveryStatus.DELIVERED:
+                        delivery.courier.total_deliveries += 1
+                    delivery.courier.save()
 
             return Response({"message": f"Status updated to {new_status}"})
         return Response(serializer.errors, status=400)
+    
+    @action(detail=True, methods=["post", "patch"], url_path="track")
+    def track(self, request, pk=None):
+        """Update courier's current location for this delivery"""
+        delivery = self.get_object()
+        courier = request.user.courier_profile
+
+        if delivery.courier != courier:
+            return Response({"error": "You are not assigned to this delivery"}, status=403)
+
+        if delivery.status not in DeliveryStatus.IN_PROGRESS_STATUSES:
+            return Response({"error": "Delivery is not in progress"}, status=400)
+
+        # Get or create tracking record
+        tracking, created = DeliveryTracking.objects.get_or_create(
+            delivery=delivery,
+            courier=courier,
+            defaults={"current_location": Point(0, 0, srid=4326)}
+        )
+
+        serializer = DeliveryTrackingSerializer(tracking, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+    @action(detail=True, methods=["get"], url_path="tracking")
+    def get_tracking(self, request, pk=None):
+        """Get current tracking location for a delivery"""
+        delivery = self.get_object()
+        tracking = DeliveryTracking.objects.filter(delivery=delivery).first()
+        
+        if not tracking:
+            return Response({"error": "No tracking data available"}, status=404)
+        
+        serializer = DeliveryTrackingSerializer(tracking)
+        return Response(serializer.data)
     
     
 class CourierEarningsListView(generics.ListAPIView):
