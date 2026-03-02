@@ -427,9 +427,9 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
             ),
           ],
         ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             // Restaurant icon
             Container(
               padding: const EdgeInsets.all(10),
@@ -693,23 +693,23 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
               ),
               Spacer(),
               Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Save ${CurrencyFormatter.format(savings)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green,
-                    ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Save ${CurrencyFormatter.format(savings)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
                   ),
                 ),
+              ),
             ],
           ),
         ],
@@ -932,7 +932,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
               // Quantity selector
               Obx(() {
                 final isInCart = cartController.isItemInCart(menuItem.id);
-                
+
                 if (isInCart) {
                   return QuantityCounter(
                     cartController: cartController,
@@ -987,7 +987,10 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                             backgroundColor: !menuItem.isAvailable
                                 ? Colors.grey[400]
                                 : TColor.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 30),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 30,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -1028,7 +1031,6 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                                     ),
                                     if (menuItem.isAvailable) ...[
                                       const SizedBox(height: 2),
-                                      
                                     ],
                                   ],
                                 ),

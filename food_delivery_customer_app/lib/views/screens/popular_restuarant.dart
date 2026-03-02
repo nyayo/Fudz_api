@@ -158,7 +158,9 @@ class _AllRestaurantsPageState extends State<AllRestaurantsPage> {
                       delegate: SliverChildBuilderDelegate((context, index) {
                         return AnimatedListItem(
                           index: index,
-                          child: _buildRestaurantCard(filteredRestaurants[index]),
+                          child: _buildRestaurantCard(
+                            filteredRestaurants[index],
+                          ),
                         );
                       }, childCount: filteredRestaurants.length),
                     ),

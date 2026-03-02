@@ -32,8 +32,10 @@ class StaggeredFadeSlide extends StatelessWidget {
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
-        position: Tween<Offset>(begin: slideOffset, end: Offset.zero)
-            .animate(curved),
+        position: Tween<Offset>(
+          begin: slideOffset,
+          end: Offset.zero,
+        ).animate(curved),
         child: child,
       ),
     );
@@ -75,8 +77,10 @@ class _FadeSlideInState extends State<FadeSlideIn>
     _ctrl = AnimationController(vsync: this, duration: widget.duration);
     final curved = CurvedAnimation(parent: _ctrl, curve: widget.curve);
     _opacity = Tween<double>(begin: 0, end: 1).animate(curved);
-    _offset =
-        Tween<Offset>(begin: widget.slideOffset, end: Offset.zero).animate(curved);
+    _offset = Tween<Offset>(
+      begin: widget.slideOffset,
+      end: Offset.zero,
+    ).animate(curved);
 
     if (widget.delay == Duration.zero) {
       _ctrl.forward();
@@ -135,9 +139,10 @@ class _ScalePopInState extends State<ScalePopIn>
     _ctrl = AnimationController(vsync: this, duration: widget.duration);
     final curved = CurvedAnimation(parent: _ctrl, curve: widget.curve);
     _scale = Tween<double>(begin: 0.0, end: 1.0).animate(curved);
-    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _opacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
 
     if (widget.delay == Duration.zero) {
       _ctrl.forward();
@@ -168,29 +173,29 @@ class _ScalePopInState extends State<ScalePopIn>
 // ──────────────────────────────────────────────────────────────
 class SmoothPageRoute<T> extends PageRouteBuilder<T> {
   SmoothPageRoute({required Widget page, RouteSettings? settings})
-      : super(
-          settings: settings,
-          transitionDuration: const Duration(milliseconds: 350),
-          reverseTransitionDuration: const Duration(milliseconds: 300),
-          pageBuilder: (_, __, ___) => page,
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curved = CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-              reverseCurve: Curves.easeInCubic,
-            );
-            return FadeTransition(
-              opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.04, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: child,
-              ),
-            );
-          },
-        );
+    : super(
+        settings: settings,
+        transitionDuration: const Duration(milliseconds: 350),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (_, __, ___) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return FadeTransition(
+            opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.04, 0),
+                end: Offset.zero,
+              ).animate(curved),
+              child: child,
+            ),
+          );
+        },
+      );
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -224,8 +229,10 @@ class _AnimatedListItemState extends State<AnimatedListItem>
     _ctrl = AnimationController(vsync: this, duration: widget.duration);
     final curved = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
     _opacity = Tween<double>(begin: 0, end: 1).animate(curved);
-    _offset = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
-        .animate(curved);
+    _offset = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(curved);
 
     // Stagger based on index – cap delay at 600ms
     final delay = Duration(milliseconds: (widget.index * 60).clamp(0, 600));
