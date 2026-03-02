@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/promotion_controller.dart';
 import 'package:food_delivery_customer_app/models/promo.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -85,7 +86,10 @@ class _PromotionsPageState extends State<PromotionsPage> {
             itemCount: activePromotions.length,
             itemBuilder: (context, index) {
               final promotion = activePromotions[index];
-              return _buildPromotionCard(promotion);
+              return AnimatedListItem(
+                index: index,
+                child: _buildPromotionCard(promotion),
+              );
             },
           ),
         );
