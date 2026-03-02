@@ -7,6 +7,7 @@ import 'package:food_delivery_customer_app/controller/order_controller.dart';
 import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
+import 'package:food_delivery_customer_app/services/image_precache_service.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/categories.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/featured.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/popular_restaurants.dart';
@@ -413,6 +414,10 @@ class _HomePageState extends State<HomePage> {
                   showLoading: false,
                 ),
               ]);
+              // Trigger background image pre-caching after refresh
+              if (Get.isRegistered<ImagePreCacheService>()) {
+                Get.find<ImagePreCacheService>().triggerPreCache();
+              }
             },
             child: SingleChildScrollView(
               child: Column(
