@@ -270,32 +270,50 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Price card
-          _buildPriceCard(menuItem),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 100),
+            child: _buildPriceCard(menuItem),
+          ),
           const SizedBox(height: 16),
 
           // Restaurant info bar
-          _buildRestaurantBar(menuItem),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 200),
+            child: _buildRestaurantBar(menuItem),
+          ),
           const SizedBox(height: 16),
 
           // Quick info chips
-          _buildQuickInfoChips(menuItem),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 250),
+            child: _buildQuickInfoChips(menuItem),
+          ),
 
           // Promotion info
           if (menuItem.hasActivePromotions) ...[
             const SizedBox(height: 16),
-            _buildPromotionCard(menuItem),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 300),
+              child: _buildPromotionCard(menuItem),
+            ),
           ],
 
           // Description
           if (menuItem.description != null &&
               menuItem.description!.isNotEmpty) ...[
             const SizedBox(height: 20),
-            _buildDescriptionSection(menuItem),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 350),
+              child: _buildDescriptionSection(menuItem),
+            ),
           ],
 
           // Item details
           const SizedBox(height: 20),
-          _buildDetailsSection(menuItem),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 400),
+            child: _buildDetailsSection(menuItem),
+          ),
         ],
       ),
     );

@@ -91,7 +91,7 @@ class _SplashScreenState extends State<SplashScreen>
       print('Stack trace: $stackTrace');
       perf.end('Total Startup', success: false, error: '$e');
       perf.finishStartup();
-      
+
       // Navigate to login on error
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.offAll(() => const GetStarted());
