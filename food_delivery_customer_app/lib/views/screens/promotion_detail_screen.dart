@@ -6,6 +6,7 @@ import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/promo.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:get/get.dart';
 
@@ -54,10 +55,10 @@ class PromotionDetailScreen extends StatelessWidget {
                 children: [
                   // Banner image or gradient
                   if (promotion.hasBanner)
-                    Image.network(
-                      promotion.banner!,
+                    CachedImage(
+                      imageUrl: promotion.banner,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildGradientBanner(),
+                      placeholderIcon: Icons.local_offer,
                     )
                   else
                     _buildGradientBanner(),
@@ -320,10 +321,13 @@ class _PromotionItemCard extends StatelessWidget {
                 width: 90,
                 height: 90,
                 child: item.hasImage
-                    ? Image.network(
-                        item.safeImageUrl,
+                    ? CachedImage(
+                        imageUrl: item.safeImageUrl,
+                        width: 90,
+                        height: 90,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        borderRadius: 12,
+                        placeholderIcon: Icons.fastfood,
                       )
                     : _buildPlaceholder(),
               ),
