@@ -23,14 +23,18 @@ class AppCacheManager {
     // Process in batches of 6 to avoid flooding the network
     for (var i = 0; i < validUrls.length; i += 6) {
       final batch = validUrls.skip(i).take(6);
-      await Future.wait(
-        batch.map(
-          (url) => instance
-              .getSingleFile(url!)
-              .catchError((_) => throw Exception('skip')),
-        ),
-        eagerError: false,
-      ).catchError((_) => <Object>[]);
+      try {
+        await Future.wait(
+          batch.map(
+            (url) => instance.getSingleFile(url!).catchError((_) {
+              // Swallow individual failures – other images can still be cached
+              return Future<dynamic>.value(null);
+            }).then((_) {}),
+          ),
+        );
+      } catch (_) {
+        // Swallow batch-level failures
+      }
     }
   }
 }
