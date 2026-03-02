@@ -6,6 +6,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:get/get.dart';
 
@@ -329,13 +330,12 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                 ),
                 child: ClipOval(
                   child: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
+                      ? CachedImage(
+                          imageUrl: imageUrl,
                           fit: BoxFit.cover,
                           width: 96,
                           height: 96,
-                          errorBuilder: (_, __, ___) =>
-                              _buildPlaceholderIcon(accentColor),
+                          placeholderIcon: Icons.fastfood,
                         )
                       : _buildPlaceholderIcon(accentColor),
                 ),
