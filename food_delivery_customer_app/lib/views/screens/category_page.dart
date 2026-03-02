@@ -6,6 +6,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
@@ -244,7 +245,10 @@ class _CategoryPageState extends State<CategoryPage> {
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final menuItem = filteredMenuItems[index];
-                  return _buildMenuItemCard(menuItem);
+                  return AnimatedListItem(
+                    index: index,
+                    child: _buildMenuItemCard(menuItem),
+                  );
                 }, childCount: filteredMenuItems.length),
               ),
             );

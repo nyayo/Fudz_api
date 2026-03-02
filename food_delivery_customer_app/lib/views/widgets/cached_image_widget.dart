@@ -24,9 +24,11 @@ class AppCacheManager {
     for (var i = 0; i < validUrls.length; i += 6) {
       final batch = validUrls.skip(i).take(6);
       await Future.wait(
-        batch.map((url) => instance
-            .getSingleFile(url!)
-            .catchError((_) => throw Exception('skip'))),
+        batch.map(
+          (url) => instance
+              .getSingleFile(url!)
+              .catchError((_) => throw Exception('skip')),
+        ),
         eagerError: false,
       ).catchError((_) => <Object>[]);
     }
@@ -107,7 +109,9 @@ class CachedImage extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: isSubtle ? Colors.grey[50] : (placeholderColor ?? Colors.grey[200]),
+        color: isSubtle
+            ? Colors.grey[50]
+            : (placeholderColor ?? Colors.grey[200]),
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: Center(
