@@ -42,6 +42,7 @@ class ImagePreCacheService extends GetxService {
       // Restaurant logos/images
       for (final r in rc.restaurants) {
         urls.add(r.logoUrl);
+        urls.add(r.imageUrl);
       }
 
       // Menu items

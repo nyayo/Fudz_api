@@ -1,5 +1,8 @@
+import 'package:food_delivery_customer_app/utils/http_overrides.dart'
+    if (dart.library.html) 'package:food_delivery_customer_app/utils/http_overrides_web.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
@@ -108,6 +111,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Allow all HTTPS certificates (helps on older Android with outdated
+  // CA stores that may not trust the Cloudflare R2 CDN certificate).
+  installHttpOverrides();
 
   try {
     // Initialize GetStorage

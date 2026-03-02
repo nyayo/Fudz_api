@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:shimmer/shimmer.dart';
@@ -16,6 +17,17 @@ class AppCacheManager {
     ),
   );
 
+  /// Clear all cached images. Useful when images fail to load due to
+  /// stale / corrupted cache entries.
+  static Future<void> clearCache() async {
+    try {
+      await instance.emptyCache();
+      debugPrint('🗑️ Image cache cleared');
+    } catch (e) {
+      debugPrint('⚠️ Error clearing image cache: $e');
+    }
+  }
+
   /// Pre-cache a list of image URLs in the background.
   /// Safe to call from anywhere – errors are silently swallowed.
   static Future<void> preCacheImages(List<String?> urls) async {
@@ -25,12 +37,13 @@ class AppCacheManager {
       final batch = validUrls.skip(i).take(6);
       try {
         await Future.wait(
-          batch.map(
-            (url) => instance.getSingleFile(url!).catchError((_) {
-              // Swallow individual failures – other images can still be cached
-              return Future<dynamic>.value(null);
-            }).then((_) {}),
-          ),
+          batch.map((url) async {
+            try {
+              await instance.getSingleFile(url!);
+            } catch (_) {
+              // Swallow individual failures
+            }
+          }),
         );
       } catch (_) {
         // Swallow batch-level failures
@@ -39,7 +52,9 @@ class AppCacheManager {
   }
 }
 
-class CachedImage extends StatelessWidget {
+/// A robust image widget that uses [CachedNetworkImage] with automatic
+/// fallback to [Image.network] when the cache layer fails.
+class CachedImage extends StatefulWidget {
   final String? imageUrl;
   final double? width;
   final double? height;
@@ -64,45 +79,89 @@ class CachedImage extends StatelessWidget {
   });
 
   @override
+  State<CachedImage> createState() => _CachedImageState();
+}
+
+class _CachedImageState extends State<CachedImage> {
+  bool _useFallback = false;
+
+  @override
   Widget build(BuildContext context) {
-    if (imageUrl == null || imageUrl!.isEmpty) {
+    if (widget.imageUrl == null || widget.imageUrl!.isEmpty) {
       return _buildPlaceholder();
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl!,
-        width: width,
-        height: height,
-        fit: fit,
-        cacheManager: AppCacheManager.instance,
-        placeholder: (context, url) {
-          if (showLoader) return _buildLoader();
-          if (useShimmer) return _buildShimmer();
-          return _buildPlaceholder(isSubtle: true);
-        },
-        errorWidget: (context, url, error) => _buildPlaceholder(),
-        fadeInDuration: const Duration(milliseconds: 200),
-        fadeInCurve: Curves.easeOut,
-        memCacheWidth: width != null ? (width! * 2).toInt() : null,
-        maxWidthDiskCache: 800,
-        maxHeightDiskCache: 800,
-      ),
+      borderRadius: BorderRadius.circular(widget.borderRadius),
+      child: _useFallback ? _buildFallbackImage() : _buildCachedImage(),
+    );
+  }
+
+  /// Primary strategy: CachedNetworkImage with disk + memory cache.
+  Widget _buildCachedImage() {
+    return CachedNetworkImage(
+      imageUrl: widget.imageUrl!,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      cacheManager: AppCacheManager.instance,
+      placeholder: (context, url) {
+        if (widget.showLoader) return _buildLoader();
+        if (widget.useShimmer) return _buildShimmer();
+        return _buildPlaceholder(isSubtle: true);
+      },
+      errorWidget: (context, url, error) {
+        debugPrint(
+          '⚠️ CachedImage cache-load failed ($url): $error — trying Image.network fallback',
+        );
+        // Switch to fallback on next frame to avoid build-during-build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _useFallback = true);
+        });
+        return _buildLoader();
+      },
+      fadeInDuration: const Duration(milliseconds: 200),
+      fadeInCurve: Curves.easeOut,
+      memCacheWidth: widget.width != null && widget.width!.isFinite ? (widget.width! * 2).toInt() : null,
+      maxWidthDiskCache: 800,
+      maxHeightDiskCache: 800,
+    );
+  }
+
+  /// Fallback strategy: plain [Image.network] which bypasses the cache
+  /// manager entirely. On Android this uses the platform HTTP stack.
+  Widget _buildFallbackImage() {
+    return Image.network(
+      widget.imageUrl!,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      cacheWidth: widget.width != null && widget.width!.isFinite ? (widget.width! * 2).toInt() : null,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child; // loaded
+        if (widget.useShimmer) return _buildShimmer();
+        return _buildLoader();
+      },
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint(
+          '❌ CachedImage fallback also failed (${widget.imageUrl}): $error',
+        );
+        return _buildPlaceholder();
+      },
     );
   }
 
   Widget _buildShimmer() {
     return Shimmer.fromColors(
-      baseColor: placeholderColor ?? Colors.grey[300]!,
+      baseColor: widget.placeholderColor ?? Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       period: const Duration(milliseconds: 1200),
       child: Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(borderRadius),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
         ),
       ),
     );
@@ -110,19 +169,21 @@ class CachedImage extends StatelessWidget {
 
   Widget _buildPlaceholder({bool isSubtle = false}) {
     return Container(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       decoration: BoxDecoration(
         color: isSubtle
             ? Colors.grey[50]
-            : (placeholderColor ?? Colors.grey[200]),
-        borderRadius: BorderRadius.circular(borderRadius),
+            : (widget.placeholderColor ?? Colors.grey[200]),
+        borderRadius: BorderRadius.circular(widget.borderRadius),
       ),
       child: Center(
         child: Icon(
-          placeholderIcon,
+          widget.placeholderIcon,
           color: isSubtle ? Colors.grey[100] : Colors.grey[400],
-          size: width != null ? (width! * 0.4).clamp(10.0, 40.0) : 40,
+          size: widget.width != null
+              ? (widget.width! * 0.4).clamp(10.0, 40.0)
+              : 40,
         ),
       ),
     );
@@ -130,8 +191,8 @@ class CachedImage extends StatelessWidget {
 
   Widget _buildLoader() {
     return Container(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       color: Colors.grey[100],
       child: const Center(
         child: SizedBox(

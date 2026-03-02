@@ -7,9 +7,8 @@ import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
-import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
-import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/controller/menu_controller.dart'
     as menu_controller;
@@ -136,12 +135,20 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
             // Image
             Hero(
               tag: 'menu_item_${menuItem.id}',
-              child: CachedImage(
-                imageUrl: menuItem.imageUrl,
-                fit: BoxFit.cover,
-                placeholderIcon: Icons.fastfood,
-                placeholderColor: Colors.grey[300],
-              ),
+              child: (menuItem.imageUrl ?? '').isNotEmpty
+                  ? CachedImage(
+                      imageUrl: menuItem.imageUrl,
+                      fit: BoxFit.cover,
+                      placeholderIcon: Icons.fastfood,
+                    )
+                  : Container(
+                      color: Colors.grey[300],
+                      child: Icon(
+                        Icons.fastfood,
+                        color: Colors.grey[500],
+                        size: 80,
+                      ),
+                    ),
             ),
 
             // Gradient overlay
@@ -270,50 +277,32 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Price card
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 100),
-            child: _buildPriceCard(menuItem),
-          ),
+          _buildPriceCard(menuItem),
           const SizedBox(height: 16),
 
           // Restaurant info bar
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 200),
-            child: _buildRestaurantBar(menuItem),
-          ),
+          _buildRestaurantBar(menuItem),
           const SizedBox(height: 16),
 
           // Quick info chips
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 250),
-            child: _buildQuickInfoChips(menuItem),
-          ),
+          _buildQuickInfoChips(menuItem),
 
           // Promotion info
           if (menuItem.hasActivePromotions) ...[
             const SizedBox(height: 16),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 300),
-              child: _buildPromotionCard(menuItem),
-            ),
+            _buildPromotionCard(menuItem),
           ],
 
           // Description
           if (menuItem.description != null &&
               menuItem.description!.isNotEmpty) ...[
             const SizedBox(height: 20),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 350),
-              child: _buildDescriptionSection(menuItem),
-            ),
+            _buildDescriptionSection(menuItem),
           ],
 
           // Item details
           const SizedBox(height: 20),
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 400),
-            child: _buildDetailsSection(menuItem),
-          ),
+          _buildDetailsSection(menuItem),
         ],
       ),
     );
@@ -446,9 +435,9 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
             ),
           ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             // Restaurant icon
             Container(
               padding: const EdgeInsets.all(10),
@@ -712,23 +701,23 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
               ),
               Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Save ${CurrencyFormatter.format(savings)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Save ${CurrencyFormatter.format(savings)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -951,7 +940,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
               // Quantity selector
               Obx(() {
                 final isInCart = cartController.isItemInCart(menuItem.id);
-
+                
                 if (isInCart) {
                   return QuantityCounter(
                     cartController: cartController,
@@ -1006,10 +995,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                             backgroundColor: !menuItem.isAvailable
                                 ? Colors.grey[400]
                                 : TColor.primary,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                              horizontal: 30,
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 30),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -1050,6 +1036,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                                     ),
                                     if (menuItem.isAvailable) ...[
                                       const SizedBox(height: 2),
+                                      
                                     ],
                                   ],
                                 ),

@@ -6,8 +6,8 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
-import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 
 class MenuItemsWidget extends StatefulWidget {
@@ -218,7 +218,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Card body — color from dominant image color
+            // Card body ΓÇö color from dominant image color
             Positioned(
               top: 50,
               left: 0,
@@ -308,7 +308,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
               ),
             ),
 
-            // Floating circular food image — pops on top, ring color from image
+            // Floating circular food image ΓÇö pops on top, ring color from image
             Positioned(
               top: 0,
               left: 160 / 2 - 48,

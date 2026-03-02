@@ -10,7 +10,9 @@ class MenuItemImage {
 
   factory MenuItemImage.fromJson(dynamic json) {
     if (json is Map<String, dynamic>) {
-      return MenuItemImage(imageUrl: UrlUtils.ensureAbsoluteUrl(json['image']?.toString()) ?? '');
+      return MenuItemImage(
+        imageUrl: UrlUtils.ensureAbsoluteUrl(json['image']?.toString()) ?? '',
+      );
     } else if (json is String) {
       return MenuItemImage(imageUrl: UrlUtils.ensureAbsoluteUrl(json) ?? '');
     }
@@ -71,7 +73,8 @@ class MenuItem {
     } else if (json['restaurant'] is Map) {
       final restaurantObj = json['restaurant'] as Map;
       // Only override restaurantName if we didn't get it from direct field
-      restaurantName ??= restaurantObj['restaurant_name']?.toString() ??
+      restaurantName ??=
+          restaurantObj['restaurant_name']?.toString() ??
           restaurantObj['name']?.toString();
       restaurantId = _parseInt(restaurantObj['id']);
       print('🏪 Restaurant from Map: id=$restaurantId, name=$restaurantName');
@@ -108,21 +111,26 @@ class MenuItem {
       // - 'image_link' (another possible format)
       // - 'photo' (another possible format)
       mainImageUrl = UrlUtils.ensureAbsoluteUrl(
-        json['imageUrl']?.toString() ?? 
-        json['image_url']?.toString() ?? 
-        json['image']?.toString() ??
-        json['image_link']?.toString() ??
-        json['photo']?.toString()
+        json['imageUrl']?.toString() ??
+            json['image_url']?.toString() ??
+            json['image']?.toString() ??
+            json['image_link']?.toString() ??
+            json['photo']?.toString(),
       );
-      
+
       // If still no image, try to look up from cached menu items
-      if ((mainImageUrl == null || mainImageUrl.isEmpty) && json['id'] != null) {
+      if ((mainImageUrl == null || mainImageUrl.isEmpty) &&
+          json['id'] != null) {
         final menuItemId = _parseInt(json['id']);
         if (menuItemId != null) {
           mainImageUrl = _getCachedMenuItemImage(menuItemId);
         }
       }
     }
+
+    print(
+      '🖼️ MenuItem ${json['id']} "${json['title']}": imageUrl=$mainImageUrl, images=${images.length}',
+    );
 
     return MenuItem(
       id: _parseInt(json['id']) ?? 0,
@@ -182,7 +190,8 @@ class MenuItem {
     return price * (1 - highestDiscount / 100);
   }
 
-  String get formattedDiscountedPrice => CurrencyFormatter.format(discountedPrice);
+  String get formattedDiscountedPrice =>
+      CurrencyFormatter.format(discountedPrice);
 
   // Safe getters for null safety
   String get safeImageUrl => imageUrl ?? '';
@@ -219,15 +228,17 @@ class MenuItem {
         final itemData = cachedData[menuItemId.toString()];
         if (itemData is Map) {
           // Try to get image from cached data in various formats
-          final imageUrl = itemData['imageUrl']?.toString() ?? 
-                          itemData['image_url']?.toString() ?? 
-                          itemData['image']?.toString();
+          final imageUrl =
+              itemData['imageUrl']?.toString() ??
+              itemData['image_url']?.toString() ??
+              itemData['image']?.toString();
           if (imageUrl != null && imageUrl.isNotEmpty) {
             return UrlUtils.ensureAbsoluteUrl(imageUrl);
           }
-          
+
           // Also check images array
-          if (itemData['images'] is List && (itemData['images'] as List).isNotEmpty) {
+          if (itemData['images'] is List &&
+              (itemData['images'] as List).isNotEmpty) {
             final firstImage = (itemData['images'] as List).first;
             if (firstImage is Map && firstImage['image'] != null) {
               return UrlUtils.ensureAbsoluteUrl(firstImage['image'].toString());

@@ -7,7 +7,6 @@ import 'package:food_delivery_customer_app/controller/order_controller.dart';
 import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
-import 'package:food_delivery_customer_app/services/image_precache_service.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/categories.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/featured.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/popular_restaurants.dart';
@@ -87,7 +86,7 @@ class _HomePageState extends State<HomePage> {
             await Future.wait(futures);
           }
         } catch (e) {
-          print('⚠️ Error initializing user services: $e');
+          print('ΓÜá∩╕Å Error initializing user services: $e');
         }
       }
     }
@@ -112,12 +111,7 @@ class _HomePageState extends State<HomePage> {
         Obx(() {
           final user = _userController.user;
           return Padding(
-            padding: const EdgeInsets.only(
-              left: 10,
-              right: 20,
-              top: 10,
-              bottom: 0,
-            ),
+            padding: const EdgeInsets.only(left: 10, right: 20, top: 10, bottom: 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -172,7 +166,7 @@ class _HomePageState extends State<HomePage> {
                         locationController.selectedLocation != null;
                     final isGettingLocation =
                         locationController.isGettingLocationValue;
-
+          
                     if (isGettingLocation) {
                       return SizedBox(
                         width: 22,
@@ -183,7 +177,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       );
                     }
-
+          
                     return Container(
                       width: 32,
                       height: 32,
@@ -201,24 +195,21 @@ class _HomePageState extends State<HomePage> {
                     );
                   }),
                   const SizedBox(width: 10),
-
+          
                   // Address text
                   Expanded(
                     child: Obx(() {
                       final location = locationController.selectedLocation;
                       final isGettingLocation =
                           locationController.isGettingLocationValue;
-
+          
                       if (isGettingLocation) {
                         return Text(
                           "Getting your location...",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                         );
                       }
-
+          
                       return Text(
                         location?.address ?? "Set delivery location",
                         style: TextStyle(
@@ -233,7 +224,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     }),
                   ),
-
+          
                   const SizedBox(width: 6),
                   Obx(() {
                     final isGettingLocation =
@@ -266,7 +257,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildOrdersNotificationBadge() {
     return GestureDetector(
       onTap: () {
-        print('📱 Orders icon tapped - navigating to OrdersPage');
+        print('≡ƒô▒ Orders icon tapped - navigating to OrdersPage');
         Get.to(() => OrdersPage());
       },
       child: Stack(
@@ -289,7 +280,7 @@ class _HomePageState extends State<HomePage> {
             child: Obx(() {
               final notificationCount = _orderController.notificationCount;
 
-              print('🎯 Orders badge - Count: $notificationCount');
+              print('≡ƒÄ» Orders badge - Count: $notificationCount');
 
               if (notificationCount == 0) {
                 return const SizedBox();
@@ -422,10 +413,6 @@ class _HomePageState extends State<HomePage> {
                   showLoading: false,
                 ),
               ]);
-              // Trigger background image pre-caching after refresh
-              if (Get.isRegistered<ImagePreCacheService>()) {
-                Get.find<ImagePreCacheService>().triggerPreCache();
-              }
             },
             child: SingleChildScrollView(
               child: Column(
@@ -454,7 +441,7 @@ class _HomePageState extends State<HomePage> {
                       featuredItemsWithPromotions:
                           restaurantController.featuredItemsWithPromotions,
                       onBannerTap: () {
-                        print('🏷️ Promo banner tapped');
+                        print('≡ƒÅ╖∩╕Å Promo banner tapped');
                       },
                     ),
                   ),

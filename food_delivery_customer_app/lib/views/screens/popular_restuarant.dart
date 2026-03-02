@@ -3,7 +3,6 @@ import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';
 
 import 'package:food_delivery_customer_app/views/screens/restaurant_details.dart';
-import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
@@ -156,12 +155,7 @@ class _AllRestaurantsPageState extends State<AllRestaurantsPage> {
                   slivers: [
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
-                        return AnimatedListItem(
-                          index: index,
-                          child: _buildRestaurantCard(
-                            filteredRestaurants[index],
-                          ),
-                        );
+                        return _buildRestaurantCard(filteredRestaurants[index]);
                       }, childCount: filteredRestaurants.length),
                     ),
                     SliverToBoxAdapter(
