@@ -122,9 +122,9 @@ class _CachedImageState extends State<CachedImage> {
       },
       fadeInDuration: const Duration(milliseconds: 200),
       fadeInCurve: Curves.easeOut,
-      memCacheWidth: widget.width != null && widget.width!.isFinite ? (widget.width! * 2).toInt() : null,
-      maxWidthDiskCache: 800,
-      maxHeightDiskCache: 800,
+      memCacheWidth: widget.width != null && widget.width!.isFinite
+          ? (widget.width! * 2).toInt()
+          : null,
     );
   }
 
@@ -136,7 +136,9 @@ class _CachedImageState extends State<CachedImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-      cacheWidth: widget.width != null && widget.width!.isFinite ? (widget.width! * 2).toInt() : null,
+      cacheWidth: widget.width != null && widget.width!.isFinite
+          ? (widget.width! * 2).toInt()
+          : null,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child; // loaded
         if (widget.useShimmer) return _buildShimmer();

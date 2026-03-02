@@ -144,26 +144,26 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                   );
                 },
                 child: Container(
-                    width: cardWidth,
-                    margin: EdgeInsets.only(
-                      right: index == popularRestaurants.length - 1 ? 0 : 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Column(
-                          children: [
+                  width: cardWidth,
+                  margin: EdgeInsets.only(
+                    right: index == popularRestaurants.length - 1 ? 0 : 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Column(
+                        children: [
                           // Top section with restaurant image
                           Expanded(
                             flex: 3,
@@ -185,18 +185,22 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                                         topLeft: Radius.circular(20),
                                         topRight: Radius.circular(20),
                                       ),
-                                      child: (restaurant.imageUrl != null &&
+                                      child:
+                                          (restaurant.imageUrl != null &&
                                               restaurant.imageUrl!.isNotEmpty)
                                           ? Hero(
-                                              tag: 'restaurant_image_${restaurant.id}',
+                                              tag:
+                                                  'restaurant_image_${restaurant.id}',
                                               child: CachedImage(
                                                 imageUrl: restaurant.imageUrl,
                                                 fit: BoxFit.cover,
-                                                placeholderIcon: Icons.restaurant,
+                                                placeholderIcon:
+                                                    Icons.restaurant,
                                               ),
                                             )
                                           : Hero(
-                                              tag: 'restaurant_image_${restaurant.id}',
+                                              tag:
+                                                  'restaurant_image_${restaurant.id}',
                                               child: _buildPlaceholderImage(),
                                             ),
                                     ),
@@ -236,8 +240,9 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF2E7D32),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -292,8 +297,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                                           ),
                                           const SizedBox(width: 2),
                                           Text(
-                                            (restaurant.avgRating ??
-                                                    restaurant.rating)
+                                            (restaurant.avgRating ?? 0.0)
                                                 .toStringAsFixed(1),
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w800,
@@ -313,12 +317,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                           Expanded(
                             flex: 2,
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                12,
-                                28,
-                                12,
-                                8,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(12, 28, 12, 8),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -354,10 +353,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 3,
-                              ),
+                              border: Border.all(color: Colors.white, width: 3),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withAlpha(25),
@@ -367,7 +363,9 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                               ],
                             ),
                             child: ClipOval(
-                              child: restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty
+                              child:
+                                  restaurant.logoUrl != null &&
+                                      restaurant.logoUrl!.isNotEmpty
                                   ? CachedImage(
                                       imageUrl: restaurant.logoUrl,
                                       width: 56,
@@ -644,7 +642,11 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.wifi_off_rounded, color: Colors.grey[400], size: 44),
+                  Icon(
+                    Icons.wifi_off_rounded,
+                    color: Colors.grey[400],
+                    size: 44,
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     sanitizeErrorMessage(restaurantController.error.value),

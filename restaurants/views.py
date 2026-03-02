@@ -366,7 +366,7 @@ class RestaurantListView(generics.ListAPIView):
                 categories_count=Count(
                     "categories", filter=Q(categories__is_active=True)
                 ),
-                avg_rating=Avg("rating"),
+                avg_rating=Avg("reviews__rating"),
             )
             .select_related("user")
         )
@@ -383,6 +383,15 @@ class RestaurantDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return (
             RestaurantProfile.objects.filter(is_approved=True, is_active=True)
+            .annotate(
+                menu_items_count=Count(
+                    "menu_items", filter=Q(menu_items__is_available=True)
+                ),
+                categories_count=Count(
+                    "categories", filter=Q(categories__is_active=True)
+                ),
+                avg_rating=Avg("reviews__rating"),
+            )
             .prefetch_related("categories__items__promotions", "promotions")
             .select_related("user")
         )
