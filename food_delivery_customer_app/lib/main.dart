@@ -19,6 +19,7 @@ import 'package:food_delivery_customer_app/routes/app_pages.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
 import 'package:food_delivery_customer_app/services/error_logger_service.dart';
 import 'package:food_delivery_customer_app/services/google.dart';
+import 'package:food_delivery_customer_app/services/image_precache_service.dart';
 import 'package:food_delivery_customer_app/services/performance_tracker.dart';
 import 'package:food_delivery_customer_app/services/token_service.dart';
 import 'package:food_delivery_customer_app/controller/menu_controller.dart'
@@ -156,9 +157,15 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
       defaultTransition: Transition.cupertino,
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: const Duration(milliseconds: 350),
       initialBinding: AppBindings(),
       home: const SplashScreen(),
       getPages: AppPages.routes,
