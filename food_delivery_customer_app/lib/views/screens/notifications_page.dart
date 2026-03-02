@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/order_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/order_detail.dart';
-import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -108,10 +107,7 @@ class OrderNotificationsTab extends StatelessWidget {
         itemCount: recentOrders.length,
         itemBuilder: (context, index) {
           final order = recentOrders[index];
-          return AnimatedListItem(
-            index: index,
-            child: _buildOrderNotificationCard(context, order),
-          );
+          return _buildOrderNotificationCard(context, order);
         },
       );
     });
@@ -364,10 +360,7 @@ class PromotionNotificationsTab extends StatelessWidget {
       itemCount: promotions.length,
       itemBuilder: (context, index) {
         final promo = promotions[index];
-        return AnimatedListItem(
-          index: index,
-          child: _buildPromotionCard(promo),
-        );
+        return _buildPromotionCard(promo);
       },
     );
   }

@@ -25,12 +25,13 @@ class AppCacheManager {
       final batch = validUrls.skip(i).take(6);
       try {
         await Future.wait(
-          batch.map(
-            (url) => instance.getSingleFile(url!).catchError((_) {
-              // Swallow individual failures – other images can still be cached
-              return Future<dynamic>.value(null);
-            }).then((_) {}),
-          ),
+          batch.map((url) async {
+            try {
+              await instance.getSingleFile(url!);
+            } catch (_) {
+              // Swallow individual failures
+            }
+          }),
         );
       } catch (_) {
         // Swallow batch-level failures
