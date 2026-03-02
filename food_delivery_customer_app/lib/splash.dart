@@ -151,22 +151,28 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       backgroundColor: TColor.primary,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset("assets/logo.png", height: 120, width: 120),
-            const SizedBox(height: 24),
-            const Text(
-              'FUDGO',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 4,
-              ),
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: ScaleTransition(
+            scale: _scaleAnim,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset("assets/logo.png", height: 120, width: 120),
+                const SizedBox(height: 24),
+                const Text(
+                  'FUDGO',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
