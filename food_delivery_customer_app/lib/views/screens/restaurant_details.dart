@@ -179,7 +179,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Obx(() {
-        if (restaurantController.isLoadingDetails.value || restaurantController.selectedRestaurant.value == null) {
+        if (restaurantController.isLoadingDetails.value ||
+            restaurantController.selectedRestaurant.value == null) {
           return _buildLoadingState();
         }
 
@@ -414,7 +415,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               height: 80,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: menuItem.imageUrl != null && menuItem.imageUrl!.isNotEmpty
+                child:
+                    menuItem.imageUrl != null && menuItem.imageUrl!.isNotEmpty
                     ? CachedImage(
                         imageUrl: menuItem.imageUrl,
                         fit: BoxFit.cover,
@@ -650,7 +652,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                 children: [
                   Row(
                     children: [
-                      if (restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty)
+                      if (restaurant.logoUrl != null &&
+                          restaurant.logoUrl!.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(right: 12),
                           child: ClipOval(
@@ -712,10 +715,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     border: Border.all(color: Colors.amber.withOpacity(0.3)),
                   ),
                   child: Obx(() {
-                    final calcRating = _reviewController.averageRating;
-                    final displayRating = calcRating > 0
-                        ? calcRating
-                        : (restaurant.avgRating ?? restaurant.rating);
+                    final displayRating = _reviewController.averageRating;
                     return Row(
                       children: [
                         Icon(Icons.star, color: Colors.amber, size: 16),
@@ -788,222 +788,120 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
       child: Obx(() {
         final reviews = _reviewController.reviews;
         final isLoading = _reviewController.isLoading.value;
+        final avg = _reviewController.averageRating;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Header row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Ratings & Reviews',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (reviews.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${reviews.length}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  TextButton.icon(
-                    onPressed: () => _showRatingDialog(restaurant.id),
-                    icon: Icon(
-                      Icons.rate_review,
-                      size: 18,
-                      color: TColor.primary,
-                    ),
-                    label: Text(
-                      'Rate',
-                      style: TextStyle(
-                        color: TColor.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Average rating display
-              if (reviews.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.amber.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      Column(
-                        children: [
-                          Text(
-                            _reviewController.averageRating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Row(
-                            children: List.generate(5, (index) {
-                              final rating = _reviewController.averageRating;
-                              return Icon(
-                                index < rating.floor()
-                                    ? Icons.star
-                                    : (index < rating.ceil() &&
-                                          rating % 1 >= 0.5)
-                                    ? Icons.star_half
-                                    : Icons.star_border,
-                                color: Colors.amber,
-                                size: 16,
-                              );
-                            }),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${reviews.length} review${reviews.length != 1 ? 's' : ''}',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 24),
-                      // Rating bars
-                      Expanded(
-                        child: Column(
-                          children: List.generate(5, (index) {
-                            final star = 5 - index;
-                            final count = reviews
-                                .where((r) => r.rating == star)
-                                .length;
-                            final percent = reviews.isNotEmpty
-                                ? count / reviews.length
-                                : 0.0;
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    '$star',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.star,
-                                    size: 12,
-                                    color: Colors.amber,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: LinearProgressIndicator(
-                                        value: percent,
-                                        backgroundColor: Colors.grey[200],
-                                        valueColor:
-                                            const AlwaysStoppedAnimation(
-                                              Colors.amber,
-                                            ),
-                                        minHeight: 6,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(
-                                    width: 24,
-                                    child: Text(
-                                      '$count',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                    ],
-                  ),
+              // ── Compact rating summary row ──
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    // Score + stars
+                    Text(
+                      avg.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    ...List.generate(5, (i) {
+                      return Icon(
+                        i < avg.floor()
+                            ? Icons.star_rounded
+                            : (i < avg.ceil() && avg % 1 >= 0.5)
+                            ? Icons.star_half_rounded
+                            : Icons.star_outline_rounded,
+                        color: Colors.amber,
+                        size: 14,
+                      );
+                    }),
+                    const SizedBox(width: 6),
+                    Text(
+                      '(${reviews.length})',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    // Rate button
+                    InkWell(
+                      onTap: () => _showRatingDialog(restaurant.id),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: TColor.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.edit, size: 13, color: TColor.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Rate',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: TColor.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               if (isLoading)
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
+                  padding: EdgeInsets.only(top: 8),
+                  child: SizedBox(height: 2, child: LinearProgressIndicator()),
                 ),
 
-              // Recent reviews (show up to 3)
+              // ── Horizontal mini review cards ──
               if (reviews.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                ...reviews.take(3).map((review) => _buildReviewCard(review)),
-              ],
-
-              if (reviews.isEmpty && !isLoading)
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.rate_review_outlined,
-                          size: 40,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No reviews yet',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Be the first to rate this restaurant!',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 74,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: reviews.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (_, i) => _buildReviewCard(reviews[i]),
                   ),
                 ),
+              ],
 
-              const SizedBox(height: 8),
+              // Empty state — single compact line
+              if (reviews.isEmpty && !isLoading)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    'No reviews yet — be the first!',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                ),
             ],
           ),
         );
@@ -1012,47 +910,64 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
   }
 
   Widget _buildReviewCard(dynamic review) {
+    final initial = (review.customerName ?? 'A')[0].toUpperCase();
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      width: 210,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: List.generate(
-                  5,
-                  (index) => Icon(
-                    index < review.rating ? Icons.star : Icons.star_border,
-                    color: Colors.amber,
-                    size: 16,
+              // Avatar initial
+              CircleAvatar(
+                radius: 10,
+                backgroundColor: TColor.primary.withOpacity(0.15),
+                child: Text(
+                  initial,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: TColor.primary,
                   ),
                 ),
               ),
+              const SizedBox(width: 6),
+              // Inline stars
+              ...List.generate(
+                5,
+                (j) => Icon(
+                  j < review.rating
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
+                  color: Colors.amber,
+                  size: 12,
+                ),
+              ),
+              const Spacer(),
               Text(
                 _formatDate(review.createdAt),
-                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                style: TextStyle(fontSize: 9, color: Colors.grey[400]),
               ),
             ],
           ),
-          if (review.comment.isNotEmpty) ...[
-            const SizedBox(height: 8),
+          if (review.comment != null && review.comment.isNotEmpty) ...[
+            const SizedBox(height: 4),
             Text(
               review.comment,
-              style: TextStyle(
-                color: Colors.grey[700],
-                fontSize: 13,
-                height: 1.4,
-              ),
-              maxLines: 3,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+                height: 1.3,
+              ),
             ),
           ],
         ],
