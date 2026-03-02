@@ -7,7 +7,6 @@ import 'package:food_delivery_customer_app/models/promo.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
-import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 
 class PromotionDetailScreen extends StatelessWidget {
