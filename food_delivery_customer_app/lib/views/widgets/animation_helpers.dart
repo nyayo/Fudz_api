@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 // ──────────────────────────────────────────────────────────────
 // Staggered fade + slide for list items (drives off parent controller)
