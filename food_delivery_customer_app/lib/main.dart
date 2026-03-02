@@ -204,5 +204,8 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => men.MenuItemController(), fenix: true);
     Get.lazyPut(() => LocationController(), fenix: true);
     Get.lazyPut(() => PromotionController(), fenix: true);
+
+    // Background image pre-caching service
+    Get.put(ImagePreCacheService(), permanent: true);
   }
 }
