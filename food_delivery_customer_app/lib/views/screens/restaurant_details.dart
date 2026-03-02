@@ -1085,64 +1085,66 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               'Rate this Restaurant',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'How was your experience?',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                // Star rating selector
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedRating = index + 1),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Icon(
-                          index < selectedRating
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: Colors.amber,
-                          size: 36,
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'How was your experience?',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  // Star rating selector
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedRating = index + 1),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            index < selectedRating
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: Colors.amber,
+                            size: 36,
+                          ),
                         ),
+                      );
+                    }),
+                  ),
+                  if (selectedRating > 0) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _getRatingLabel(selectedRating),
+                      style: TextStyle(
+                        color: Colors.amber[800],
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
-                    );
-                  }),
-                ),
-                if (selectedRating > 0) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    _getRatingLabel(selectedRating),
-                    style: TextStyle(
-                      color: Colors.amber[800],
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  // Comment field
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Share your experience (optional)',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: TColor.primary),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
                     ),
                   ),
                 ],
-                const SizedBox(height: 16),
-                // Comment field
-                TextField(
-                  controller: commentController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Share your experience (optional)',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: TColor.primary),
-                    ),
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-              ],
+              ),
             ),
             actions: [
               TextButton(
