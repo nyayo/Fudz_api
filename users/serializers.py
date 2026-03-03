@@ -115,10 +115,10 @@ class VerifyOTPSerializer(serializers.Serializer):
 
 
 class RegistrationSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False, allow_blank=True)
     first_name = serializers.CharField(max_length=30)
     last_name = serializers.CharField(max_length=30)
-    phone = serializers.CharField(max_length=15)
+    phone = serializers.CharField(max_length=17, required=False, allow_blank=True)
     user_type = serializers.ChoiceField(choices=User.USER_TYPES)
     password = serializers.CharField(min_length=8, write_only=True)
     password2 = serializers.CharField(min_length=8, write_only=True)
@@ -134,13 +134,31 @@ class RegistrationSerializer(serializers.Serializer):
         if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError("Passwords do not match")
 
-        if not EmailVerification.objects.filter(
-            email=attrs["email"], is_verified=True
-        ).exists():
-            raise serializers.ValidationError("Email not verified.")
+        email = attrs.get("email")
+        phone = attrs.get("phone")
+
+        if not email and not phone:
+            raise serializers.ValidationError(
+                "Either email or phone number is required."
+            )
+
+        # Check verification: at least one of email or phone must be verified
+        email_verified = (
+            email
+            and EmailVerification.objects.filter(email=email, is_verified=True).exists()
+        )
+        phone_verified = (
+            phone
+            and PhoneVerification.objects.filter(phone=phone, is_verified=True).exists()
+        )
+
+        if not email_verified and not phone_verified:
+            raise serializers.ValidationError(
+                "Email or phone number must be verified before registration."
+            )
 
         user_type = attrs["user_type"]
-        if user_type == "customer" and not attrs.get("phone"):
+        if user_type == "customer" and not phone:
             raise serializers.ValidationError("Phone number is required for customers")
         elif user_type == "restaurant" and not all(
             [
@@ -179,11 +197,11 @@ class RegistrationSerializer(serializers.Serializer):
         print(f"Validated data: {validated_data}, Profile data: {profile_data}")
 
         user = User.objects.create_user(
-            phone=validated_data["phone"],
+            phone=validated_data.get("phone"),
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
             user_type=validated_data["user_type"],
-            email=validated_data.get("email"),
+            email=validated_data.get("email") or None,
             password=validated_data["password"],
             is_verified=True,
         )
@@ -195,15 +213,16 @@ class RegistrationSerializer(serializers.Serializer):
         elif user_type == "courier":
             CourierProfile.objects.create(user=user, **profile_data)
 
-        # Send welcome email asynchronously
-        send_templated_email_task.delay(
-            user.email,
-            "welcome_verified",
-            {
-                "user_name": user.first_name or user.email,
-                "username": user.username or user.email,
-            },
-        )
+        # Send welcome email asynchronously (only if email is provided)
+        if user.email:
+            send_templated_email_task.delay(
+                user.email,
+                "welcome_verified",
+                {
+                    "user_name": user.first_name or user.email,
+                    "username": user.username or user.email,
+                },
+            )
 
         return user
 
