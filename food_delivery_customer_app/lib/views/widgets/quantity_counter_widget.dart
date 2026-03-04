@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
+import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 
 class QuantityCounter extends StatelessWidget {
   final CartController cartController;
   final MenuItem menuItem;
   final String? accessToken;
+  final int? userId;
   final double height;
   final bool compact;
 
@@ -16,6 +18,7 @@ class QuantityCounter extends StatelessWidget {
     required this.cartController,
     required this.menuItem,
     this.accessToken,
+    this.userId,
     this.height = 40,
     this.compact = false,
   });
@@ -61,6 +64,7 @@ class QuantityCounter extends StatelessWidget {
                   menuItem: menuItem,
                   quantity: 1,
                   accessToken: accessToken,
+                  userId: userId,
                 );
               },
         child: Row(
