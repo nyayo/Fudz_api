@@ -9,7 +9,7 @@ import 'package:food_delivery_customer_app/controller/registration_controller.da
 class RegistrationPage extends StatelessWidget {
   RegistrationPage({super.key});
 
-  final RegistrationController _controller = Get.put(RegistrationController());
+  final RegistrationController _controller = Get.find<RegistrationController>();
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +70,55 @@ class RegistrationPage extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // ── Phone section (shown first for phone flow) ──
+          Obx(() {
+            if (_controller.fromPhone) {
+              return _buildReadOnlyField(
+                'Phone Number (verified)',
+                _controller.phone ?? '',
+                Icons.phone,
+              );
+            }
+            return TextFormField(
+              controller: _controller.phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'Phone Number',
+                prefixIcon: Icon(Icons.phone, color: TColor.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 16),
+
+          // First Name
+          TextFormField(
+            controller: _controller.firstNameController,
+            decoration: InputDecoration(
+              labelText: 'First Name',
+              prefixIcon: Icon(Icons.person_outline, color: TColor.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Last Name
+          TextFormField(
+            controller: _controller.lastNameController,
+            decoration: InputDecoration(
+              labelText: 'Last Name',
+              prefixIcon: Icon(Icons.person_outline, color: TColor.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // ── Email section ──
           // If from phone flow: editable email + inline verify
           // If from email flow: read-only (already verified)
@@ -236,56 +285,6 @@ class RegistrationPage extends StatelessWidget {
               ],
             );
           }),
-          const SizedBox(height: 16),
-
-          // Phone (read-only if from phone flow, editable otherwise)
-          Obx(() {
-            final isPhoneReadOnly = _controller.fromPhone;
-            if (isPhoneReadOnly) {
-              return _buildReadOnlyField(
-                'Phone Number',
-                _controller.phone ?? '',
-                Icons.phone,
-              );
-            }
-            return TextFormField(
-              controller: _controller.phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
-                prefixIcon: Icon(Icons.phone, color: TColor.primary),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: 16),
-
-          // First Name
-          TextFormField(
-            controller: _controller.firstNameController,
-            decoration: InputDecoration(
-              labelText: 'First Name',
-              prefixIcon: Icon(Icons.person_outline, color: TColor.primary),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Last Name
-          TextFormField(
-            controller: _controller.lastNameController,
-            decoration: InputDecoration(
-              labelText: 'Last Name',
-              prefixIcon: Icon(Icons.person_outline, color: TColor.primary),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
           const SizedBox(height: 16),
 
           // Password
