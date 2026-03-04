@@ -639,19 +639,47 @@ class ApiService extends GetxService {
         responseBody: response.body,
       );
 
+      // Parse the error response for more specific error messages
+      String errorMessage = 'Something went wrong';
+      
       try {
         final error = json.decode(response.body);
-        throw Exception(
-          error['detail'] ??
-              error['message'] ??
-              error['error'] ??
-              'Something went wrong',
-        );
+        
+        // Check for specific error fields
+        if (error is Map) {
+          // Try various common error field names
+          errorMessage = error['detail'] ?? 
+                         error['message'] ?? 
+                         error['error'] ?? 
+                         error['non_field_errors']?.toString() ??
+                         error['phone']?.toString() ??
+                         'Something went wrong';
+          
+          // If it's a list of errors, join them
+          if (error['detail'] is List) {
+            errorMessage = (error['detail'] as List).join(', ');
+          }
+        }
       } catch (e) {
-        throw Exception(
-          'Something went wrong (Status: ${response.statusCode})',
-        );
+        // If we can't parse JSON, use status code based message
+        if (response.statusCode == 400) {
+          errorMessage = 'Invalid request. Please check your phone number format.';
+        } else if (response.statusCode == 401) {
+          errorMessage = 'Authentication failed. Please try again.';
+        } else if (response.statusCode == 403) {
+          errorMessage = 'Access denied. Please try again.';
+        } else if (response.statusCode == 404) {
+          errorMessage = 'Service not found. Please try again later.';
+        } else if (response.statusCode == 429) {
+          errorMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (response.statusCode >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else {
+          errorMessage = 'Something went wrong (Status: ${response.statusCode})';
+        }
       }
+      
+      throw Exception(errorMessage);
     }
   }
 

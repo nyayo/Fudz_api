@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/category_controller.dart';
 import 'package:food_delivery_customer_app/controller/email_auth_controller.dart';
+import 'package:food_delivery_customer_app/controller/phone_auth_controller.dart';
 import 'package:food_delivery_customer_app/controller/location_controller.dart';
 import 'package:food_delivery_customer_app/controller/order_controller.dart';
 import 'package:food_delivery_customer_app/controller/promotion_controller.dart';
@@ -208,6 +209,7 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => WishlistController(), fenix: true);
     Get.lazyPut(() => OrderController(), fenix: true);
     Get.lazyPut(() => EmailAuthController(), fenix: true);
+    Get.lazyPut(() => PhoneAuthController(), fenix: true);
     Get.lazyPut(() => men.MenuItemController(), fenix: true);
     Get.lazyPut(() => LocationController(), fenix: true);
     Get.lazyPut(() => PromotionController(), fenix: true);
