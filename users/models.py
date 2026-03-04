@@ -39,7 +39,7 @@ class User(AbstractUser, PermissionsMixin):
         null=True,
         help_text="Phone number in international format",
     )
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, blank=True, null=True)
     user_type = models.CharField(
         max_length=20, choices=USER_TYPES, db_index=True
     )
@@ -69,7 +69,14 @@ class User(AbstractUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         if not self.username:
-            base_username = self.email.split("@")[0]
+            # Generate base username from email or phone
+            if self.email:
+                base_username = self.email.split("@")[0]
+            elif self.phone:
+                # Use last 6 digits of phone for username base
+                base_username = self.phone[-6:].replace("+", "")
+            else:
+                base_username = "user"
 
             if self.user_type == "customer":
                 self.username = f"customer_{base_username}"
