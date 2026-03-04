@@ -145,14 +145,18 @@ class RegistrationPage extends StatelessWidget {
                         enabled: !_controller.isEmailVerified.value,
                         decoration: InputDecoration(
                           labelText: 'Email Address',
-                          prefixIcon:
-                              Icon(Icons.email_outlined, color: TColor.primary),
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: TColor.primary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           suffixIcon: _controller.isEmailVerified.value
-                              ? const Icon(Icons.check_circle,
-                                  color: Colors.green)
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                )
                               : null,
                         ),
                       ),
@@ -185,8 +189,10 @@ class RegistrationPage extends StatelessWidget {
                                     ),
                                   ),
                                 )
-                              : const Text('Verify',
-                                  style: TextStyle(color: Colors.white)),
+                              : const Text(
+                                  'Verify',
+                                  style: TextStyle(color: Colors.white),
+                                ),
                         ),
                       ),
                     ],
@@ -224,13 +230,16 @@ class RegistrationPage extends StatelessWidget {
                             fillColor: Colors.grey[50],
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide:
-                                  BorderSide(color: Colors.grey.shade400),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade400,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide:
-                                  BorderSide(color: TColor.primary, width: 2),
+                              borderSide: BorderSide(
+                                color: TColor.primary,
+                                width: 2,
+                              ),
                             ),
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -276,8 +285,10 @@ class RegistrationPage extends StatelessWidget {
                                   ),
                                 ),
                               )
-                            : const Text('Verify Email',
-                                style: TextStyle(color: Colors.white)),
+                            : const Text(
+                                'Verify Email',
+                                style: TextStyle(color: Colors.white),
+                              ),
                       ),
                     ),
                   ),
