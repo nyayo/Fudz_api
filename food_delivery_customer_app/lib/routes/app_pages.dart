@@ -7,6 +7,7 @@ import 'package:food_delivery_customer_app/views/screens/get_started.dart';
 import 'package:food_delivery_customer_app/views/screens/google_phone_input.dart';
 import 'package:food_delivery_customer_app/views/screens/main_tab/main_tab_view.dart';
 import 'package:food_delivery_customer_app/views/screens/promotions_page.dart';
+import 'package:food_delivery_customer_app/views/auth/phone_verification_screen.dart';
 import 'package:food_delivery_customer_app/views/screens/register.dart';
 import 'package:get/get.dart';
 
@@ -18,6 +19,10 @@ class AppPages {
     GetPage(
       name: '/email_verification',
       page: () => const EmailVerificationScreen(),
+    ),
+    GetPage(
+      name: '/phone_verification',
+      page: () => const PhoneVerificationScreen(),
     ),
     GetPage(name: '/register', page: () => RegistrationPage()),
     GetPage(name: '/home', page: () => const MainTabView()),

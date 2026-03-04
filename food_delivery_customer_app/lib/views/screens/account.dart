@@ -63,6 +63,15 @@ class ProfilePage extends StatelessWidget {
                       ),
                     if (isLoggedIn) const SizedBox(height: 24),
 
+                    // Google Account Linking Section
+                    if (isLoggedIn)
+                      FadeSlideIn(
+                        duration: const Duration(milliseconds: 500),
+                        delay: const Duration(milliseconds: 350),
+                        child: _buildGoogleLinkSection(userController),
+                      ),
+                    if (isLoggedIn) const SizedBox(height: 24),
+
                     // Notification Preferences
                     if (isLoggedIn)
                       FadeSlideIn(
@@ -426,6 +435,186 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
             Icons.badge_outlined,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoogleLinkSection(UserController userController) {
+    return Obx(() {
+      final isLinked = userController.isGoogleLinked.value;
+      final isLinking = userController.isLinkingGoogle.value;
+
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.link, color: TColor.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Linked Accounts',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: TColor.primaryText,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                // Google icon
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isLinked
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/google_icon.png',
+                      width: 22,
+                      height: 22,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.g_mobiledata,
+                        color: isLinked ? Colors.green : Colors.grey,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Google Account',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: TColor.primaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isLinked
+                            ? 'Linked — you can sign in with Google'
+                            : 'Not linked — tap to connect',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isLinked ? Colors.green : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Link / Unlink button
+                if (isLinking)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  _buildGoogleLinkButton(isLinked, userController),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildGoogleLinkButton(bool isLinked, UserController userController) {
+    if (isLinked) {
+      return TextButton(
+        onPressed: () => _showUnlinkConfirmation(userController),
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.red[400],
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: const Text(
+          'Unlink',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      );
+    }
+
+    return ElevatedButton(
+      onPressed: () => userController.linkGoogleAccount(),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: TColor.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        elevation: 0,
+      ),
+      child: const Text(
+        'Link',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  void _showUnlinkConfirmation(UserController userController) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.link_off, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Unlink Google?'),
+          ],
+        ),
+        content: const Text(
+          'You will no longer be able to sign in with Google. '
+          'Make sure you have another way to access your account (email/phone).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: TColor.primaryText),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              userController.unlinkGoogleAccount();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Unlink'),
           ),
         ],
       ),

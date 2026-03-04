@@ -443,6 +443,7 @@ class UserController extends GetxController {
 
         // Initialize services and go to home
         await _initializeUserServices();
+        isGoogleLinked.value = true; // Logged in via Google = linked
         Get.offAllNamed('/home');
       } else if (needsRegistration) {
         // NEW USER: Needs to provide additional information
@@ -911,6 +912,11 @@ class UserController extends GetxController {
         print('⚠️ Notification setup error: $e');
       });
 
+      // Check Google link status (non-critical)
+      checkGoogleLinkStatus().catchError((e) {
+        print('⚠️ Google link status check error: $e');
+      });
+
       _servicesInitialized = true;
       print('✅ All user services initialized successfully');
     } catch (e) {
@@ -1138,6 +1144,220 @@ class UserController extends GetxController {
       print('❌ Google auth status check error: $e');
       return false;
     }
+  }
+
+  // ── Google Account Linking ──────────────────────────────────────────
+
+  /// Check if the current user's Google account is linked
+  final RxBool isGoogleLinked = false.obs;
+  final RxBool isLinkingGoogle = false.obs;
+
+  /// Check Google link status from the backend
+  Future<void> checkGoogleLinkStatus() async {
+    try {
+      final response = await _apiService.get('users/auth/link-google/');
+      if (response is Map) {
+        isGoogleLinked.value = response['google_linked'] == true;
+        // Also update the local user object
+        if (_user.value != null) {
+          _user.value = _user.value!.copyWith(
+            googleLinked: response['google_linked'] == true,
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error checking Google link status: $e');
+    }
+  }
+
+  /// Link a Google account to the current logged-in user
+  Future<bool> linkGoogleAccount() async {
+    try {
+      isLinkingGoogle.value = true;
+      error.value = '';
+
+      // Step 1: Get Google account
+      final GoogleSignInAccount? googleUser =
+          await _googleSignInService.signIn();
+      if (googleUser == null) {
+        _showSuccessSnackbar('Cancelled', 'Google linking was cancelled');
+        return false;
+      }
+
+      // Step 2: Get id_token
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      if (googleAuth.idToken == null) {
+        throw Exception('Failed to get Google authentication token');
+      }
+
+      // Step 3: Send id_token to backend link endpoint
+      final response = await _apiService.post('users/auth/link-google/', {
+        'id_token': googleAuth.idToken!,
+      });
+
+      if (response is Map && response['google_linked'] == true) {
+        isGoogleLinked.value = true;
+        if (_user.value != null) {
+          _user.value = _user.value!.copyWith(googleLinked: true);
+          await _tokenService.saveUserData(_user.value!);
+        }
+        _showSuccessSnackbar(
+          'Google Linked',
+          'Your Google account has been linked successfully!',
+        );
+        return true;
+      } else {
+        throw Exception(
+          response['message'] ?? response['detail'] ?? 'Linking failed',
+        );
+      }
+    } catch (e) {
+      error.value = e.toString();
+      print('❌ Google linking error: $e');
+      _showSafeSnackbar('Linking Failed', _getUserFriendlyError(e));
+      return false;
+    } finally {
+      isLinkingGoogle.value = false;
+    }
+  }
+
+  /// Unlink the Google account from the current user
+  Future<bool> unlinkGoogleAccount() async {
+    try {
+      isLinkingGoogle.value = true;
+      error.value = '';
+
+      final response = await _apiService.delete('users/auth/link-google/');
+
+      // DELETE might return empty on success
+      if (response is Map &&
+          response.containsKey('google_linked') &&
+          response['google_linked'] == false) {
+        isGoogleLinked.value = false;
+        if (_user.value != null) {
+          _user.value = _user.value!.copyWith(googleLinked: false);
+          await _tokenService.saveUserData(_user.value!);
+        }
+        _showSuccessSnackbar(
+          'Google Unlinked',
+          'Your Google account has been unlinked.',
+        );
+        return true;
+      } else if (response is Map && response.containsKey('message')) {
+        throw Exception(response['message']);
+      }
+      // If response is empty map from a 200/204, treat as success
+      isGoogleLinked.value = false;
+      if (_user.value != null) {
+        _user.value = _user.value!.copyWith(googleLinked: false);
+        await _tokenService.saveUserData(_user.value!);
+      }
+      _showSuccessSnackbar(
+        'Google Unlinked',
+        'Your Google account has been unlinked.',
+      );
+      return true;
+    } catch (e) {
+      error.value = e.toString();
+      print('❌ Google unlinking error: $e');
+      _showSafeSnackbar('Unlink Failed', _getUserFriendlyError(e));
+      return false;
+    } finally {
+      isLinkingGoogle.value = false;
+    }
+  }
+
+  void _showSuccessSnackbar(String title, String message) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (Get.isRegistered<UserController>() && Get.context != null) {
+          try {
+            Get.snackbar(
+              title,
+              message,
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+              margin: const EdgeInsets.all(10),
+              borderRadius: 8,
+            );
+          } catch (e) {
+            debugPrint('Snackbar error: $e - $title: $message');
+          }
+        }
+      });
+    });
+  }
+
+  /// Show Google link prompt dialog after registration/login
+  /// Called when can_link_google is true in auth response
+  void showGoogleLinkPrompt() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (Get.context != null) {
+          Get.dialog(
+            AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Image.asset(
+                    'assets/google_icon.png',
+                    width: 24,
+                    height: 24,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.g_mobiledata,
+                      color: Colors.red,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Link Google Account?',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+              content: const Text(
+                'Link your Google account so you can also sign in with Google in the future. This makes it easier to access your account.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text(
+                    'Not Now',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                    linkGoogleAccount();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CAF50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Link Google',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            barrierDismissible: true,
+          );
+        }
+      });
+    });
   }
 
   Future<void> createUserFromOtpResponse(Map<String, dynamic> userData) async {

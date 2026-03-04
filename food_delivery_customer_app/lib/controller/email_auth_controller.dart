@@ -162,8 +162,17 @@ class EmailAuthController extends GetxController {
               print('✅ User created from OTP response');
             }
 
+            // Check if user can link Google and update state
+            final canLinkGoogle = response['can_link_google'] == true;
+            userController.isGoogleLinked.value = !canLinkGoogle;
+
             print('User logged in successfully, navigating to home');
             Get.offAllNamed('/home');
+
+            // Show Google link prompt if available
+            if (canLinkGoogle) {
+              userController.showGoogleLinkPrompt();
+            }
           } else {
             throw Exception('Authentication tokens not received');
           }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
+import 'package:food_delivery_customer_app/controller/phone_auth_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/views/screens/google_button.dart';
 import 'package:food_delivery_customer_app/views/widgets/round_button.dart';
@@ -13,6 +14,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final UserController userController = Get.find<UserController>();
+    final PhoneAuthController phoneController = Get.find<PhoneAuthController>();
 
     return AuthLayoutWrapper(
       child: Column(
@@ -58,35 +60,51 @@ class LoginScreen extends StatelessWidget {
                     border: Border.all(color: Colors.grey.withOpacity(0.3)),
                     color: Colors.white.withOpacity(0.5),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          "+256",
-                          style: ResponsiveText.body(
-                            context,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 24,
-                        color: Colors.grey.withOpacity(0.3),
-                      ),
-                      Expanded(
-                        child: TextField(
-                          keyboardType: TextInputType.phone,
-                          style: ResponsiveText.body(context),
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 18,
-                              horizontal: 16,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              "+256",
+                              style: ResponsiveText.body(
+                                context,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            hintText: "Enter phone number",
-                            hintStyle: ResponsiveText.hint(context),
-                            border: InputBorder.none,
+                          ),
+                          Container(
+                            width: 1,
+                            height: 24,
+                            color: Colors.grey.withOpacity(0.3),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: phoneController.phoneController,
+                              keyboardType: TextInputType.phone,
+                              style: ResponsiveText.body(context),
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                  horizontal: 16,
+                                ),
+                                hintText: "Enter phone number",
+                                hintStyle: ResponsiveText.hint(context),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: Text(
+                          "Enter 9 digits (e.g., 712345678)",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
                           ),
                         ),
                       ),
@@ -96,17 +114,32 @@ class LoginScreen extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // Get Code link
+                // Get Code button
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: null, // As previously disabled
-                    child: Text(
-                      "Get Code",
-                      style: TextStyle(
-                        color: TColor.primary.withOpacity(0.5),
-                        fontWeight: FontWeight.w600,
-                      ),
+                  child: Obx(
+                    () => TextButton(
+                      onPressed: phoneController.isLoading.value
+                          ? null
+                          : () => phoneController.requestOtp(),
+                      child: phoneController.isLoading.value
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  TColor.primary,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              "Get Code",
+                              style: TextStyle(
+                                color: TColor.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ),
