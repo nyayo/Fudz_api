@@ -58,6 +58,7 @@ class _HomePageState extends State<HomePage> {
 
     if (userController.isLoggedIn && userController.user != null) {
       final accessToken = userController.accessToken;
+      final userId = userController.user?.id;
       if (accessToken != null && accessToken.isNotEmpty) {
         try {
           // Only init services that haven't been loaded yet
@@ -65,7 +66,7 @@ class _HomePageState extends State<HomePage> {
 
           if (!cartController.hasItems && cartController.cart == null) {
             futures.add(
-              cartController.initializeCart(accessToken: accessToken),
+              cartController.initializeCart(userId: userId, accessToken: accessToken),
             );
           }
           futures.add(

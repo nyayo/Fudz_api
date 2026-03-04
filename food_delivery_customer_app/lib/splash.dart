@@ -104,10 +104,11 @@ class _SplashScreenState extends State<SplashScreen>
       final cartController = Get.find<CartController>();
       final wishlistController = Get.find<WishlistController>();
       final accessToken = userController.accessToken;
+      final userId = userController.user?.id;
 
       // Run cart and wishlist init in parallel
       await Future.wait([
-        cartController.initializeCart(accessToken: accessToken),
+        cartController.initializeCart(userId: userId, accessToken: accessToken),
         wishlistController.loadWishlist(accessToken),
       ]);
 

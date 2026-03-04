@@ -873,7 +873,7 @@ class UserController extends GetxController {
       // Cart
       final cartController = Get.find<CartController>();
       futures.add(
-        cartController.initializeCart(accessToken: token).catchError((e) {
+        cartController.initializeCart(userId: _user.value?.id, accessToken: token).catchError((e) {
           print('⚠️ Cart init error: $e');
         }),
       );
