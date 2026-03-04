@@ -44,6 +44,7 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_userController.isLoggedIn && _cartController.cart == null) {
         _cartController.initializeCart(
+          userId: _userController.user?.id,
           accessToken: _userController.accessToken,
         );
       }

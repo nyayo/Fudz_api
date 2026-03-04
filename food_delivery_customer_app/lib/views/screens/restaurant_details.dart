@@ -509,6 +509,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                           accessToken: userController.isLoggedIn
                               ? userController.accessToken
                               : null,
+                          userId: userController.user?.id,
                           height: 36,
                           compact: true,
                         ),
