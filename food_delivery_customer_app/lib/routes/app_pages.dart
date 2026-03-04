@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/controller/registration_controller.dart';
 import 'package:food_delivery_customer_app/views/auth/email_login.dart';
 import 'package:food_delivery_customer_app/views/auth/email_verification_screen.dart';
 import 'package:food_delivery_customer_app/views/auth/login.dart';
@@ -24,7 +25,16 @@ class AppPages {
       name: '/phone_verification',
       page: () => const PhoneVerificationScreen(),
     ),
-    GetPage(name: '/register', page: () => RegistrationPage()),
+    GetPage(
+      name: '/register',
+      page: () => RegistrationPage(),
+      binding: BindingsBuilder(() {
+        if (Get.isRegistered<RegistrationController>()) {
+          Get.delete<RegistrationController>(force: true);
+        }
+        Get.put(RegistrationController());
+      }),
+    ),
     GetPage(name: '/home', page: () => const MainTabView()),
     GetPage(name: '/promotions', page: () => const PromotionsPage()),
     GetPage(name: '/promotion-details/:id', page: () => const MainTabView()),
