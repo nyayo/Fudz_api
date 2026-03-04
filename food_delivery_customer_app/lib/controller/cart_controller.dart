@@ -16,6 +16,20 @@ class CartController extends GetxController {
   final RxBool isSyncing = false.obs; // Track sync status
   final RxString error = ''.obs;
 
+  static String _getCartKey(int userId) => 'cart_id_$userId';
+
+  String? _getStoredCartId(int userId) {
+    return GetStorage().read(_getCartKey(userId));
+  }
+
+  Future<void> _saveCartId(int userId, String cartId) async {
+    await GetStorage().write(_getCartKey(userId), cartId);
+  }
+
+  Future<void> _clearCartId(int userId) async {
+    await GetStorage().remove(_getCartKey(userId));
+  }
+
   Cart? get cart =>
       _localCart.value ?? _cart.value; // Prefer local cart for display
   List<CartItem> get cartItems => cart?.items ?? [];
@@ -167,7 +181,8 @@ class CartController extends GetxController {
   Future<bool> addToCart({
     required MenuItem menuItem,
     required int quantity,
-    required String? accessToken,
+    String? accessToken,
+    int? userId,
   }) async {
     final itemKey = '${menuItem.id}_add';
 
@@ -195,7 +210,7 @@ class CartController extends GetxController {
 
       // 3. THEN: Sync with backend in background if we have access token
       if (accessToken != null && accessToken.isNotEmpty) {
-        _syncWithBackend(accessToken: accessToken);
+        _syncWithBackend(accessToken: accessToken, userId: userId);
       }
 
       return true;
@@ -294,22 +309,25 @@ class CartController extends GetxController {
   }
 
   // Sync local cart with backend
-  Future<void> _syncWithBackend({required String accessToken}) async {
+  Future<void> _syncWithBackend({required String accessToken, int? userId}) async {
     if (_localCart.value == null || _localCart.value!.items.isEmpty) return;
 
     try {
       isSyncing.value = true;
       print('🔄 Syncing local cart with backend...');
 
-      // Get or create remote cart
-      String cartId;
-      if (_cart.value == null) {
+      String cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
+      
+      if (cartId == null || _cart.value == null) {
         final cartResponse = await _apiService.post('orders/carts/', {});
         cartId = cartResponse['id'];
-        await GetStorage().write('current_cart_id', cartId);
+        
+        if (userId != null) {
+          await _saveCartId(userId, cartId);
+        } else {
+          await GetStorage().write('current_cart_id', cartId);
+        }
         _cart.value = Cart.fromJson(cartResponse);
-      } else {
-        cartId = _cart.value!.id;
       }
 
       // Sync each item with backend
@@ -336,7 +354,7 @@ class CartController extends GetxController {
       }
 
       // Refresh remote cart to get updated data
-      await getCart();
+      await getCart(userId: userId);
 
       // Merge local cart with remote cart
       await _mergeCarts();
@@ -589,27 +607,23 @@ class CartController extends GetxController {
   }
 
   // Existing methods with local-first approach
-  Future<void> initializeCart({required String? accessToken}) async {
-    // Changed to nullable
+  Future<void> initializeCart({int? userId, String? accessToken}) async {
     try {
-      // Only try to get existing cart from backend if we have access token
       if (accessToken != null && accessToken.isNotEmpty) {
-        await getCart();
+        await getCart(userId: userId);
 
-        // If we have a remote cart, merge it with local cart to preserve rich MenuItem data
         if (_cart.value != null) {
-          await _mergeCarts(); // Use merge to preserve local MenuItem imageUrl and restaurantName
+          await _mergeCarts();
         }
       }
     } catch (e) {
       print('Error initializing cart: $e');
-      // Continue with local cart if backend fails
     }
   }
 
-  Future<void> getCart() async {
+  Future<void> getCart({int? userId}) async {
     try {
-      final cartId = GetStorage().read('current_cart_id');
+      final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
 
       if (cartId != null) {
         final response = await _apiService.get('orders/carts/$cartId/');
@@ -621,29 +635,33 @@ class CartController extends GetxController {
     }
   }
 
-  Future<void> clearCart({required String? accessToken}) async {
-    // Changed to nullable
+  Future<void> clearCart({int? userId, String? accessToken}) async {
     try {
-      // Clear both local and remote
       _clearLocalCart();
 
-      // Only clear remote cart if we have access token
-      if (accessToken != null && accessToken.isNotEmpty) {
-        final cartId = GetStorage().read('current_cart_id');
-        if (cartId != null) {
-          await _apiService.delete('orders/carts/$cartId/');
-        }
+      final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
+      
+      if (accessToken != null && accessToken.isNotEmpty && cartId != null) {
+        await _apiService.delete('orders/carts/$cartId/');
       }
 
       _cart.value = null;
-      await GetStorage().remove('current_cart_id');
+      
+      if (userId != null) {
+        await _clearCartId(userId);
+      } else {
+        await GetStorage().remove('current_cart_id');
+      }
 
       Get.snackbar('Cleared', 'Cart cleared');
     } catch (e) {
       error.value = e.toString();
-      // Even if remote clear fails, local cart is cleared
       rethrow;
     }
+  }
+
+  Future<void> clearCartForUser(int userId) async {
+    await clearCart(userId: userId);
   }
 
   // Rest of your existing methods...
