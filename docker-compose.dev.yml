@@ -8,41 +8,62 @@ services:
       POSTGRES_DB: fudz_delivery
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  api:
-    build: .
     ports:
-      - "8000:8000"
-    depends_on:
-      - redis
-      - db
-
-  websocket:
-    build: .
-    command: uv run daphne -b 0.0.0.0 -p 8001 Fudz_api.asgi:application
-    ports:
-      - "8001:8001"
-    volumes:
-      - .:/app
+      - "5433:5432"
 
   redis:
     image: redis:7-alpine
     ports:
       - "6389:6379"
 
-  celery:
-    build: .
-    command: uv run celery -A Fudz_api worker --loglevel=info
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
     volumes:
       - .:/app
+    environment:
+      - DEBUG=True
+    depends_on:
+      - db
+      - redis
+
+  websocket:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: uv run daphne -b 0.0.0.0 -p 8001 Fudz_api.asgi:application
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: uv run celery -A Fudz_api worker --loglevel=info --pool=solo
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
 
   celery-beat:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     command: uv run celery -A Fudz_api beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - .:/app
     depends_on:
-      - redis
       - db
+      - redis
 
 volumes:
   postgres_data:
