@@ -134,6 +134,18 @@ class RegistrationSerializer(serializers.Serializer):
         if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError("Passwords do not match")
 
+        # Check for duplicate email
+        if User.objects.filter(email=attrs["email"]).exists():
+            raise serializers.ValidationError(
+                "An account with this email already exists. Please login instead."
+            )
+
+        # Check for duplicate phone
+        if User.objects.filter(phone=attrs["phone"]).exists():
+            raise serializers.ValidationError(
+                "An account with this phone number already exists. Please login instead."
+            )
+
         if not EmailVerification.objects.filter(
             email=attrs["email"], is_verified=True
         ).exists():
@@ -412,6 +424,7 @@ class LogoutUserSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
     profile = serializers.SerializerMethodField()
 
     class Meta:
@@ -419,12 +432,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "username",
+            "full_name",
             "phone",
             "email",
             "user_type",
             "is_verified",
             "profile",
         ]
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
 
     def get_profile(self, obj):
         if obj.user_type == "customer":

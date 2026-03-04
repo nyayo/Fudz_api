@@ -71,15 +71,14 @@ class RegistrationPage extends StatelessWidget {
       child: Column(
         children: [
           // ── Phone section (shown first for phone flow) ──
-          Obx(() {
-            if (_controller.fromPhone) {
-              return _buildReadOnlyField(
-                'Phone Number (verified)',
-                _controller.phone ?? '',
-                Icons.phone,
-              );
-            }
-            return TextFormField(
+          if (_controller.fromPhone)
+            _buildReadOnlyField(
+              'Phone Number (verified)',
+              _controller.phone ?? '',
+              Icons.phone,
+            )
+          else
+            TextFormField(
               controller: _controller.phoneController,
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
@@ -89,8 +88,7 @@ class RegistrationPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-            );
-          }),
+            ),
           const SizedBox(height: 16),
 
           // First Name

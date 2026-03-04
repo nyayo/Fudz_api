@@ -220,6 +220,8 @@ class VerifyOTPView(generics.CreateAPIView):
         )
 
 
+from django.db import IntegrityError
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
     permission_classes = [AllowAny]
@@ -227,7 +229,29 @@ class RegisterView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        try:
+            user = serializer.save()
+        except IntegrityError as e:
+            error_str = str(e).lower()
+            if "email" in error_str:
+                return Response(
+                    {"error": "An account with this email already exists. Please login instead."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            elif "phone" in error_str:
+                return Response(
+                    {"error": "An account with this phone number already exists. Please login instead."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(
+                {"error": "An account with these details already exists."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         tokens = get_tokens_for_user(user)
         return Response(
             {
