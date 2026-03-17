@@ -160,7 +160,18 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset("assets/logo.png", height: 120, width: 120),
+                Image.asset(
+                  "assets/logo.png",
+                  height: 120,
+                  width: 120,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.restaurant_menu,
+                      size: 80,
+                      color: Colors.white,
+                    );
+                  },
+                ),
                 const SizedBox(height: 24),
                 const Text(
                   'FUDGO',

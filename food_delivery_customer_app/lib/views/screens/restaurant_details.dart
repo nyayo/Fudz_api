@@ -630,7 +630,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           final animatedLeft = lerpDouble(startLeft, endLeft, progress) ??
               startLeft;
 
-          final startBottom = 20.0;
+            // Start above the title/subtitle block so the logo never covers text.
+            final startBottom = 92.0;
           final endBottom = expandedHeight -
               (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
           final animatedBottom =

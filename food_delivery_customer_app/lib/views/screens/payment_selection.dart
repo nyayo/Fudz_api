@@ -413,9 +413,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         }
       }
 
-      final deliveryFee = 5.0; // TODO: Calculate based on distance/location
-      final tax = discountedSubtotal * 0.05; // 5% tax
-      final totalAmount = discountedSubtotal + deliveryFee + tax;
+      final totalAmount = discountedSubtotal;
 
       return Container(
         padding: const EdgeInsets.all(16),
@@ -438,10 +436,6 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 valueColor: Colors.green,
               ),
             ],
-            const SizedBox(height: 8),
-            _buildSummaryRow('Delivery', CurrencyFormatter.format(deliveryFee)),
-            const SizedBox(height: 8),
-            _buildSummaryRow('Tax', CurrencyFormatter.format(tax)),
             Divider(height: 24, color: Colors.grey[300]),
             _buildSummaryRow(
               'Total Amount',
