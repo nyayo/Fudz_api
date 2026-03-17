@@ -703,6 +703,16 @@ class RestaurantController extends GetxController {
         });
   }
 
+  /// Lightweight background sync called by [DataSyncService].
+  /// Re-fetches restaurants, menu items, and featured items silently.
+  Future<void> backgroundSync() async {
+    await Future.wait([
+      _syncRestaurants(),
+      _syncMenuItems(),
+      _syncFeaturedItems(),
+    ]);
+  }
+
   // Getters
   bool get isLoadingValue => isLoading.value;
   bool get isLoadingMenuItemsValue => isLoadingMenuItems.value;

@@ -948,6 +948,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                     accessToken: userController.isLoggedIn
                         ? userController.accessToken
                         : null,
+                    userId: userController.user?.id,
                     height: 50,
                   );
                 }
@@ -1009,6 +1010,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                                       menuItem: menuItem,
                                       quantity: _quantity,
                                       accessToken: userController.accessToken,
+                                      userId: userController.user?.id,
                                     );
                                   } catch (_) {}
                                 },

@@ -466,6 +466,12 @@ void debugCacheStatus() {
     await getCategoryDetail(categoryId, forceRefresh: true);
   }
 
+  /// Lightweight background sync called by [DataSyncService].
+  /// Re-fetches the full categories list silently.
+  Future<void> backgroundSync() async {
+    await getCategories(forceRefresh: true);
+  }
+
   // Getters for cache info
   int get cachedCategoriesCount => _categoryCache.length;
   List<int> get cachedCategoryIds => _categoryCache.keys.toList();

@@ -56,41 +56,38 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            TColor.primary,
-                            TColor.primary.withAlpha(150),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(2),
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          TColor.primary,
+                          TColor.primary.withAlpha(150),
+                        ],
                       ),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Popular Menu Items',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: TColor.primaryText,
-                        letterSpacing: -0.5,
-                      ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Popular Menu Items',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: TColor.primaryText,
+                      letterSpacing: -0.5,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               GestureDetector(
                 onTap: () => Get.to(() => AllMenuItemsPage()),
@@ -146,7 +143,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
               controller: _scrollController,
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 4, right: 4, bottom: 8),
+              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 8),
               itemCount: displayItems.length,
               itemBuilder: (context, index) {
                 final item = displayItems[index];
@@ -299,6 +296,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                         accessToken: userController.isLoggedIn
                             ? userController.accessToken
                             : null,
+                        userId: userController.user?.id,
                         height: 32,
                         compact: true,
                       ),

@@ -203,15 +203,15 @@ class WishlistController extends GetxController {
       isSyncing.value = true;
       print('🔄 Syncing wishlist with backend...');
 
-      if (wasInWishlist) {
-        // Remove from backend
-        await _apiService.delete('wishlists/remove/${menuItem.id}/');
-        print('✅ Removed from backend wishlist: ${menuItem.title}');
-      } else {
-        // Add to backend
-        await _apiService.post('wishlists/add/', {'menu_item_id': menuItem.id});
-        print('✅ Added to backend wishlist: ${menuItem.title}');
-      }
+      await _performWishlistRequestWithRetry(() async {
+        if (wasInWishlist) {
+          await _apiService.delete('wishlists/remove/${menuItem.id}/');
+          print('✅ Removed from backend wishlist: ${menuItem.title}');
+        } else {
+          await _apiService.post('wishlists/add/', {'menu_item_id': menuItem.id});
+          print('✅ Added to backend wishlist: ${menuItem.title}');
+        }
+      });
 
       // Refresh remote wishlist to get updated data
       await loadWishlist(accessToken);
@@ -233,10 +233,47 @@ class WishlistController extends GetxController {
         print('⚠️ Item not found on backend, removing from local');
         await _removeFromLocalWishlist(menuItemId: menuItem.id);
       } else {
-        SnackbarService.showError('Failed to sync wishlist');
+        // Keep optimistic UI and retry reconciliation shortly in background.
+        Future.delayed(const Duration(milliseconds: 700), () async {
+          try {
+            await loadWishlist(accessToken);
+            await _mergeWishlists();
+          } catch (_) {}
+        });
       }
     } finally {
       isSyncing.value = false;
+    }
+  }
+
+  bool _isTransientWishlistError(String errorText) {
+    final e = errorText.toLowerCase();
+    return e.contains('403') ||
+        e.contains('401') ||
+        e.contains('timeout') ||
+        e.contains('socket') ||
+        e.contains('network') ||
+        e.contains('connection');
+  }
+
+  Future<void> _performWishlistRequestWithRetry(
+    Future<void> Function() action,
+  ) async {
+    Object? lastError;
+    for (int attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await action();
+        return;
+      } catch (e) {
+        lastError = e;
+        if (attempt == 2 || !_isTransientWishlistError(e.toString())) {
+          rethrow;
+        }
+        await Future.delayed(Duration(milliseconds: 350 * attempt));
+      }
+    }
+    if (lastError != null) {
+      throw lastError!;
     }
   }
 

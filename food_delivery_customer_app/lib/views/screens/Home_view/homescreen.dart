@@ -15,6 +15,7 @@ import 'package:food_delivery_customer_app/views/screens/favorite.dart';
 import 'package:food_delivery_customer_app/views/screens/get_started.dart';
 import 'package:food_delivery_customer_app/views/screens/location_selection.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
+import 'package:food_delivery_customer_app/services/data_sync_service.dart';
 import 'package:get/get.dart';
 
 class HomePage extends StatefulWidget {
@@ -406,14 +407,18 @@ class _HomePageState extends State<HomePage> {
           // Normal content - background syncing happens without blocking UI
           return RefreshIndicator(
             onRefresh: () async {
-              // Pull to refresh - background sync without loading indicator
-              await Future.wait([
-                restaurantController.refreshRestaurants(),
-                restaurantController.refreshMenuItems(),
-                restaurantController.getFeaturedItemsWithPromotions(
-                  showLoading: false,
-                ),
-              ]);
+              // Trigger centralized sync which refreshes everything
+              if (Get.isRegistered<DataSyncService>()) {
+                await Get.find<DataSyncService>().syncNow();
+              } else {
+                await Future.wait([
+                  restaurantController.refreshRestaurants(),
+                  restaurantController.refreshMenuItems(),
+                  restaurantController.getFeaturedItemsWithPromotions(
+                    showLoading: false,
+                  ),
+                ]);
+              }
             },
             child: SingleChildScrollView(
               child: Column(
