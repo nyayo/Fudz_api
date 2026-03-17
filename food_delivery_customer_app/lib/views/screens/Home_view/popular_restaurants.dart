@@ -19,6 +19,7 @@ class PopularRestaurantsWidget extends StatefulWidget {
 class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
   final RestaurantController restaurantController = Get.find();
   late ScrollController _scrollController;
+  static const double _sectionInset = 16;
 
   @override
   void initState() {
@@ -59,7 +60,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
       children: [
         // Title row
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: _sectionInset),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -131,7 +132,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: _sectionInset),
             itemCount: popularRestaurants.length,
             itemBuilder: (context, index) {
               final restaurant = popularRestaurants[index];

@@ -13,6 +13,7 @@ import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
+import 'dart:ui' show lerpDouble;
 
 class RestaurantDetailPage extends StatefulWidget {
   final int restaurantId;
@@ -583,8 +584,11 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
   }
 
   SliverAppBar _buildAppBar(RestaurantProfile restaurant) {
+    const double expandedHeight = 250;
+    const double logoSize = 50;
+
     return SliverAppBar(
-      expandedHeight: 250,
+      expandedHeight: expandedHeight,
       pinned: true,
       stretch: true,
       backgroundColor: Colors.white,
@@ -612,86 +616,120 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           ),
         ),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty
-                ? Hero(
-                    tag: 'restaurant_image_${restaurant.id}',
-                    child: CachedImage(
-                      imageUrl: restaurant.imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 250,
-                      placeholderIcon: Icons.restaurant,
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          final topPadding = MediaQuery.of(context).padding.top;
+          final collapsedHeight = kToolbarHeight + topPadding;
+          final progress =
+              ((expandedHeight - constraints.biggest.height) /
+                      (expandedHeight - collapsedHeight))
+                  .clamp(0.0, 1.0);
+
+          final startLeft = 20.0;
+          final endLeft = (constraints.maxWidth - logoSize) / 2;
+          final animatedLeft = lerpDouble(startLeft, endLeft, progress) ??
+              startLeft;
+
+          final startBottom = 20.0;
+          final endBottom = expandedHeight -
+              (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
+          final animatedBottom =
+              lerpDouble(startBottom, endBottom, progress) ?? startBottom;
+
+          final animatedScale = lerpDouble(1.0, 0.86, progress) ?? 1.0;
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty
+                  ? Hero(
+                      tag: 'restaurant_image_${restaurant.id}',
+                      child: CachedImage(
+                        imageUrl: restaurant.imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: expandedHeight,
+                        placeholderIcon: Icons.restaurant,
+                      ),
+                    )
+                  : Container(
+                      color: Colors.grey[300],
+                      child: Icon(
+                        Icons.restaurant,
+                        color: Colors.grey[500],
+                        size: 80,
+                      ),
                     ),
-                  )
-                : Container(
-                    color: Colors.grey[300],
-                    child: Icon(
-                      Icons.restaurant,
-                      color: Colors.grey[500],
-                      size: 80,
-                    ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black.withOpacity(0.6), Colors.transparent],
                   ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
                 ),
               ),
-            ),
-            Positioned(
-              left: 20,
-              bottom: 20,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (restaurant.logoUrl != null &&
-                          restaurant.logoUrl!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: ClipOval(
-                            child: CachedImage(
-                              imageUrl: restaurant.logoUrl,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              placeholderIcon: Icons.restaurant,
-                            ),
+              if (restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty)
+                Positioned(
+                  left: animatedLeft,
+                  bottom: animatedBottom,
+                  child: Transform.scale(
+                    scale: animatedScale,
+                    child: Container(
+                      width: logoSize,
+                      height: logoSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
-                        ),
-                      Expanded(
-                        child: Text(
-                          restaurant.restaurantName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: CachedImage(
+                          imageUrl: restaurant.logoUrl,
+                          width: logoSize,
+                          height: logoSize,
+                          fit: BoxFit.cover,
+                          placeholderIcon: Icons.restaurant,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Various Cuisine',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 16,
                     ),
                   ),
-                ],
+                ),
+              Positioned(
+                left: 20,
+                bottom: 20,
+                right: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      restaurant.restaurantName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Various Cuisine',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
