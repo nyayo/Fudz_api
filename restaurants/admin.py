@@ -61,6 +61,14 @@ class MenuItemAdmin(admin.ModelAdmin):
     
 
 
+class MenuItemPromotionInline(admin.TabularInline):
+    model = MenuItem.promotions.through
+    extra = 1
+    verbose_name = "Menu Item"
+    verbose_name_plural = "Menu Items"
+    autocomplete_fields = ["menuitem"]
+
+
 @admin.register(Promotion)
 class PromotionAdmin(admin.ModelAdmin):
     list_display = ["name", "restaurant_title", "description", "discount", "start_date", "end_date", "is_active", "is_current"]
@@ -70,6 +78,7 @@ class PromotionAdmin(admin.ModelAdmin):
     list_filter = ["restaurant", "is_active", "start_date", "end_date"]
     search_fields = ['name', 'description', 'restaurant__restaurant_name']
     date_hierarchy = 'start_date'
+    inlines = [MenuItemPromotionInline]
 
     def restaurant_title(self, promotion):
         return promotion.restaurant.restaurant_name
@@ -83,3 +92,30 @@ class PromotionAdmin(admin.ModelAdmin):
         return obj.is_active and obj.start_date <= now <= obj.end_date
     is_current.boolean = True
     is_current.short_description = 'Currently Active'
+
+
+@admin.register(MenuItemImage)
+class MenuItemImageAdmin(admin.ModelAdmin):
+    list_display = ["id", "menu_item", "thumbnail", "alt_text"]
+    list_filter = ["menu_item__restaurant"]
+    list_per_page = 10
+    search_fields = ["menu_item__title", "alt_text"]
+    autocomplete_fields = ["menu_item"]
+
+    def thumbnail(self, instance):
+        if instance.image:
+            return format_html(f'<img src="{instance.image.url}" width="50" height="50" />')
+        return ""
+
+
+@admin.register(MenuCategoryImage)
+class MenuCategoryImageAdmin(admin.ModelAdmin):
+    list_display = ["id", "category", "thumbnail", "alt_text"]
+    list_filter = ["category__restaurant"]
+    list_per_page = 10
+    search_fields = ["category__name", "alt_text"]
+    autocomplete_fields = ["category"]
+
+    def thumbnail(self, instance):
+        if instance.image:
+            return format_html(f'<img src="{instance.image.url}" width="50" height="50" />')

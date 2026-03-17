@@ -1,7 +1,7 @@
 # users/email_templates.py
 """
 Modern Email Templates for Fudgo Food Delivery
-Each template has a unique design matching its purpose
+Glovo-style design with green color palette, dark mode support, and table-based layout
 """
 
 from typing import Any, Dict
@@ -9,7 +9,174 @@ from django.conf import settings
 
 
 class EmailTemplates:
-    """Unique purpose-driven email templates for Fudgo"""
+    """Professional email templates with dark mode support and green theme"""
+
+    # ============================================================
+    # BASE STYLES - Shared CSS for all templates
+    # ============================================================
+    
+    BASE_STYLES = """
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+    .main {
+      padding: 0;
+      margin: 0;
+      font-family: Verdana, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+      font-size: 16px;
+      letter-spacing: 0;
+      line-height: 1.4;
+      background-color: #f9fafb;
+    }
+    table {
+      width: 100%;
+    }
+    td {
+      font-family: Verdana, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    }
+    td a {
+      color: #22c55e;
+      text-decoration: none;
+    }
+    a.no-color {
+      color: inherit;
+    }
+    .header {
+      background-color: #f0fdf4;
+      border-radius: 0 0 80px 0;
+      max-width: 1200px;
+    }
+    .header__title {
+      font-size: 1.75em;
+      font-weight: bold;
+      padding: 24px 0;
+      letter-spacing: -0.5px;
+      color: #1f2937;
+    }
+    .header__subtitle {
+      color: #6b7280;
+      padding-bottom: 24px;
+    }
+    .header__inner-container {
+      padding: 40px 24px 60px;
+      margin: 0;
+    }
+    .body__details {
+      padding: 12px;
+    }
+    .body__background {
+      background-color: #f3f4f6;
+    }
+    .highlight {
+      color: #166534;
+      background-color: #dcfce7;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 0.75em;
+      font-weight: 500;
+    }
+    .table__padded td {
+      padding: 12px;
+    }
+    .table__padded td td {
+      padding: 0;
+    }
+    .indent {
+      background-color: white;
+    }
+    .label {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+    .label-details {
+      color: #6b7280 !important;
+      text-decoration: none !important;
+    }
+    .product__promotion {
+      background-color: #22c55e;
+      color: white;
+      font-size: 0.7em;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .btn-primary {
+      color: white !important;
+      background-color: #22c55e;
+      padding: 12px 24px;
+      font-size: 0.875em;
+      border-radius: 8px;
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary:hover {
+      background-color: #16a34a;
+    }
+    .footer {
+      padding: 32px 24px;
+      text-align: center;
+      background-color: #1f2937;
+    }
+    .footer p {
+      color: #9ca3af;
+      font-size: 12px;
+      margin: 4px 0;
+    }
+    .footer a {
+      color: #22c55e;
+    }
+    /* Dark Mode Support */
+    @media (prefers-color-scheme: dark) {
+      .main {
+        color: #f9fafb !important;
+        background-color: #111827 !important;
+      }
+      .header {
+        background-color: #14532d !important;
+        color: white !important;
+      }
+      .header__title {
+        color: white !important;
+      }
+      .header__subtitle {
+        color: #d1d5db !important;
+      }
+      .body__background {
+        background-color: #1f2937 !important;
+        color: white !important;
+      }
+      .indent {
+        background-color: #111827 !important;
+      }
+      .highlight {
+        background-color: #064e3b !important;
+        color: #86efac !important;
+      }
+      .label {
+        color: inherit !important;
+      }
+      .label-details {
+        color: #9ca3af !important;
+      }
+      .footer {
+        background-color: #0f172a !important;
+      }
+    }
+    /* Mobile Responsive */
+    @media (max-width: 600px) {
+      .header__inner-container {
+        padding: 32px 16px 48px;
+      }
+      .header__title {
+        font-size: 1.5em;
+      }
+      .body__details {
+        padding: 8px;
+      }
+    }
+    """
 
     @staticmethod
     def _get_year() -> int:
@@ -19,49 +186,140 @@ class EmailTemplates:
     @staticmethod
     def _get_company_name() -> str:
         return getattr(settings, "COMPANY_NAME", "Fudgo")
+    
+    @classmethod
+    def _base_template(cls, content: str, preheader: str = "") -> str:
+        """Wrap content in base email structure with dark mode support"""
+        return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark only">
+  <title>Fudgo</title>
+  <style type="text/css">
+    {cls.BASE_STYLES}
+  </style>
+</head>
+<body class="main">
+<div style="color:transparent;visibility:hidden;opacity:0;font-size:0px;border:0;max-height:1px;width:1px;margin:0px;padding:0px;display:none!important;line-height:0px!important;">{preheader}</div>
+{content}
+</body>
+</html>"""
+    
+    @classmethod
+    def _header(cls, title: str, subtitle: str = "", icon: str = "🍔") -> str:
+        """Generate styled header section"""
+        subtitle_html = f'<tr><td class="header__subtitle">{subtitle}</td></tr>' if subtitle else ""
+        return f"""
+  <table style="max-width:100%;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px">
+        <tr><td class="header">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td align="center">
+              <table style="max-width: 560px" class="header__inner-container" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size: 32px;">{icon} <strong style="color: #22c55e; font-size: 24px;">Fudgo</strong></td>
+                </tr>
+                <tr><td class="header__title"><a class="no-color" rel="nofollow">{title}</a></td></tr>
+                {subtitle_html}
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+
+    @classmethod
+    def _footer(cls, message: str = "") -> str:
+        """Generate styled footer section"""
+        msg_html = f'<p style="color: #d1d5db; margin-bottom: 12px;">{message}</p>' if message else ""
+        return f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="footer">
+      {msg_html}
+      <p style="font-size: 20px; margin-bottom: 8px;">🍔 <span style="color: #22c55e; font-weight: bold;">Fudgo</span></p>
+      <p>© {cls._get_year()} Fudgo. All rights reserved.</p>
+      <p style="margin-top: 8px;"><a href="#">Unsubscribe</a> · <a href="#">Privacy Policy</a></p>
+    </td></tr>
+  </table>"""
+    
+    @classmethod
+    def _dashed_separator(cls) -> str:
+        """Generate dashed separator line"""
+        return """
+<table border="0" width="100%" cellpadding="0" cellspacing="0">
+  <tr><td style="padding-top: 12px;height:0;font-size:0"></td></tr>
+  <tr>
+    <td style="width:12px;"></td>
+    <td style="background:none; border-top: 2px dashed #d1d5db; font-size: 0">&nbsp;</td>
+    <td style="width:12px;"></td>
+  </tr>
+  <tr><td style="padding-top: 12px;height:0;font-size:0"></td></tr>
+</table>"""
+
+    @classmethod
+    def _code_box(cls, code: str, label: str = "Your Code") -> str:
+        """Generate styled verification code box"""
+        return f"""
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border: 2px dashed #22c55e; border-radius: 12px; padding: 24px 40px;">
+      <tr><td align="center">
+        <p style="color: #16a34a; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 12px; font-weight: 600;">{label}</p>
+        <p style="font-size: 36px; font-weight: 800; color: #15803d; letter-spacing: 8px; font-family: 'Courier New', monospace; margin: 0;">{code}</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>"""
 
     # ============================================================
     # VERIFICATION EMAIL - Clean, trustworthy, focus on the code
     # ============================================================
     @classmethod
     def email_verification(cls, user_name: str, verification_code: str) -> Dict[str, str]:
-        """Email verification - minimal, code-focused design"""
+        """Email verification - minimal, code-focused design with dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0fdf4; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 20px 40px rgba(34, 197, 94, 0.15); }}
-.header {{ background: #22c55e; padding: 40px; text-align: center; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 28px; font-weight: 700; }}
-.header p {{ color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px; }}
-.body {{ padding: 40px; text-align: center; }}
-.greeting {{ font-size: 20px; color: #1f2937; margin-bottom: 16px; }}
-.message {{ color: #6b7280; font-size: 15px; line-height: 1.6; margin-bottom: 32px; }}
-.code-box {{ background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 3px dashed #22c55e; border-radius: 4px; padding: 32px; margin: 24px 0; }}
-.code-label {{ font-size: 11px; color: #16a34a; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; font-weight: 600; }}
-.code {{ font-size: 42px; font-weight: 800; color: #15803d; letter-spacing: 10px; font-family: 'Courier New', monospace; }}
-.expires {{ background: #fef3c7; color: #92400e; padding: 12px 20px; border-radius: 4px; font-size: 13px; display: inline-block; margin-top: 24px; }}
-.footer {{ background: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 4px 0; }}
-.ignore {{ color: #9ca3af; font-size: 13px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; }}
-</style></head>
-<body><div class="container">
-<div class="header"><h1>🍔 Fudgo</h1><p>Verify Your Email</p></div>
-<div class="body">
-<p class="greeting">Hey {user_name}! 👋</p>
-<p class="message">Welcome to Fudgo! Enter this code to verify your email and start ordering delicious food.</p>
-<div class="code-box">
-<div class="code-label">Verification Code</div>
-<div class="code">{verification_code}</div>
-</div>
-<div class="expires">⏱️ Expires in 30 minutes</div>
-<p class="ignore">Didn't create an account? Just ignore this email.</p>
-</div>
-<div class="footer"><p>© {cls._get_year()} Fudgo. All rights reserved.</p></div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"Hey {user_name}! 👋 Verify your email",
+            "Enter this code to verify your email and start ordering delicious food.",
+            "🔐"
+        )
+        
+        code_box = cls._code_box(verification_code, "Verification Code")
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          {code_box}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fef3c7; border-radius: 8px; padding: 12px 20px; margin: 16px 0;">
+            <tr><td>
+              <p style="color: #92400e; font-size: 13px; margin: 0;">⏱️ This code expires in <strong>30 minutes</strong></p>
+            </td></tr>
+          </table>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">Didn't create an account? Just ignore this email.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer()
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Your verification code is {verification_code}"
+        )
+        
         plain = f"""Hey {user_name}!
 
 Welcome to Fudgo! Your verification code is: {verification_code}
@@ -79,43 +337,38 @@ Didn't create an account? Just ignore this email.
     # ============================================================
     @classmethod
     def resend_verification(cls, user_name: str, verification_code: str) -> Dict[str, str]:
-        """Resend verification - refresh/retry themed"""
+        """Resend verification - refresh/retry themed with dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #ecfdf5; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }}
-.header {{ background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 36px; text-align: center; }}
-.refresh-icon {{ font-size: 48px; margin-bottom: 12px; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 22px; font-weight: 600; }}
-.body {{ padding: 36px; text-align: center; }}
-.message {{ color: #4b5563; font-size: 15px; line-height: 1.7; margin-bottom: 28px; }}
-.code-container {{ background: #f0fdf4; border-radius: 4px; padding: 28px; margin: 20px 0; }}
-.new-badge {{ background: #22c55e; color: #fff; font-size: 10px; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; margin-bottom: 16px; }}
-.code {{ font-size: 38px; font-weight: 800; color: #059669; letter-spacing: 8px; font-family: monospace; }}
-.timer {{ color: #6b7280; font-size: 13px; margin-top: 20px; }}
-.timer strong {{ color: #dc2626; }}
-.footer {{ padding: 20px; text-align: center; background: #f9fafb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="refresh-icon">🔄</div>
-<h1>New Verification Code</h1>
-</div>
-<div class="body">
-<p class="message">No worries, <strong>{user_name}</strong>! Here's a fresh new code for you.</p>
-<div class="code-container">
-<span class="new-badge">✨ Fresh Code</span>
-<div class="code">{verification_code}</div>
-</div>
-<p class="timer">Valid for <strong>30 minutes</strong></p>
-</div>
-<div class="footer"><p>© {cls._get_year()} Fudgo</p></div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"New Verification Code 🔄",
+            f"No worries, <strong>{user_name}</strong>! Here's a fresh new code for you.",
+            "🔄"
+        )
+        
+        code_box = cls._code_box(verification_code, "✨ Fresh Code")
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          {code_box}
+          <p style="color: #6b7280; font-size: 13px; margin-top: 16px;">Valid for <strong style="color: #dc2626;">30 minutes</strong></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer()
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Your new verification code is {verification_code}"
+        )
+        
         plain = f"""New Verification Code for {user_name}
 
 Your fresh code: {verification_code}
@@ -131,51 +384,46 @@ Valid for 30 minutes.
     # ============================================================
     @classmethod
     def password_reset(cls, user_name: str, reset_code: str) -> Dict[str, str]:
-        """Password reset - security-themed with lock icon"""
+        """Password reset - security-themed with lock icon and dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fef2f2; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 4px solid #ef4444; }}
-.header {{ padding: 40px; text-align: center; background: linear-gradient(180deg, #fef2f2 0%, #fff 100%); }}
-.lock-icon {{ width: 80px; height: 80px; background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 36px; }}
-.header h1 {{ color: #1f2937; margin: 0; font-size: 24px; font-weight: 700; }}
-.header p {{ color: #6b7280; margin: 8px 0 0; font-size: 14px; }}
-.body {{ padding: 0 36px 36px; }}
-.message {{ color: #4b5563; font-size: 15px; line-height: 1.7; text-align: center; }}
-.code-box {{ background: #1f2937; border-radius: 4px; padding: 28px; margin: 28px 0; text-align: center; }}
-.code-label {{ color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }}
-.code {{ color: #fff; font-size: 36px; font-weight: 800; letter-spacing: 8px; font-family: monospace; }}
-.warning {{ background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin: 24px 0; }}
-.warning p {{ color: #92400e; font-size: 13px; margin: 0; line-height: 1.5; }}
-.warning strong {{ display: block; margin-bottom: 4px; }}
-.expires {{ text-align: center; color: #dc2626; font-size: 14px; font-weight: 600; }}
-.footer {{ padding: 20px; text-align: center; background: #f9fafb; border-top: 1px solid #e5e7eb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="lock-icon">🔐</div>
-<h1>Password Reset</h1>
-<p>We received a reset request for your account</p>
-</div>
-<div class="body">
-<p class="message">Hi <strong>{user_name}</strong>, use this code to reset your password.</p>
-<div class="code-box">
-<div class="code-label">Reset Code</div>
-<div class="code">{reset_code}</div>
-</div>
-<p class="expires">⏱️ Expires in 15 minutes</p>
-<div class="warning">
-<p><strong>⚠️ Didn't request this?</strong>
-If you didn't request a password reset, ignore this email. Your password won't change.</p>
-</div>
-</div>
-<div class="footer"><p>© {cls._get_year()} Fudgo • Security Team</p></div>
-</div></body></html>
-"""
+        header = cls._header(
+            "Password Reset Request 🔐",
+            f"Hi <strong>{user_name}</strong>, we received a reset request for your account.",
+            "🔐"
+        )
+        
+        code_box = cls._code_box(reset_code, "Reset Code")
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          {code_box}
+          <p style="color: #dc2626; font-size: 14px; font-weight: 600; margin: 16px 0;">⏱️ Expires in 15 minutes</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px; margin: 24px 0; text-align: left;">
+            <tr><td>
+              <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
+                <strong>⚠️ Didn't request this?</strong><br>
+                If you didn't request a password reset, ignore this email. Your password won't change.
+              </p>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer()
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Your password reset code is {reset_code}"
+        )
+        
         plain = f"""Password Reset Request
 
 Hi {user_name},
@@ -195,50 +443,50 @@ If you didn't request this, ignore this email.
     # ============================================================
     @classmethod
     def password_reset_success(cls, user_name: str) -> Dict[str, str]:
-        """Password reset success - confirmation with shield"""
+        """Password reset success - confirmation with shield and dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0fdf4; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 30px rgba(34,197,94,0.15); }}
-.header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 48px; text-align: center; }}
-.check-circle {{ width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 24px; font-weight: 700; }}
-.body {{ padding: 36px; text-align: center; }}
-.message {{ color: #4b5563; font-size: 15px; line-height: 1.7; margin-bottom: 28px; }}
-.success-box {{ background: #f0fdf4; border: 2px solid #22c55e; border-radius: 4px; padding: 20px; margin: 20px 0; }}
-.success-box p {{ color: #166534; font-size: 14px; margin: 0; }}
-.tips {{ text-align: left; background: #f9fafb; border-radius: 4px; padding: 20px; margin: 24px 0; }}
-.tips h3 {{ color: #1f2937; font-size: 14px; margin: 0 0 12px; }}
-.tip {{ display: flex; align-items: center; padding: 8px 0; color: #4b5563; font-size: 13px; }}
-.tip span {{ margin-right: 10px; }}
-.btn {{ display: inline-block; background: #22c55e; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 4px; font-weight: 600; margin-top: 20px; }}
-.footer {{ padding: 20px; text-align: center; background: #f9fafb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="check-circle">✅</div>
-<h1>Password Updated!</h1>
-</div>
-<div class="body">
-<p class="message">Great news, <strong>{user_name}</strong>! Your password has been successfully changed.</p>
-<div class="success-box">
-<p>🎉 You can now log in with your new password</p>
-</div>
-<div class="tips">
-<h3>🛡️ Security Tips</h3>
-<div class="tip"><span>📱</span> Enable two-factor authentication</div>
-<div class="tip"><span>🔑</span> Use a unique password</div>
-<div class="tip"><span>👀</span> Check your recent activity</div>
-</div>
-<a href="#" class="btn">Open Fudgo App</a>
-</div>
-<div class="footer"><p>© {cls._get_year()} Fudgo</p></div>
-</div></body></html>
-"""
+        header = cls._header(
+            "Password Updated! ✅",
+            f"Great news, <strong>{user_name}</strong>! Your password has been successfully changed.",
+            "✅"
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 20px 40px; margin: 16px 0;">
+            <tr><td align="center">
+              <p style="color: #166534; font-size: 16px; margin: 0;">🎉 You can now log in with your new password</p>
+            </td></tr>
+          </table>
+          
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: left; width: 100%;">
+            <tr><td>
+              <p style="color: #1f2937; font-size: 14px; font-weight: 600; margin: 0 0 12px;">🛡️ Security Tips</p>
+              <p style="color: #4b5563; font-size: 13px; margin: 8px 0;">📱 Enable two-factor authentication</p>
+              <p style="color: #4b5563; font-size: 13px; margin: 8px 0;">🔑 Use a unique password</p>
+              <p style="color: #4b5563; font-size: 13px; margin: 8px 0;">👀 Check your recent activity</p>
+            </td></tr>
+          </table>
+          
+          <a href="#" class="btn-primary" style="margin-top: 16px;">Open Fudgo App</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer()
+        
+        html = cls._base_template(
+            header + body + footer,
+            "Your password has been successfully updated"
+        )
+        
         plain = f"""Password Successfully Updated!
 
 Hi {user_name},
@@ -259,75 +507,95 @@ Security Tips:
     # ============================================================
     @classmethod
     def welcome_verified(cls, user_name: str, username: str) -> Dict[str, str]:
-        """Welcome email - party/celebration theme"""
+        """Welcome email - party/celebration theme with dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #fef3c7 0%, #dcfce7 100%); margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 520px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.15); }}
-.header {{ background: linear-gradient(135deg, #22c55e 0%, #10b981 50%, #06b6d4 100%); padding: 48px 32px; text-align: center; position: relative; }}
-.confetti {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,...') repeat; opacity: 0.1; }}
-.party {{ font-size: 64px; margin-bottom: 16px; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 32px; font-weight: 800; }}
-.header p {{ color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 16px; }}
-.body {{ padding: 40px 32px; }}
-.user-card {{ background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 4px; padding: 24px; text-align: center; margin-bottom: 32px; border: 2px solid #22c55e; }}
-.avatar {{ width: 64px; height: 64px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 28px; color: #fff; font-weight: 700; }}
-.username {{ color: #16a34a; font-size: 18px; font-weight: 700; }}
-.verified {{ color: #6b7280; font-size: 13px; margin-top: 4px; }}
-.features {{ margin: 32px 0; }}
-.feature {{ display: flex; align-items: center; padding: 16px; background: #f9fafb; border-radius: 4px; margin-bottom: 12px; }}
-.feature-icon {{ font-size: 28px; margin-right: 16px; }}
-.feature-text h4 {{ color: #1f2937; font-size: 15px; margin: 0; font-weight: 600; }}
-.feature-text p {{ color: #6b7280; font-size: 13px; margin: 4px 0 0; }}
-.cta {{ text-align: center; margin: 32px 0; }}
-.btn {{ display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; text-decoration: none; padding: 16px 40px; border-radius: 4px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 15px rgba(34,197,94,0.4); }}
-.footer {{ background: #1f2937; padding: 28px; text-align: center; }}
-.footer-logo {{ color: #22c55e; font-size: 20px; font-weight: 700; margin-bottom: 8px; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 4px 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="party">🎉</div>
-<h1>Welcome to Fudgo!</h1>
-<p>Your email is verified – let's eat!</p>
-</div>
-<div class="body">
-<div class="user-card">
-<div class="avatar">{user_name[0].upper()}</div>
-<div class="username">@{username}</div>
-<div class="verified">✓ Verified Account</div>
-</div>
-<div class="features">
-<div class="feature">
-<span class="feature-icon">🍕</span>
-<div class="feature-text"><h4>Thousands of Restaurants</h4><p>From local gems to your favorites</p></div>
-</div>
-<div class="feature">
-<span class="feature-icon">⚡</span>
-<div class="feature-text"><h4>Lightning Fast Delivery</h4><p>Hot food at your door, quick</p></div>
-</div>
-<div class="feature">
-<span class="feature-icon">🎁</span>
-<div class="feature-text"><h4>Exclusive Deals</h4><p>Members-only discounts daily</p></div>
-</div>
-<div class="feature">
-<span class="feature-icon">📍</span>
-<div class="feature-text"><h4>Real-time Tracking</h4><p>Watch your food come to you</p></div>
-</div>
-</div>
-<div class="cta">
-<a href="#" class="btn">Start Ordering Now 🚀</a>
-</div>
-</div>
-<div class="footer">
-<div class="footer-logo">🍔 Fudgo</div>
-<p>© {cls._get_year()} Fudgo • Made with 💚 for food lovers</p>
-</div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"Welcome to Fudgo! 🎉",
+            "Your email is verified – let's eat!",
+            "🎉"
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <!-- User Card -->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px; border: 2px solid #22c55e; width: 100%;">
+            <tr><td align="center">
+              <div style="width: 64px; height: 64px; background: #22c55e; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px; color: #fff; font-weight: 700;">{user_name[0].upper()}</div>
+              <p style="color: #16a34a; font-size: 18px; font-weight: 700; margin: 12px 0 4px;">@{username}</p>
+              <p style="color: #6b7280; font-size: 13px; margin: 0;">✓ Verified Account</p>
+            </td></tr>
+          </table>
+          
+          <!-- Features -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 8px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="width: 48px; font-size: 28px; vertical-align: top;">🍕</td>
+                  <td>
+                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Thousands of Restaurants</p>
+                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">From local gems to your favorites</p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+            <tr><td style="height: 8px;"></td></tr>
+            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="width: 48px; font-size: 28px; vertical-align: top;">⚡</td>
+                  <td>
+                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Lightning Fast Delivery</p>
+                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">Hot food at your door, quick</p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+            <tr><td style="height: 8px;"></td></tr>
+            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="width: 48px; font-size: 28px; vertical-align: top;">🎁</td>
+                  <td>
+                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Exclusive Deals</p>
+                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">Members-only discounts daily</p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+            <tr><td style="height: 8px;"></td></tr>
+            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="width: 48px; font-size: 28px; vertical-align: top;">📍</td>
+                  <td>
+                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Real-time Tracking</p>
+                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">Watch your food come to you</p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+          
+          <a href="#" class="btn-primary" style="margin-top: 16px; padding: 16px 40px; font-size: 16px;">Start Ordering Now 🚀</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer(f"Made with 💚 for food lovers")
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Welcome to Fudgo, {user_name}! Your email is verified."
+        )
+        
         plain = f"""🎉 Welcome to Fudgo, {user_name}!
 
 Your email is verified! Username: @{username}
@@ -342,7 +610,7 @@ Start ordering at fudgo.com
 
 © {cls._get_year()} Fudgo"""
 
-        return {"subject": "🎉 Welcome to Fudgo, {user_name}!", "html": html, "plain": plain}
+        return {"subject": f"🎉 Welcome to Fudgo, {user_name}!", "html": html, "plain": plain}
 
     # ============================================================
     # ORDER CONFIRMATION - Receipt style, clean, professional
@@ -354,94 +622,136 @@ Start ordering at fudgo.com
         delivery_address: str, estimated_time: str = "30-45 mins",
         restaurant_name: str = ""
     ) -> Dict[str, str]:
-        """Order confirmation - receipt/invoice style with product images"""
+        """Order confirmation - receipt/invoice style with product images and dark mode"""
         
+        # Build items HTML
         items_html = ""
         items_text = ""
         for item in items:
             image_url = item.get('image_url', '')
-            image_html = f'<img src="{image_url}" alt="{item.get("name", "")}" style="width: 60px; height: 60px; border-radius: 4px; object-fit: cover; margin-right: 12px;">' if image_url else '<div style="width: 60px; height: 60px; border-radius: 4px; background: #f3f4f6; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🍽️</div>'
+            name = item.get('name', '')
+            qty = item.get('quantity', 1)
+            price = item.get('price', '')
+            original_price = item.get('original_price', '')
+            
+            image_cell = f'<img src="{image_url}" alt="{name}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">' if image_url else '<div style="width: 60px; height: 60px; border-radius: 8px; background: #f0fdf4; text-align: center; line-height: 60px; font-size: 24px;">🍽️</div>'
+            
+            original_price_html = f'<tr><td align="right" style="text-decoration: line-through; color: #9ca3af; font-size: 0.875em; padding-top: 3px;">{original_price}</td></tr>' if original_price and original_price != price else ""
             
             items_html += f"""
-            <tr>
-                <td style="padding: 16px 0; border-bottom: 1px solid #e5e7eb;">
-                    <div style="display: flex; align-items: center;">
-                        {image_html}
-                        <div>
-                            <div style="color: #1f2937; font-weight: 600; font-size: 15px;">{item.get('name', '')}</div>
-                            <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Qty: {item.get('quantity', 1)}</div>
-                        </div>
-                    </div>
+        <tr style="vertical-align: top">
+          <td style="padding: 12px 0; width: 30px;"><strong>{qty}x</strong></td>
+          <td style="padding: 12px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="width: 72px; vertical-align: top;">{image_cell}</td>
+                <td style="padding-left: 12px; vertical-align: top;">
+                  <p style="margin: 0; font-weight: 600; color: #1f2937;">{name}</p>
                 </td>
-                <td style="padding: 16px 0; border-bottom: 1px solid #e5e7eb; text-align: right; color: #1f2937; font-weight: 600; vertical-align: middle;">{item.get('price', '')}</td>
-            </tr>"""
-            items_text += f"  {item.get('name', '')} × {item.get('quantity', 1)} - {item.get('price', '')}\n"
-
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 560px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }}
-.header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 32px; text-align: center; }}
-.check {{ width: 64px; height: 64px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 24px; font-weight: 700; }}
-.order-id {{ color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px; }}
-.restaurant-badge {{ background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 4px; display: inline-block; margin-top: 12px; color: #fff; font-size: 13px; }}
-.body {{ padding: 32px; }}
-.section {{ margin-bottom: 28px; }}
-.section-title {{ color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; font-weight: 600; }}
-.eta-box {{ background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 4px; padding: 20px; text-align: center; margin-bottom: 28px; }}
-.eta-label {{ color: #92400e; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }}
-.eta-time {{ color: #78350f; font-size: 28px; font-weight: 800; margin-top: 4px; }}
-.items-table {{ width: 100%; border-collapse: collapse; }}
-.total-row {{ background: #f0fdf4; }}
-.total-row td {{ padding: 16px; font-size: 18px; font-weight: 700; }}
-.total-row td:first-child {{ color: #1f2937; }}
-.total-row td:last-child {{ color: #22c55e; text-align: right; }}
-.address {{ background: #f9fafb; border-radius: 4px; padding: 16px; }}
-.address p {{ color: #4b5563; font-size: 14px; margin: 0; line-height: 1.5; }}
-.btn {{ display: block; background: #22c55e; color: #fff; text-decoration: none; padding: 16px; border-radius: 4px; font-weight: 600; text-align: center; margin-top: 24px; }}
-.footer {{ background: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="check">✓</div>
-<h1>Order Confirmed!</h1>
-<p class="order-id">Order #{order_id}</p>
-{"<div class='restaurant-badge'>🏪 " + restaurant_name + "</div>" if restaurant_name else ""}
-</div>
-<div class="body">
-<div class="eta-box">
-<div class="eta-label">Estimated Delivery</div>
-<div class="eta-time">🕐 {estimated_time}</div>
-</div>
-<div class="section">
-<div class="section-title">📦 Your Order</div>
-<table class="items-table">
-{items_html}
-</table>
-<div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #e5e7eb;">
-<table class="items-table">
-<tr><td style="padding: 8px 0; color: #6b7280;">Subtotal</td><td style="padding: 8px 0; text-align: right; color: #6b7280;">{subtotal}</td></tr>
-<tr><td style="padding: 8px 0; color: #6b7280;">Delivery Fee</td><td style="padding: 8px 0; text-align: right; color: #6b7280;">{delivery_fee}</td></tr>
-</table>
-</div>
-<table class="items-table" style="margin-top: 12px;"><tr class="total-row"><td>Total</td><td>{total}</td></tr></table>
-</div>
-<div class="section">
-<div class="section-title">📍 Delivery Address</div>
-<div class="address"><p>{delivery_address}</p></div>
-</div>
-<a href="#" class="btn">Track Your Order 📍</a>
-</div>
-<div class="footer">
-<p>Thank you for ordering, {user_name}!</p>
-<p style="margin-top: 8px;">© {cls._get_year()} Fudgo</p>
-</div>
-</div></body></html>
-"""
+              </tr>
+            </table>
+          </td>
+          <td align="right" style="padding: 12px 0; white-space: nowrap; vertical-align: top;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td align="right" style="font-weight: 600;">{price}</td></tr>
+              {original_price_html}
+            </table>
+          </td>
+        </tr>"""
+            items_text += f"  {name} × {qty} - {price}\n"
+        
+        restaurant_html = f'<p style="color: #6b7280; font-size: 14px; margin-top: 8px;">🏪 From <strong>{restaurant_name}</strong></p>' if restaurant_name else ""
+        
+        header = cls._header(
+            f"Order Confirmed! ✓",
+            f"Order #{order_id}{restaurant_html}",
+            "✓"
+        )
+        
+        separator = cls._dashed_separator()
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px 16px 0 0; padding: 16px;">
+      <!-- ETA Box -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+        <tr><td align="center">
+          <p style="color: #166534; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Estimated Delivery</p>
+          <p style="color: #15803d; font-size: 28px; font-weight: 800; margin: 8px 0 0;">🕐 {estimated_time}</p>
+        </td></tr>
+      </table>
+      
+      <!-- Products Header -->
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><strong>Products</strong></td>
+          <td align="right" style="white-space: nowrap; vertical-align: top">
+            <span class="highlight">Order #{order_id}</span>
+          </td>
+        </tr>
+      </table>
+      
+      <!-- Items List -->
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        {items_html}
+      </table>
+      
+      {separator}
+      
+      <!-- Totals -->
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="padding: 8px 12px; color: #6b7280;">Subtotal</td>
+          <td align="right" style="padding: 8px 12px; color: #6b7280;">{subtotal}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; color: #6b7280;">Delivery Fee</td>
+          <td align="right" style="padding: 8px 12px; color: #6b7280;">{delivery_fee}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  
+  <!-- Total Row -->
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 0 0 16px 16px; padding: 0 16px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border-radius: 8px;">
+        <tr>
+          <td style="padding: 16px; font-size: 18px; font-weight: 700; color: #1f2937;">Total</td>
+          <td align="right" style="padding: 16px; font-size: 18px; font-weight: 700; color: #22c55e;">{total}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 16px;"></td></tr>
+  </table>
+  
+  <!-- Delivery Address -->
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 16px;">
+      <p style="font-weight: 600; margin: 0 0 8px; color: #1f2937;">📍 Delivery Address</p>
+      <p style="color: #6b7280; margin: 0; line-height: 1.5;">{delivery_address}</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 16px;">
+        <tr><td align="center">
+          <a href="#" class="btn-primary">Track Your Order 📍</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer(f"Thank you for ordering, {user_name}!")
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Order #{order_id} confirmed - arriving in {estimated_time}"
+        )
+        
         plain = f"""Order Confirmed! ✓
 
 Order #{order_id}
@@ -470,7 +780,7 @@ Thank you, {user_name}!
         cls, user_name: str, order_id: str, status: str,
         status_message: str, estimated_time: str = None
     ) -> Dict[str, str]:
-        """Order status - progress tracker design"""
+        """Order status - progress tracker design with dark mode"""
         
         statuses = {
             "confirmed": {"icon": "✓", "color": "#22c55e", "bg": "#dcfce7", "step": 1},
@@ -481,59 +791,73 @@ Thank you, {user_name}!
         }
         s = statuses.get(status.lower(), statuses["confirmed"])
         
-        def step_style(step_num):
+        def step_html(step_num, label):
             if step_num < s["step"]:
-                return "background: #22c55e; color: #fff;"
+                return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: #22c55e; border-radius: 50%; color: white; line-height: 32px; font-weight: bold; margin: 0 auto;">✓</div><p style="font-size: 10px; color: #22c55e; margin: 4px 0 0;">{label}</p></td>'
             elif step_num == s["step"]:
-                return f"background: {s['color']}; color: #fff; box-shadow: 0 0 0 4px {s['bg']};"
+                return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: {s["color"]}; border-radius: 50%; color: white; line-height: 32px; font-weight: bold; margin: 0 auto; box-shadow: 0 0 0 4px {s["bg"]};">{step_num}</div><p style="font-size: 10px; color: {s["color"]}; margin: 4px 0 0; font-weight: bold;">{label}</p></td>'
             else:
-                return "background: #e5e7eb; color: #9ca3af;"
-
-        eta_html = f'<div style="background: #f0fdf4; padding: 16px; border-radius: 4px; text-align: center; margin-top: 24px;"><span style="color: #166534; font-weight: 600;">⏱️ ETA: {estimated_time}</span></div>' if estimated_time else ""
-
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }}
-.header {{ background: {s['bg']}; padding: 40px; text-align: center; }}
-.status-icon {{ font-size: 56px; margin-bottom: 16px; }}
-.header h1 {{ color: {s['color']}; margin: 0; font-size: 22px; font-weight: 700; }}
-.order-id {{ color: #6b7280; font-size: 14px; margin-top: 8px; }}
-.body {{ padding: 32px; }}
-.message {{ color: #4b5563; font-size: 15px; line-height: 1.6; text-align: center; margin-bottom: 32px; }}
-.progress {{ display: flex; justify-content: space-between; align-items: center; padding: 0 20px; margin-bottom: 32px; }}
-.step {{ width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }}
-.line {{ flex: 1; height: 3px; background: #e5e7eb; margin: 0 8px; }}
-.line.active {{ background: #22c55e; }}
-.btn {{ display: block; background: {s['color']}; color: #fff; text-decoration: none; padding: 14px; border-radius: 4px; font-weight: 600; text-align: center; }}
-.footer {{ padding: 20px; text-align: center; background: #f9fafb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="status-icon">{s['icon']}</div>
-<h1>{status.replace('_', ' ').title()}</h1>
-<p class="order-id">Order #{order_id}</p>
-</div>
-<div class="body">
-<p class="message">{status_message}</p>
-<div class="progress">
-<div class="step" style="{step_style(1)}">1</div>
-<div class="line {'active' if s['step'] > 1 else ''}"></div>
-<div class="step" style="{step_style(2)}">2</div>
-<div class="line {'active' if s['step'] > 2 else ''}"></div>
-<div class="step" style="{step_style(3)}">3</div>
-<div class="line {'active' if s['step'] > 3 else ''}"></div>
-<div class="step" style="{step_style(4)}">4</div>
-</div>
-{eta_html}
-<a href="#" class="btn" style="margin-top: 24px;">Track Order 📍</a>
-</div>
-<div class="footer"><p>© {cls._get_year()} Fudgo</p></div>
-</div></body></html>
-"""
+                return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: #e5e7eb; border-radius: 50%; color: #9ca3af; line-height: 32px; font-weight: bold; margin: 0 auto;">{step_num}</div><p style="font-size: 10px; color: #9ca3af; margin: 4px 0 0;">{label}</p></td>'
+        
+        def line_html(active):
+            color = "#22c55e" if active else "#e5e7eb"
+            return f'<td style="padding: 0 4px;"><div style="height: 3px; background: {color};"></div></td>'
+        
+        eta_html = f"""
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin-top: 24px;">
+        <tr><td align="center">
+          <p style="color: #166534; font-weight: 600; margin: 0;">⏱️ ETA: {estimated_time}</p>
+        </td></tr>
+      </table>""" if estimated_time else ""
+        
+        header = cls._header(
+            f"{status.replace('_', ' ').title()} {s['icon']}",
+            f"Order #{order_id}",
+            s['icon']
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">{status_message}</p>
+          
+          <!-- Progress Steps -->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+            <tr>
+              {step_html(1, "Confirmed")}
+              {line_html(s["step"] > 1)}
+              {step_html(2, "Preparing")}
+              {line_html(s["step"] > 2)}
+              {step_html(3, "On the way")}
+              {line_html(s["step"] > 3)}
+              {step_html(4, "Delivered")}
+            </tr>
+          </table>
+          
+          {eta_html}
+          
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;">
+            <tr><td align="center">
+              <a href="#" class="btn-primary">Track Order 📍</a>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer()
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Order #{order_id} - {status.replace('_', ' ').title()}"
+        )
+        
         eta_text = f"\nETA: {estimated_time}" if estimated_time else ""
         plain = f"""{status.replace('_', ' ').title()} - Order #{order_id}
 
@@ -550,7 +874,7 @@ Track your order in the Fudgo app.
     # ============================================================
     @classmethod
     def order_delivered(cls, user_name: str, order_id: str, restaurant_name: str, items: list = None) -> Dict[str, str]:
-        """Order delivered - celebration with rating request and product images"""
+        """Order delivered - celebration with rating request and product images, dark mode"""
         
         # Build items gallery if items provided
         items_gallery = ""
@@ -558,66 +882,64 @@ Track your order in the Fudgo app.
             items_html = ""
             for item in items[:4]:  # Show max 4 items
                 image_url = item.get('image_url', '')
+                name = item.get('name', '')
                 if image_url:
-                    items_html += f'<div style="width: 80px; height: 80px; border-radius: 4px; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"><img src="{image_url}" alt="{item.get("name", "")}" style="width: 100%; height: 100%; object-fit: cover;"></div>'
+                    items_html += f'<td style="padding: 4px;"><img src="{image_url}" alt="{name}" style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></td>'
                 else:
-                    items_html += f'<div style="width: 80px; height: 80px; border-radius: 4px; background: #f0fdf4; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 28px;">🍽️</div>'
+                    items_html += f'<td style="padding: 4px;"><div style="width: 70px; height: 70px; border-radius: 8px; background: #f0fdf4; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; line-height: 70px; font-size: 28px;">🍽️</div></td>'
             
-            items_gallery = f'''
-            <div style="margin: 24px 0;">
-                <p style="color: #6b7280; font-size: 13px; margin-bottom: 12px;">Your order</p>
-                <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                    {items_html}
-                </div>
-            </div>'''
+            items_gallery = f"""
+          <p style="color: #6b7280; font-size: 13px; margin: 24px 0 12px;">Your order</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+            <tr>{items_html}</tr>
+          </table>"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%); margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 20px 40px rgba(34,197,94,0.2); }}
-.header {{ background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); padding: 48px; text-align: center; }}
-.delivered-icon {{ font-size: 72px; margin-bottom: 16px; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 28px; font-weight: 800; }}
-.header p {{ color: rgba(255,255,255,0.9); font-size: 15px; margin-top: 8px; }}
-.body {{ padding: 40px 32px; text-align: center; }}
-.restaurant {{ background: #f9fafb; border-radius: 4px; padding: 20px; margin-bottom: 24px; }}
-.restaurant p {{ color: #6b7280; font-size: 13px; margin: 0 0 4px; }}
-.restaurant h3 {{ color: #1f2937; font-size: 18px; margin: 0; font-weight: 600; }}
-.rating-section {{ margin: 32px 0; }}
-.rating-section h3 {{ color: #1f2937; font-size: 18px; margin-bottom: 16px; }}
-.stars {{ font-size: 36px; letter-spacing: 8px; }}
-.btn {{ display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; text-decoration: none; padding: 16px 40px; border-radius: 4px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 15px rgba(245,158,11,0.4); }}
-.reorder {{ display: block; color: #22c55e; text-decoration: none; font-weight: 600; margin-top: 20px; font-size: 15px; }}
-.footer {{ background: #f9fafb; padding: 24px; text-align: center; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="delivered-icon">🍽️</div>
-<h1>Enjoy Your Meal!</h1>
-<p>Order #{order_id} delivered</p>
-</div>
-<div class="body">
-<div class="restaurant">
-<p>Delivered from</p>
-<h3>🏪 {restaurant_name}</h3>
-</div>
-{items_gallery}
-<div class="rating-section">
-<h3>How was your food?</h3>
-<div class="stars">⭐⭐⭐⭐⭐</div>
-</div>
-<a href="#" class="btn">Rate Your Order</a>
-<a href="#" class="reorder">🔄 Order Again</a>
-</div>
-<div class="footer">
-<p>Thanks for choosing Fudgo, {user_name}!</p>
-<p style="margin-top: 8px;">© {cls._get_year()} Fudgo</p>
-</div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"Enjoy Your Meal! 🍽️",
+            f"Order #{order_id} delivered",
+            "🍽️"
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <!-- Restaurant Card -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+            <tr><td align="center">
+              <p style="color: #6b7280; font-size: 13px; margin: 0 0 4px;">Delivered from</p>
+              <p style="color: #1f2937; font-size: 18px; font-weight: 600; margin: 0;">🏪 {restaurant_name}</p>
+            </td></tr>
+          </table>
+          
+          {items_gallery}
+          
+          <!-- Rating Section -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0;">
+            <tr><td align="center">
+              <p style="color: #1f2937; font-size: 18px; font-weight: 600; margin: 0 0 16px;">How was your food?</p>
+              <p style="font-size: 36px; letter-spacing: 8px; margin: 0;">⭐⭐⭐⭐⭐</p>
+            </td></tr>
+          </table>
+          
+          <a href="#" class="btn-primary" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 16px 40px; font-size: 16px;">Rate Your Order</a>
+          <p style="margin-top: 20px;"><a href="#" style="color: #22c55e; font-weight: 600; font-size: 15px;">🔄 Order Again</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer(f"Thanks for choosing Fudgo, {user_name}!")
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Your order from {restaurant_name} has been delivered!"
+        )
+        
         items_text = ""
         if items:
             items_text = "\nYour order:\n" + "\n".join([f"  • {item.get('name', '')}" for item in items[:4]])
@@ -643,9 +965,9 @@ Thanks for choosing Fudgo, {user_name}!
         description: str, expiry_date: str, min_order: str = None,
         featured_items: list = None, restaurant_name: str = None
     ) -> Dict[str, str]:
-        """Promotion - bold sale/discount design with featured product images"""
+        """Promotion - bold sale/discount design with featured product images and dark mode"""
         
-        min_html = f'<p style="color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 12px;">Min. order: {min_order}</p>' if min_order else ""
+        min_html = f'<p style="color: #6b7280; font-size: 13px; margin-top: 8px;">Min. order: {min_order}</p>' if min_order else ""
         min_text = f"\nMin. order: {min_order}" if min_order else ""
         
         # Featured items gallery
@@ -659,72 +981,66 @@ Thanks for choosing Fudgo, {user_name}!
                 original_price = item.get('original_price', '')
                 
                 if image_url:
-                    items_html += f'''
-                    <div style="flex: 1; min-width: 140px; max-width: 160px; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                        <img src="{image_url}" alt="{name}" style="width: 100%; height: 100px; object-fit: cover;">
-                        <div style="padding: 12px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{name}</div>
-                            <div style="margin-top: 6px;">
-                                {"<span style='text-decoration: line-through; color: #9ca3af; font-size: 12px; margin-right: 6px;'>" + original_price + "</span>" if original_price else ""}
-                                <span style="color: #ef4444; font-weight: 700;">{price}</span>
-                            </div>
-                        </div>
-                    </div>'''
+                    original_html = f'<span style="text-decoration: line-through; color: #9ca3af; font-size: 12px; margin-right: 6px;">{original_price}</span>' if original_price else ""
+                    items_html += f"""
+            <td style="padding: 6px; vertical-align: top;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 140px;">
+                <tr><td><img src="{image_url}" alt="{name}" style="width: 140px; height: 100px; object-fit: cover;"></td></tr>
+                <tr><td style="padding: 12px;">
+                  <p style="font-size: 13px; font-weight: 600; color: #1f2937; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{name}</p>
+                  <p style="margin: 6px 0 0;">{original_html}<span style="color: #22c55e; font-weight: 700;">{price}</span></p>
+                </td></tr>
+              </table>
+            </td>"""
             
-            items_gallery = f'''
-            <div style="margin: 28px 0;">
-                <p style="color: #6b7280; font-size: 14px; font-weight: 600; margin-bottom: 16px;">🔥 Featured Deals</p>
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                    {items_html}
-                </div>
-            </div>'''
+            items_gallery = f"""
+          <p style="color: #6b7280; font-size: 14px; font-weight: 600; margin: 28px 0 16px;">🔥 Featured Deals</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+            <tr>{items_html}</tr>
+          </table>"""
         
-        restaurant_html = f'<div style="background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 4px; display: inline-block; margin-top: 12px; color: #fff; font-size: 13px;">🏪 {restaurant_name}</div>' if restaurant_name else ""
-
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fef2f2; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 520px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 20px 50px rgba(239,68,68,0.2); }}
-.header {{ background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); padding: 48px 32px; text-align: center; position: relative; overflow: hidden; }}
-.sale-badge {{ position: absolute; top: 20px; right: -30px; background: #fbbf24; color: #78350f; padding: 8px 40px; font-size: 12px; font-weight: 800; transform: rotate(45deg); text-transform: uppercase; }}
-.discount {{ font-size: 64px; font-weight: 900; color: #fff; margin: 0; text-shadow: 2px 2px 0 rgba(0,0,0,0.1); }}
-.discount-label {{ color: rgba(255,255,255,0.9); font-size: 18px; margin-top: 8px; }}
-.body {{ padding: 32px; text-align: center; }}
-.message {{ color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 24px; }}
-.code-box {{ background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 3px dashed #ef4444; border-radius: 4px; padding: 24px; margin: 24px 0; }}
-.code-label {{ color: #dc2626; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-weight: 600; }}
-.code {{ font-size: 32px; font-weight: 800; color: #b91c1c; letter-spacing: 4px; font-family: monospace; }}
-.expires {{ background: #fef3c7; color: #92400e; padding: 12px 24px; border-radius: 4px; font-size: 14px; display: inline-block; margin: 20px 0; font-weight: 600; }}
-.btn {{ display: block; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; text-decoration: none; padding: 18px; border-radius: 4px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 15px rgba(239,68,68,0.4); }}
-.footer {{ background: #1f2937; padding: 24px; text-align: center; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="sale-badge">Limited!</div>
-<div class="discount">{discount_amount}</div>
-<p class="discount-label">OFF Your Order!</p>
-{min_html}
-{restaurant_html}
-</div>
-<div class="body">
-<p class="message">{description}</p>
-{items_gallery}
-<div class="code-box">
-<div class="code-label">Your Promo Code</div>
-<div class="code">{promo_code}</div>
-</div>
-<div class="expires">⏰ Expires: {expiry_date}</div>
-<a href="#" class="btn">Use Code Now 🔥</a>
-</div>
-<div class="footer">
-<p>Happy eating, {user_name}! 🍔</p>
-<p style="margin-top: 8px;">© {cls._get_year()} Fudgo</p>
-</div>
-</div></body></html>
-"""
+        restaurant_html = f'<p style="margin-top: 12px;"><span class="highlight">🏪 {restaurant_name}</span></p>' if restaurant_name else ""
+        
+        header = cls._header(
+            f"{discount_amount} OFF! 🔥",
+            f"{description}{restaurant_html}",
+            "🔥"
+        )
+        
+        code_box = cls._code_box(promo_code, "Your Promo Code")
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          {items_gallery}
+          
+          {code_box}
+          {min_html}
+          
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fef3c7; border-radius: 8px; padding: 12px 24px; margin: 20px 0;">
+            <tr><td>
+              <p style="color: #92400e; font-size: 14px; font-weight: 600; margin: 0;">⏰ Expires: {expiry_date}</p>
+            </td></tr>
+          </table>
+          
+          <a href="#" class="btn-primary" style="padding: 18px 40px; font-size: 18px;">Use Code Now 🔥</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer(f"Happy eating, {user_name}! 🍔")
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"{discount_amount} OFF with code {promo_code}"
+        )
+        
         items_text = ""
         if featured_items:
             items_text = "\n\nFeatured items:\n" + "\n".join([f"  • {item.get('name', '')} - {item.get('price', '')}" for item in featured_items[:3]])
@@ -748,54 +1064,53 @@ Use code at fudgo.com!
     # ============================================================
     @classmethod
     def welcome_promo(cls, user_name: str, promo_code: str, discount_amount: str) -> Dict[str, str]:
-        """Welcome promo - gift box themed"""
+        """Welcome promo - gift box themed with dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #fae8ff 0%, #e9d5ff 100%); margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 20px 50px rgba(168,85,247,0.2); }}
-.header {{ background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7c3aed 100%); padding: 48px; text-align: center; }}
-.gift {{ font-size: 80px; margin-bottom: 16px; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 28px; font-weight: 800; }}
-.header p {{ color: rgba(255,255,255,0.9); font-size: 16px; margin-top: 8px; }}
-.body {{ padding: 40px 32px; text-align: center; }}
-.discount-card {{ background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-radius: 4px; padding: 32px; margin-bottom: 28px; border: 2px solid #a855f7; }}
-.amount {{ font-size: 48px; font-weight: 900; color: #7c3aed; }}
-.amount-label {{ color: #6b7280; font-size: 14px; margin-top: 8px; }}
-.code-box {{ background: #1f2937; border-radius: 4px; padding: 20px; margin: 24px 0; }}
-.code {{ color: #a855f7; font-size: 28px; font-weight: 800; letter-spacing: 4px; font-family: monospace; }}
-.valid {{ color: #9ca3af; font-size: 13px; margin-top: 12px; }}
-.message {{ color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 24px; }}
-.btn {{ display: inline-block; background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); color: #fff; text-decoration: none; padding: 16px 40px; border-radius: 4px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 15px rgba(168,85,247,0.4); }}
-.footer {{ background: #f9fafb; padding: 24px; text-align: center; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="gift">🎁</div>
-<h1>A Gift For You!</h1>
-<p>Welcome to the Fudgo family</p>
-</div>
-<div class="body">
-<div class="discount-card">
-<div class="amount">{discount_amount}</div>
-<div class="amount-label">off your first order</div>
-</div>
-<div class="code-box">
-<div class="code">{promo_code}</div>
-<p class="valid">Valid for first order only</p>
-</div>
-<p class="message">Start your Fudgo journey with a treat on us! Thousands of restaurants are waiting.</p>
-<a href="#" class="btn">Claim Your Gift 🎉</a>
-</div>
-<div class="footer">
-<p>Welcome aboard, {user_name}! 💜</p>
-<p style="margin-top: 8px;">© {cls._get_year()} Fudgo</p>
-</div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"A Gift For You! 🎁",
+            "Welcome to the Fudgo family",
+            "🎁"
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <!-- Discount Card -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 32px; margin-bottom: 24px; border: 2px solid #22c55e;">
+            <tr><td align="center">
+              <p style="font-size: 48px; font-weight: 900; color: #15803d; margin: 0;">{discount_amount}</p>
+              <p style="color: #6b7280; font-size: 14px; margin: 8px 0 0;">off your first order</p>
+            </td></tr>
+          </table>
+          
+          <!-- Code Box -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #1f2937; border-radius: 12px; padding: 20px; margin: 24px 0;">
+            <tr><td align="center">
+              <p style="color: #22c55e; font-size: 28px; font-weight: 800; letter-spacing: 4px; font-family: monospace; margin: 0;">{promo_code}</p>
+              <p style="color: #9ca3af; font-size: 13px; margin: 12px 0 0;">Valid for first order only</p>
+            </td></tr>
+          </table>
+          
+          <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 24px 0;">Start your Fudgo journey with a treat on us! Thousands of restaurants are waiting.</p>
+          
+          <a href="#" class="btn-primary" style="padding: 16px 40px; font-size: 16px;">Claim Your Gift 🎉</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer(f"Welcome aboard, {user_name}! 💚")
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Get {discount_amount} OFF your first order with code {promo_code}"
+        )
+        
         plain = f"""🎁 Welcome Gift for {user_name}!
 
 Get {discount_amount} OFF your first order!
@@ -817,55 +1132,58 @@ Start ordering at fudgo.com!
         cls, user_name: str, order_id: str,
         driver_name: str, estimated_time: str
     ) -> Dict[str, str]:
-        """Driver assigned - tracking/map style"""
+        """Driver assigned - tracking/map style with dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eff6ff; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 30px rgba(59,130,246,0.15); }}
-.header {{ background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px; text-align: center; }}
-.vehicle {{ font-size: 56px; margin-bottom: 12px; }}
-.header h1 {{ color: #fff; margin: 0; font-size: 22px; font-weight: 700; }}
-.header p {{ color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px; }}
-.body {{ padding: 32px; }}
-.driver-card {{ background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 4px; padding: 24px; text-align: center; margin-bottom: 24px; }}
-.driver-avatar {{ width: 64px; height: 64px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 28px; }}
-.driver-name {{ color: #1f2937; font-size: 18px; font-weight: 700; }}
-.driver-label {{ color: #6b7280; font-size: 13px; margin-top: 4px; }}
-.info-row {{ display: flex; justify-content: space-between; padding: 16px; background: #f9fafb; border-radius: 4px; margin-bottom: 12px; }}
-.info-row .label {{ color: #6b7280; font-size: 14px; }}
-.info-row .value {{ color: #1f2937; font-size: 14px; font-weight: 600; }}
-.btn {{ display: block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; text-decoration: none; padding: 16px; border-radius: 4px; font-weight: 600; text-align: center; }}
-.footer {{ padding: 20px; text-align: center; background: #f9fafb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="vehicle">🛵</div>
-<h1>Driver On The Way!</h1>
-<p>Order #{order_id}</p>
-</div>
-<div class="body">
-<div class="driver-card">
-<div class="driver-avatar">👤</div>
-<div class="driver-name">{driver_name}</div>
-<div class="driver-label">Your Delivery Partner</div>
-</div>
-<div class="info-row">
-<span class="label">📦 Order ID</span>
-<span class="value">#{order_id}</span>
-</div>
-<div class="info-row">
-<span class="label">⏱️ Arriving In</span>
-<span class="value">{estimated_time}</span>
-</div>
-<a href="#" class="btn">Track Live Location 📍</a>
-</div>
-<div class="footer"><p>© {cls._get_year()} Fudgo</p></div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"Driver On The Way! 🛵",
+            f"Order #{order_id}",
+            "🛵"
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <!-- Driver Card -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <tr><td align="center">
+              <div style="width: 64px; height: 64px; background: #22c55e; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px;">👤</div>
+              <p style="color: #1f2937; font-size: 18px; font-weight: 700; margin: 12px 0 4px;">{driver_name}</p>
+              <p style="color: #6b7280; font-size: 13px; margin: 0;">Your Delivery Partner</p>
+            </td></tr>
+          </table>
+          
+          <!-- Info Rows -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+            <tr>
+              <td style="color: #6b7280; font-size: 14px;">📦 Order ID</td>
+              <td align="right" style="color: #1f2937; font-size: 14px; font-weight: 600;">#{order_id}</td>
+            </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <tr>
+              <td style="color: #6b7280; font-size: 14px;">⏱️ Arriving In</td>
+              <td align="right" style="color: #1f2937; font-size: 14px; font-weight: 600;">{estimated_time}</td>
+            </tr>
+          </table>
+          
+          <a href="#" class="btn-primary">Track Live Location 📍</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer()
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"{driver_name} is delivering your order - arriving in {estimated_time}"
+        )
+        
         plain = f"""🛵 Driver On The Way!
 
 Order #{order_id}
@@ -884,41 +1202,58 @@ Track in the Fudgo app.
     # ============================================================
     @classmethod
     def delivery_arriving_soon(cls, user_name: str, order_id: str, minutes_away: int = 5) -> Dict[str, str]:
-        """Arriving soon - countdown timer style"""
+        """Arriving soon - countdown timer style with dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fef3c7; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 420px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 20px 40px rgba(245,158,11,0.25); border: 3px solid #f59e0b; }}
-.header {{ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 48px 32px; text-align: center; }}
-.alert {{ font-size: 64px; margin-bottom: 12px; animation: pulse 1s infinite; }}
-@keyframes pulse {{ 0%, 100% {{ transform: scale(1); }} 50% {{ transform: scale(1.1); }} }}
-.countdown {{ background: #fff; color: #d97706; font-size: 72px; font-weight: 900; padding: 20px 40px; border-radius: 4px; display: inline-block; margin: 16px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }}
-.countdown span {{ font-size: 24px; }}
-.header p {{ color: #fff; font-size: 18px; margin: 0; font-weight: 600; }}
-.body {{ padding: 32px; text-align: center; }}
-.message {{ color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 24px; }}
-.order-id {{ color: #6b7280; font-size: 14px; background: #f9fafb; padding: 12px; border-radius: 4px; }}
-.footer {{ background: #fffbeb; padding: 20px; text-align: center; }}
-.footer p {{ color: #92400e; font-size: 13px; margin: 0; font-weight: 500; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="alert">🏃</div>
-<div class="countdown">{minutes_away}<span>min</span></div>
-<p>Almost there!</p>
-</div>
-<div class="body">
-<p class="message">Your order is just around the corner! Please be ready to receive it.</p>
-<div class="order-id">Order #{order_id}</div>
-</div>
-<div class="footer">
-<p>📱 Keep your phone nearby!</p>
-</div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"Almost There! 🏃",
+            "Your order is just around the corner!",
+            "🏃"
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <!-- Countdown Box -->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 16px; padding: 32px 48px; margin: 16px 0; border: 3px solid #f59e0b;">
+            <tr><td align="center">
+              <p style="font-size: 72px; font-weight: 900; color: #d97706; margin: 0; line-height: 1;">{minutes_away}<span style="font-size: 24px;">min</span></p>
+            </td></tr>
+          </table>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 24px 0;">Please be ready to receive your order!</p>
+          
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 24px;">
+            <tr><td align="center">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">Order #{order_id}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>
+  
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="background: #fef3c7; border-radius: 12px; padding: 16px; text-align: center;">
+      <p style="color: #92400e; font-size: 13px; font-weight: 500; margin: 0;">📱 Keep your phone nearby!</p>
+    </td></tr>
+  </table>
+  
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer()
+        
+        html = cls._base_template(
+            header + body + footer,
+            f"Your order arrives in {minutes_away} minutes!"
+        )
+        
         plain = f"""🏃 Almost There!
 
 Your order will arrive in {minutes_away} minutes!
@@ -936,51 +1271,54 @@ Please be ready to receive your order.
     # ============================================================
     @classmethod
     def account_deactivated(cls, user_name: str) -> Dict[str, str]:
-        """Account deactivated - gentle farewell design"""
+        """Account deactivated - gentle farewell design with dark mode"""
         
-        html = f"""
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; margin: 0; padding: 40px 20px; }}
-.container {{ max-width: 480px; margin: 0 auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e5e7eb; }}
-.header {{ padding: 40px; text-align: center; border-bottom: 1px solid #e5e7eb; }}
-.wave {{ font-size: 48px; margin-bottom: 16px; }}
-.header h1 {{ color: #1f2937; margin: 0; font-size: 22px; font-weight: 600; }}
-.body {{ padding: 32px; }}
-.message {{ color: #4b5563; font-size: 15px; line-height: 1.7; margin-bottom: 24px; }}
-.info-box {{ background: #f9fafb; border-radius: 4px; padding: 20px; margin: 24px 0; }}
-.info-box h4 {{ color: #1f2937; font-size: 14px; margin: 0 0 8px; }}
-.info-box p {{ color: #6b7280; font-size: 14px; margin: 0; line-height: 1.5; }}
-.btn {{ display: inline-block; background: #22c55e; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 4px; font-weight: 600; }}
-.btn-outline {{ display: inline-block; border: 2px solid #e5e7eb; color: #6b7280; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 500; margin-left: 12px; }}
-.cta {{ text-align: center; margin: 28px 0; }}
-.footer {{ background: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; }}
-.footer p {{ color: #9ca3af; font-size: 12px; margin: 0; }}
-</style></head>
-<body><div class="container">
-<div class="header">
-<div class="wave">👋</div>
-<h1>We'll Miss You, {user_name}</h1>
-</div>
-<div class="body">
-<p class="message">Your Fudgo account has been deactivated as requested. We're sad to see you go, but we understand.</p>
-<div class="info-box">
-<h4>💡 Changed Your Mind?</h4>
-<p>You can reactivate your account within 30 days by simply logging in. All your data will be restored.</p>
-</div>
-<p class="message">If there's anything we could have done better, we'd love to hear from you.</p>
-<div class="cta">
-<a href="#" class="btn">Reactivate Account</a>
-<a href="#" class="btn-outline">Give Feedback</a>
-</div>
-</div>
-<div class="footer">
-<p>Thank you for being part of Fudgo ��</p>
-<p style="margin-top: 8px;">© {cls._get_year()} Fudgo</p>
-</div>
-</div></body></html>
-"""
+        header = cls._header(
+            f"We'll Miss You, {user_name} 👋",
+            "Your Fudgo account has been deactivated as requested.",
+            "👋"
+        )
+        
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
+      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td>
+          <p style="color: #4b5563; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">We're sad to see you go, but we understand.</p>
+          
+          <!-- Info Box -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border-radius: 12px; padding: 20px; margin: 24px 0;">
+            <tr><td>
+              <p style="color: #1f2937; font-size: 14px; font-weight: 600; margin: 0 0 8px;">💡 Changed Your Mind?</p>
+              <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.5;">You can reactivate your account within 30 days by simply logging in. All your data will be restored.</p>
+            </td></tr>
+          </table>
+          
+          <p style="color: #4b5563; font-size: 15px; line-height: 1.7; margin: 24px 0;">If there's anything we could have done better, we'd love to hear from you.</p>
+          
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0;">
+            <tr>
+              <td align="center">
+                <a href="#" class="btn-primary" style="margin-right: 12px;">Reactivate Account</a>
+                <a href="#" style="display: inline-block; border: 2px solid #e5e7eb; color: #6b7280; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">Give Feedback</a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td style="height: 24px;"></td></tr>
+  </table>"""
+        
+        footer = cls._footer("Thank you for being part of Fudgo 💚")
+        
+        html = cls._base_template(
+            header + body + footer,
+            "Your Fudgo account has been deactivated"
+        )
+        
         plain = f"""We'll Miss You, {user_name}
 
 Your Fudgo account has been deactivated.

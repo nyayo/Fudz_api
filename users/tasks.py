@@ -1,9 +1,11 @@
 import logging
+
 from celery import shared_task
 from firebase_admin import messaging
 from push_notifications.models import APNSDevice, GCMDevice, WebPushDevice
-from .models import User, NotificationPreference
+
 from .helpers import convert_data_to_strings
+from .models import NotificationPreference, User
 
 logger = logging.getLogger(__name__)
 
@@ -268,8 +270,9 @@ def send_order_confirmation_email(order_id: int):
     """
     Send order confirmation email with product images
     """
-    from orders.models import Order
     from django.conf import settings
+
+    from orders.models import Order
     
     try:
         order = Order.objects.select_related(
@@ -277,15 +280,13 @@ def send_order_confirmation_email(order_id: int):
         ).prefetch_related('items__menu_item__images').get(id=order_id)
         
         customer = order.customer.user
-        base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
         
-        # Build items list with images
         items = []
         for item in order.items.all():
             menu_item = item.menu_item
             image_url = ""
             if menu_item.images.exists():
-                image_url = f"{base_url}{menu_item.images.first().image.url}"
+                image_url = menu_item.images.first().image.url
             
             items.append({
                 'name': menu_item.title,
@@ -323,8 +324,9 @@ def send_order_delivered_email(order_id: int):
     """
     Send order delivered email with product images
     """
-    from orders.models import Order
     from django.conf import settings
+
+    from orders.models import Order
     
     try:
         order = Order.objects.select_related(
@@ -332,15 +334,13 @@ def send_order_delivered_email(order_id: int):
         ).prefetch_related('items__menu_item__images').get(id=order_id)
         
         customer = order.customer.user
-        base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
         
-        # Build items list with images
         items = []
         for item in order.items.all():
             menu_item = item.menu_item
             image_url = ""
             if menu_item.images.exists():
-                image_url = f"{base_url}{menu_item.images.first().image.url}"
+                image_url = menu_item.images.first().image.url 
             
             items.append({
                 'name': menu_item.title,
@@ -371,12 +371,12 @@ def send_promotion_email(promotion_id: int, user_ids: list):
     """
     Send promotion email with featured product images to multiple users
     """
-    from restaurants.models import Promotion
     from django.conf import settings
+
+    from restaurants.models import Promotion
     
     try:
         promotion = Promotion.objects.select_related('restaurant').get(id=promotion_id)
-        base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
         
         # Get featured items from this promotion
         featured_items = []
@@ -384,7 +384,7 @@ def send_promotion_email(promotion_id: int, user_ids: list):
         for menu_item in menu_items:
             image_url = ""
             if menu_item.images.exists():
-                image_url = f"{base_url}{menu_item.images.first().image.url}"
+                image_url = menu_item.images.first().image.url
             
             original_price = f"${menu_item.price}"
             discounted_price = f"${menu_item.get_offer_price()}"

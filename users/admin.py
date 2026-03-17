@@ -95,3 +95,34 @@ class RestaurantStaffAdmin(GISModelAdmin):
 
     def restaurant_owner(self, restaurant):
         return restaurant.user.first_name + " " + restaurant.user.last_name
+
+
+@admin.register(models.PhoneVerification)
+class PhoneVerificationAdmin(admin.ModelAdmin):
+    list_display = ["phone", "otp", "is_verified", "created_at", "expires_at"]
+    ordering = ["-created_at"]
+    list_filter = ["is_verified"]
+    list_per_page = 10
+
+
+@admin.register(models.Address)
+class AddressAdmin(GISModelAdmin):
+    list_display = ["label", "user", "street", "city", "phone"]
+    ordering = ["user__first_name", "user__last_name"]
+    list_filter = ["city"]
+    list_per_page = 10
+    search_fields = ["label", "street", "city", "user__first_name", "user__last_name"]
+    autocomplete_fields = ["user"]
+
+    default_lon = 0
+    default_lat = 0
+    default_zoom = 2
+
+
+@admin.register(models.NotificationPreference)
+class NotificationPreferenceAdmin(admin.ModelAdmin):
+    list_display = ["user", "receive_push", "receive_email", "promotions_and_offers", "new_restaurants", "review_reminders"]
+    list_filter = ["receive_push", "receive_email", "promotions_and_offers"]
+    list_per_page = 10
+    search_fields = ["user__email", "user__first_name", "user__last_name"]
+    autocomplete_fields = ["user"]
