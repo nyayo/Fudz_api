@@ -450,6 +450,7 @@ class _CategoryPageState extends State<CategoryPage> {
                           accessToken: _userController.isLoggedIn
                               ? _userController.accessToken
                               : null,
+                          userId: _userController.user?.id,
                           height: 36,
                           compact: true,
                         ),

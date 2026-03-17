@@ -28,8 +28,14 @@ class PromotionController extends GetxController {
       _isLoading.value = true;
       _error.value = '';
 
-      print('📡 Making API request to: promotions/');
-      final response = await _apiService.get('promotions/');
+      print('📡 Making API request to: restaurants/promotions/');
+      dynamic response;
+      try {
+        response = await _apiService.get('restaurants/promotions/');
+      } catch (_) {
+        // Backward-compatible fallback if backend routing differs by environment.
+        response = await _apiService.get('promotions/');
+      }
       
       print('✅ API Response received');
       print('   Response type: ${response.runtimeType}');

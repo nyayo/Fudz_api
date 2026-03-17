@@ -1071,6 +1071,12 @@ class UserController extends GetxController {
       final orderController = Get.find<OrderController>();
       orderController.clearOrders();
 
+      // Clear cart
+      final cartController = Get.find<CartController>();
+      if (_user.value?.id != null) {
+        await cartController.clearCartForUser(_user.value!.id);
+      }
+
       // Unregister from notifications
       final notificationService = Get.find<NotificationService>();
       await notificationService.unregisterDevice();

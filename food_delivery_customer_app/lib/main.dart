@@ -18,6 +18,7 @@ import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/firebase_options.dart';
 import 'package:food_delivery_customer_app/services/connectivity_service.dart';
+import 'package:food_delivery_customer_app/services/data_sync_service.dart';
 import 'package:food_delivery_customer_app/services/notification_service.dart';
 import 'package:food_delivery_customer_app/routes/app_pages.dart';
 import 'package:food_delivery_customer_app/services/api_service.dart';
@@ -213,6 +214,9 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => men.MenuItemController(), fenix: true);
     Get.lazyPut(() => LocationController(), fenix: true);
     Get.lazyPut(() => PromotionController(), fenix: true);
+
+    // Background data sync service (polling + connectivity-triggered)
+    Get.put(DataSyncService(), permanent: true);
 
     // Background image pre-caching service
     Get.put(ImagePreCacheService(), permanent: true);

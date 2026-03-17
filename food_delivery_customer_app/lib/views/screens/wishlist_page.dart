@@ -556,6 +556,7 @@ class WishlistPage extends StatelessWidget {
                                           quantity: 1,
                                           accessToken:
                                               _userController.accessToken,
+                                          userId: _userController.user?.id,
                                         );
                                       },
                                 child: isProcessing

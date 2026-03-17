@@ -486,6 +486,7 @@ class _OrdersPageState extends State<OrdersPage>
           menuItem: item.menuItem,
           quantity: item.quantity,
           accessToken: _userController.accessToken,
+          userId: _userController.user?.id,
         );
       }
 

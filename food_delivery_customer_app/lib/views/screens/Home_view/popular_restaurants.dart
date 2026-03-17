@@ -131,6 +131,7 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             itemCount: popularRestaurants.length,
             itemBuilder: (context, index) {
               final restaurant = popularRestaurants[index];

@@ -474,6 +474,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                                 accessToken: userController.isLoggedIn
                                     ? userController.accessToken
                                     : null,
+                                userId: userController.user?.id,
                                 height: 40,
                                 compact: true,
                               )

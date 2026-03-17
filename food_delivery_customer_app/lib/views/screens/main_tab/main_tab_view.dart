@@ -144,35 +144,33 @@ class _MainTabViewState extends State<MainTabView> with SingleTickerProviderStat
           Positioned(
             right: isSelected ? 8 : 4,
             top: 8,
-            child: GetBuilder<WishlistController>(
-              builder: (controller) {
-                final itemCount = controller.wishlistItemCount;
-                if (itemCount == 0) return const SizedBox();
+            child: Obx(() {
+              final itemCount = wishlistController.wishlistItemCount;
+              if (itemCount == 0) return const SizedBox();
 
-                return Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.pink,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Builder(
-                    builder: (context) => Text(
-                      itemCount > 9 ? '9+' : itemCount.toString(),
-                      style: ResponsiveText.tiny(
-                        context,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+              return Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.pink,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                child: Builder(
+                  builder: (context) => Text(
+                    itemCount > 9 ? '9+' : itemCount.toString(),
+                    style: ResponsiveText.tiny(
+                      context,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            }),
           ),
         ],
       ),

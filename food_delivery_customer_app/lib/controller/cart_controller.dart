@@ -448,7 +448,8 @@ class CartController extends GetxController {
   Future<void> updateQuantity({
     required String itemId,
     required int quantity,
-    required String? accessToken, // Changed to nullable
+    String? accessToken,
+    int? userId,
   }) async {
     final itemKey = '${itemId}_update';
 
@@ -464,6 +465,7 @@ class CartController extends GetxController {
           itemId: itemId,
           quantity: quantity,
           accessToken: accessToken,
+          userId: userId,
         );
       }
     } catch (e) {
@@ -518,11 +520,12 @@ class CartController extends GetxController {
     required String itemId,
     required int quantity,
     required String accessToken,
+    int? userId,
   }) async {
     if (!itemId.startsWith('local_')) {
       // This is already a remote item, update directly
       try {
-        final cartId = GetStorage().read('current_cart_id');
+        final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
         if (cartId == null) return;
 
         if (quantity <= 0) {
@@ -533,7 +536,7 @@ class CartController extends GetxController {
           });
         }
 
-        await getCart(); // Refresh remote cart
+        await getCart(userId: userId); // Refresh remote cart
         await _mergeCarts(); // Update local cart with remote data
       } catch (e) {
         print('❌ Failed to sync quantity: $e');
@@ -545,7 +548,8 @@ class CartController extends GetxController {
   // FAST LOCAL REMOVE FROM CART
   Future<void> removeFromCart({
     required String itemId,
-    required String? accessToken, // Changed to nullable
+    String? accessToken,
+    int? userId,
   }) async {
     final itemKey = '${itemId}_remove';
 
@@ -557,7 +561,7 @@ class CartController extends GetxController {
 
       // 2. THEN: Sync with backend if we have access token
       if (accessToken != null && accessToken.isNotEmpty) {
-        _syncRemoveWithBackend(itemId: itemId, accessToken: accessToken);
+        _syncRemoveWithBackend(itemId: itemId, accessToken: accessToken, userId: userId);
       }
 
       Get.snackbar(
@@ -589,15 +593,16 @@ class CartController extends GetxController {
   Future<void> _syncRemoveWithBackend({
     required String itemId,
     required String accessToken,
+    int? userId,
   }) async {
     if (!itemId.startsWith('local_')) {
       // This is a remote item, remove directly
       try {
-        final cartId = GetStorage().read('current_cart_id');
+        final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
         if (cartId == null) return;
 
         await _apiService.delete('orders/carts/$cartId/items/$itemId/');
-        await getCart(); // Refresh remote cart
+        await getCart(userId: userId); // Refresh remote cart
         await _mergeCarts(); // Update local cart with remote data
       } catch (e) {
         print('❌ Failed to sync remove: $e');
