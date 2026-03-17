@@ -19,6 +19,7 @@ class MenuItemsWidget extends StatefulWidget {
 
 class _MenuItemsWidgetState extends State<MenuItemsWidget> {
   late ScrollController _scrollController;
+  static const double _sectionInset = 16;
 
   static const List<Color> _fallbackAccents = [
     Color(0xFFFFF3E0),
@@ -56,7 +57,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: _sectionInset),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -143,7 +144,11 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
               controller: _scrollController,
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 8),
+              padding: const EdgeInsets.only(
+                left: _sectionInset,
+                right: _sectionInset,
+                bottom: 8,
+              ),
               itemCount: displayItems.length,
               itemBuilder: (context, index) {
                 final item = displayItems[index];
