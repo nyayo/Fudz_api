@@ -411,6 +411,8 @@ Color _getStatusColor(String status) {
       isLoading.value = true;
       error.value = '';
 
+      final localOrderId = DateTime.now().millisecondsSinceEpoch;
+
       print('📦 Creating order with delivery location:');
       print('📦   Address: $deliveryAddress');
       if (deliveryLocation != null) {
@@ -421,7 +423,7 @@ Color _getStatusColor(String status) {
 
       // 1. FIRST: Create a local order immediately for UI feedback
       final localOrder = Order(
-        id: DateTime.now().millisecondsSinceEpoch, // Temporary local ID
+        id: localOrderId, // Temporary local ID
         status: 'pending',
         paymentStatus: 'pending', // ADD THIS REQUIRED PARAMETER
         items: [],
@@ -444,9 +446,13 @@ Color _getStatusColor(String status) {
 
       _addToLocalOrders(localOrder);
 
+      // Ensure backend receives a UUID cart id. Local-only carts use ids like
+      // "local_cart_*" and will be rejected by the order endpoint.
+      final backendCartId = await _ensureBackendCartId(cartId);
+
       // 2. THEN: Create order in backend and sync
       final orderData = {
-        'cart_id': cartId,
+        'cart_id': backendCartId,
         'delivery_address': deliveryAddress,
         'payment_method': paymentMethod,
         if (deliveryLocation != null) ...{
@@ -508,9 +514,7 @@ Color _getStatusColor(String status) {
       print('❌ Error placing order: $e');
 
       // Remove local order if backend creation failed
-      _localOrders.removeWhere(
-        (order) => order.id == DateTime.now().millisecondsSinceEpoch,
-      );
+      _localOrders.removeWhere((order) => order.id == localOrderId);
 
       Get.snackbar(
         'Order Failed',
@@ -523,6 +527,42 @@ Color _getStatusColor(String status) {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  bool _isUuid(String value) {
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    );
+    return uuidRegex.hasMatch(value);
+  }
+
+  Future<String> _ensureBackendCartId(String cartId) async {
+    if (_isUuid(cartId)) return cartId;
+
+    print('🛒 Local cart detected, creating backend cart before checkout...');
+
+    final cartController = Get.find<CartController>();
+    final localItems = cartController.cartItems;
+    if (localItems.isEmpty) {
+      throw Exception('Your cart is empty. Please add items before checkout.');
+    }
+
+    final createdCart = await _apiService.post('orders/carts/', {});
+    final backendCartId = createdCart['id']?.toString();
+    if (backendCartId == null || !_isUuid(backendCartId)) {
+      throw Exception('Failed to prepare checkout cart. Please try again.');
+    }
+
+    for (final item in localItems) {
+      await _apiService.post('orders/carts/$backendCartId/items/', {
+        'menu_item_id': item.menuItem.id,
+        'qty': item.quantity,
+      });
+    }
+
+    await GetStorage().write('current_cart_id', backendCartId);
+    print('✅ Backend cart prepared for checkout: $backendCartId');
+    return backendCartId;
   }
 
   // FAST LOCAL ORDERS LOADING - Show local data immediately, sync in background
