@@ -288,7 +288,7 @@ class _OrdersPageState extends State<OrdersPage>
 
                       // Order code + date
                       Text(
-                        '#${order.id}  ΓÇó  ${_formatDate(order.placedAt)}',
+                        '#${order.id}  ${_formatDate(order.placedAt)}',
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
 

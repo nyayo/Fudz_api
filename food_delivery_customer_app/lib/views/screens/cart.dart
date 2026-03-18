@@ -484,7 +484,7 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${item.quantity} ├ù ${CurrencyFormatter.format(itemPrice)}',
+                            '${item.quantity} x ${CurrencyFormatter.format(itemPrice)}',
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey[500],

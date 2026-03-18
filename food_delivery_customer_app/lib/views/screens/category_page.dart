@@ -55,7 +55,7 @@ class _CategoryPageState extends State<CategoryPage> {
       // Try the category-specific endpoint first
       try {
         final response = await _apiService.get(
-          'restaurants/categories/${widget.categoryId}/items/',
+          'restaurants/restaurants/categories/${widget.categoryId}/items/',
         );
 
         List<dynamic> itemsList = [];

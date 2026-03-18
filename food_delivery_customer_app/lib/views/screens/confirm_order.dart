@@ -13,11 +13,13 @@ class OrderConfirmationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Order Confirmed'),
+        title: Center(child: const Text('Order Confirmed')),
         backgroundColor: Colors.white,
         foregroundColor: TColor.primaryText,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
