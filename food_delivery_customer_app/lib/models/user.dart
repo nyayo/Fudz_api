@@ -28,12 +28,41 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    String firstName = json['first_name']?.toString() ?? '';
+    String lastName = json['last_name']?.toString() ?? '';
+
+    if (firstName.isEmpty || lastName.isEmpty) {
+      final fullName = json['full_name']?.toString().trim() ?? '';
+      if (fullName.isNotEmpty && !fullName.contains('@')) {
+        final parts = fullName.split(RegExp(r'\s+'));
+        if (firstName.isEmpty && parts.isNotEmpty) {
+          firstName = parts.first;
+        }
+        if (lastName.isEmpty && parts.length > 1) {
+          lastName = parts.sublist(1).join(' ');
+        }
+      }
+    }
+
+    if ((firstName.isEmpty || lastName.isEmpty) && json['display_name'] != null) {
+      final displayName = json['display_name'].toString().trim();
+      if (displayName.isNotEmpty && !displayName.contains('@')) {
+        final parts = displayName.split(RegExp(r'\s+'));
+        if (firstName.isEmpty && parts.isNotEmpty) {
+          firstName = parts.first;
+        }
+        if (lastName.isEmpty && parts.length > 1) {
+          lastName = parts.sublist(1).join(' ');
+        }
+      }
+    }
+
     return User(
       id: json['id'],
       username: json['username'] ?? '',
       email: json['email'] ?? '',
-      firstName: json['first_name'] ?? '',
-      lastName: json['last_name'] ?? '',
+      firstName: firstName,
+      lastName: lastName,
       phone: json['phone'] ?? '',
       userType: json['user_type'] ?? 'customer',
       isVerified: json['is_verified'] ?? false,
@@ -91,5 +120,14 @@ class User {
     return email.split('@').first;
   }
 
-  String get fullName => '$firstName $lastName';
+  String get fullName {
+    if (firstName.isNotEmpty && lastName.isNotEmpty) {
+      return '$firstName $lastName';
+    } else if (firstName.isNotEmpty) {
+      return firstName;
+    } else if (lastName.isNotEmpty) {
+      return lastName;
+    }
+    return displayName;
+  }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
+import 'package:food_delivery_customer_app/models/user.dart';
 import 'package:get/get.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -35,10 +36,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     final user = _userController.user;
 
-    _firstNameController = TextEditingController(text: user?.firstName ?? '');
-    _lastNameController = TextEditingController(text: user?.lastName ?? '');
+    _firstNameController = TextEditingController(text: _resolveFirstName(user));
+    _lastNameController = TextEditingController(text: _resolveLastName(user));
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
+
+    // Ensure we also prefill from the latest backend profile when cache is stale.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshProfileForPrefill();
+    });
 
     // Auto-focus on the specified field
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -56,6 +62,67 @@ class _EditProfilePageState extends State<EditProfilePage> {
         }
       }
     });
+  }
+
+  Future<void> _refreshProfileForPrefill() async {
+    try {
+      await _userController.getProfile();
+      if (!mounted) return;
+
+      final refreshedUser = _userController.user;
+      final first = _resolveFirstName(refreshedUser);
+      final last = _resolveLastName(refreshedUser);
+
+      if (_firstNameController.text.trim().isEmpty && first.isNotEmpty) {
+        _firstNameController.text = first;
+      }
+      if (_lastNameController.text.trim().isEmpty && last.isNotEmpty) {
+        _lastNameController.text = last;
+      }
+      if (_phoneController.text.trim().isEmpty &&
+          (refreshedUser?.phone ?? '').trim().isNotEmpty) {
+        _phoneController.text = refreshedUser!.phone;
+      }
+      if (_emailController.text.trim().isEmpty &&
+          (refreshedUser?.email ?? '').trim().isNotEmpty) {
+        _emailController.text = refreshedUser!.email;
+      }
+    } catch (_) {
+      // Keep currently displayed cached values if profile refresh fails.
+    }
+  }
+
+  String _resolveFirstName(User? user) {
+    final direct = (user?.firstName ?? '').trim();
+    if (direct.isNotEmpty) return direct;
+
+    final fromProfile = (user?.profile?['first_name'] ?? '').toString().trim();
+    if (fromProfile.isNotEmpty) return fromProfile;
+
+    final display = (user?.displayName ?? '').trim();
+    if (display.isNotEmpty && !display.contains('@') && display.contains(' ')) {
+      return display.split(RegExp(r'\s+')).first;
+    }
+
+    return '';
+  }
+
+  String _resolveLastName(User? user) {
+    final direct = (user?.lastName ?? '').trim();
+    if (direct.isNotEmpty) return direct;
+
+    final fromProfile = (user?.profile?['last_name'] ?? '').toString().trim();
+    if (fromProfile.isNotEmpty) return fromProfile;
+
+    final display = (user?.displayName ?? '').trim();
+    if (display.isNotEmpty && !display.contains('@') && display.contains(' ')) {
+      final parts = display.split(RegExp(r'\s+'));
+      if (parts.length > 1) {
+        return parts.sublist(1).join(' ');
+      }
+    }
+
+    return '';
   }
 
   @override

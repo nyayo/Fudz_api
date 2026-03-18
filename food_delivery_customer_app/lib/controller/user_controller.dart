@@ -522,6 +522,7 @@ class UserController extends GetxController {
           'phone': registrationData['phone'],
           'user_type': 'customer',
           'is_verified': true,
+          'auth_provider': 'google',
         });
 
         _user.value = user;
@@ -596,6 +597,7 @@ class UserController extends GetxController {
             'user_type': 'customer',
             'is_verified': true,
             'username': userData['email'].split('@').first,
+            'auth_provider': 'google',
           });
         }
 

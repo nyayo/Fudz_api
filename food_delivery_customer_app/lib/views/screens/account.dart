@@ -64,13 +64,14 @@ class ProfilePage extends StatelessWidget {
                     if (isLoggedIn) const SizedBox(height: 24),
 
                     // Google Account Linking Section
-                    if (isLoggedIn)
+                    if (isLoggedIn && !_isPrimaryGoogleAccount(user, userController))
                       FadeSlideIn(
                         duration: const Duration(milliseconds: 500),
                         delay: const Duration(milliseconds: 350),
                         child: _buildGoogleLinkSection(userController),
                       ),
-                    if (isLoggedIn) const SizedBox(height: 24),
+                    if (isLoggedIn && !_isPrimaryGoogleAccount(user, userController))
+                      const SizedBox(height: 24),
 
                     // Notification Preferences
                     if (isLoggedIn)
@@ -546,6 +547,10 @@ class ProfilePage extends StatelessWidget {
     });
   }
 
+  bool _isPrimaryGoogleAccount(User? user, UserController userController) {
+    return user?.googleLinked == true && userController.isGoogleLinked.value;
+  }
+
   Widget _buildGoogleLinkButton(bool isLinked, UserController userController) {
     if (isLinked) {
       return TextButton(
@@ -571,9 +576,7 @@ class ProfilePage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 0,
       ),
       child: const Text(
@@ -586,9 +589,7 @@ class ProfilePage extends StatelessWidget {
   void _showUnlinkConfirmation(UserController userController) {
     Get.dialog(
       AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
             Icon(Icons.link_off, color: Colors.orange),
@@ -603,10 +604,7 @@ class ProfilePage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: TColor.primaryText),
-            ),
+            child: Text('Cancel', style: TextStyle(color: TColor.primaryText)),
           ),
           TextButton(
             onPressed: () {

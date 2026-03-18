@@ -207,12 +207,10 @@ class ApiService extends GetxService {
 
       try {
         final error = json.decode(response.body);
-        throw Exception(
-          error['detail'] ??
-              error['message'] ??
-              error['error'] ??
-              'Something went wrong',
-        );
+        if (error is Map<String, dynamic>) {
+          throw Exception(_extractErrorMessage(error));
+        }
+        throw Exception(error.toString());
       } catch (e) {
         throw Exception(
           'Something went wrong (Status: ${response.statusCode})',
@@ -647,18 +645,7 @@ class ApiService extends GetxService {
         
         // Check for specific error fields
         if (error is Map) {
-          // Try various common error field names
-          errorMessage = error['detail'] ?? 
-                         error['message'] ?? 
-                         error['error'] ?? 
-                         error['non_field_errors']?.toString() ??
-                         error['phone']?.toString() ??
-                         'Something went wrong';
-          
-          // If it's a list of errors, join them
-          if (error['detail'] is List) {
-            errorMessage = (error['detail'] as List).join(', ');
-          }
+          errorMessage = _extractErrorMessage(Map<String, dynamic>.from(error));
         }
       } catch (e) {
         // If we can't parse JSON, use status code based message
@@ -681,6 +668,44 @@ class ApiService extends GetxService {
       
       throw Exception(errorMessage);
     }
+  }
+
+  String _extractErrorMessage(Map<String, dynamic> error) {
+    final direct = error['detail'] ?? error['message'] ?? error['error'];
+    if (direct is String && direct.trim().isNotEmpty) {
+      return direct;
+    }
+    if (direct is List && direct.isNotEmpty) {
+      return direct.join(', ');
+    }
+
+    if (error['non_field_errors'] is List &&
+        (error['non_field_errors'] as List).isNotEmpty) {
+      return (error['non_field_errors'] as List).join(', ');
+    }
+
+    // DRF validation errors often come as: {"field": ["message"]}
+    for (final entry in error.entries) {
+      final key = entry.key;
+      final value = entry.value;
+
+      if (value is List && value.isNotEmpty) {
+        return '$key: ${value.join(', ')}';
+      }
+      if (value is String && value.trim().isNotEmpty) {
+        return '$key: $value';
+      }
+      if (value is Map && value.isNotEmpty) {
+        final nested = value.entries.first;
+        final nestedValue = nested.value;
+        if (nestedValue is List && nestedValue.isNotEmpty) {
+          return '$key.${nested.key}: ${nestedValue.join(', ')}';
+        }
+        return '$key.${nested.key}: $nestedValue';
+      }
+    }
+
+    return 'Something went wrong';
   }
 
   // Helper method to check authentication status

@@ -121,24 +121,23 @@ class LocationService {
       }
 
       // Build address in the same call for reliability
-      String address = 'Getting address...';
+      DeliveryLocation? location;
       try {
-        address = await getDetailedAddress(
+        location = await getDetailedAddress(
           position!.latitude,
-          position.longitude,
+          position!.longitude,
         );
-        debugPrint('📍 Address: $address');
+        debugPrint('📍 Address: ${location.address}');
       } catch (e) {
         debugPrint('⚠️ Address lookup failed: $e');
-        address =
-            '${position!.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        location = DeliveryLocation(
+          latitude: position!.latitude,
+          longitude: position!.longitude,
+          address: '${position!.latitude.toStringAsFixed(6)}, ${position!.longitude.toStringAsFixed(6)}',
+        );
       }
 
-      return DeliveryLocation(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        address: address,
-      );
+      return location;
     } catch (e) {
       debugPrint('❌ Error getting current location: $e');
       return null;
@@ -147,57 +146,82 @@ class LocationService {
 
   // ── Address retrieval ──────────────────────────────────────────────
 
-  /// Get a detailed address string from coordinates.
-  /// Tries the geocoding package first, then Nominatim, then coords.
-  Future<String> getDetailedAddress(double lat, double lng) async {
+  Future<DeliveryLocation> getDetailedAddress(double lat, double lng) async {
     try {
-      // Primary: geocoding package (uses device-native geocoder)
-      String address = await _getAddressFromGeocoding(lat, lng);
-      if (address != 'Unknown Location') return address;
+      DeliveryLocation location = await _getAddressFromGeocoding(lat, lng);
+      if (location.address != null && location.address != 'Unknown Location') {
+        return location;
+      }
 
-      // Fallback: Nominatim
-      address = await getAddressFromNominatim(lat, lng);
-      if (address != 'Unknown Location') return address;
+      location = await getAddressFromNominatim(lat, lng);
+      if (location.address != null && location.address != 'Unknown Location') {
+        return location;
+      }
 
-      return '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}';
+      return DeliveryLocation(
+        latitude: lat,
+        longitude: lng,
+        address: '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}',
+      );
     } catch (e) {
       debugPrint('Error getting detailed address: $e');
-      return '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}';
+      return DeliveryLocation(
+        latitude: lat,
+        longitude: lng,
+        address: '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}',
+      );
     }
   }
 
-  Future<String> _getAddressFromGeocoding(double lat, double lng) async {
+  Future<DeliveryLocation> _getAddressFromGeocoding(double lat, double lng) async {
     try {
       List<geocoding.Placemark> placemarks = await geocoding
           .placemarkFromCoordinates(lat, lng);
 
-      if (placemarks.isEmpty) return 'Unknown Location';
+      if (placemarks.isEmpty) {
+        return DeliveryLocation(
+          latitude: lat,
+          longitude: lng,
+          address: 'Unknown Location',
+        );
+      }
 
       final placemark = placemarks.first;
-      List<String> parts = [];
+      String? street = placemark.street;
+      String? neighborhood = placemark.subLocality;
+      String? city = placemark.locality ?? placemark.subAdministrativeArea;
+      String? state = placemark.administrativeArea;
+      String? country = placemark.country;
 
-      if (placemark.street != null && placemark.street!.isNotEmpty) {
-        parts.add(placemark.street!);
-      }
-      if (placemark.subLocality != null && placemark.subLocality!.isNotEmpty) {
-        parts.add(placemark.subLocality!);
-      }
-      if (placemark.locality != null && placemark.locality!.isNotEmpty) {
-        parts.add(placemark.locality!);
-      }
-      if (placemark.administrativeArea != null &&
-          placemark.administrativeArea!.isNotEmpty) {
-        parts.add(placemark.administrativeArea!);
-      }
+      final parts = <String>[];
+      if (street != null && street.isNotEmpty) parts.add(street);
+      if (neighborhood != null && neighborhood.isNotEmpty) parts.add(neighborhood);
+      if (city != null && city.isNotEmpty) parts.add(city);
+      if (state != null && state.isNotEmpty) parts.add(state);
 
-      return parts.isNotEmpty ? parts.join(', ') : 'Unknown Location';
+      final address = parts.isNotEmpty ? parts.join(', ') : 'Unknown Location';
+
+      return DeliveryLocation(
+        latitude: lat,
+        longitude: lng,
+        address: address,
+        street: street,
+        neighborhood: neighborhood,
+        city: city,
+        state: state,
+        country: country,
+      );
     } catch (e) {
       debugPrint('Error in geocoding: $e');
-      return 'Unknown Location';
+      return DeliveryLocation(
+        latitude: lat,
+        longitude: lng,
+        address: 'Unknown Location',
+      );
     }
   }
 
-  Future<String> getAddressFromNominatim(double lat, double lng) async {
+  Future<DeliveryLocation> getAddressFromNominatim(double lat, double lng) async {
     try {
       final response = await http
           .get(
@@ -211,20 +235,56 @@ class LocationService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final address = data['address'] ?? {};
-        if (address.isEmpty) return 'Unknown Location';
+        if (address.isEmpty) {
+          return DeliveryLocation(
+            latitude: lat,
+            longitude: lng,
+            address: 'Unknown Location',
+          );
+        }
 
-        List<String> parts = [];
-        if (address['road'] != null) parts.add(address['road']);
-        if (address['suburb'] != null) parts.add(address['suburb']);
-        if (address['city'] != null) parts.add(address['city']);
-        if (address['state'] != null) parts.add(address['state']);
+        String? street = address['road']?.toString();
+        String? neighborhood = address['neighbourhood']?.toString() ?? 
+                              address['suburb']?.toString() ??
+                              address['quarter']?.toString();
+        String? city = address['city']?.toString() ?? 
+                       address['town']?.toString() ?? 
+                       address['village']?.toString();
+        String? state = address['state']?.toString();
+        String? country = address['country']?.toString();
 
-        return parts.isNotEmpty ? parts.join(', ') : 'Unknown Location';
+        final parts = <String>[];
+        if (street != null && street.isNotEmpty) parts.add(street);
+        if (neighborhood != null && neighborhood.isNotEmpty) parts.add(neighborhood);
+        if (city != null && city.isNotEmpty) parts.add(city);
+        if (state != null && state.isNotEmpty) parts.add(state);
+
+        final displayAddress = parts.isNotEmpty ? parts.join(', ') : 'Unknown Location';
+
+        return DeliveryLocation(
+          latitude: lat,
+          longitude: lng,
+          address: displayAddress,
+          placeName: data['display_name'] ?? data['name'],
+          street: street,
+          neighborhood: neighborhood,
+          city: city,
+          state: state,
+          country: country,
+        );
       }
-      return 'Unknown Location';
+      return DeliveryLocation(
+        latitude: lat,
+        longitude: lng,
+        address: 'Unknown Location',
+      );
     } catch (e) {
       debugPrint('Error in Nominatim: $e');
-      return 'Unknown Location';
+      return DeliveryLocation(
+        latitude: lat,
+        longitude: lng,
+        address: 'Unknown Location',
+      );
     }
   }
 

@@ -83,6 +83,7 @@ class OrderController extends GetxController {
       }
     }
   }
+
   void _startNotificationListener() {
     // Add a small delay to ensure notification service is initialized
     Future.delayed(const Duration(seconds: 2), () {
@@ -95,161 +96,157 @@ class OrderController extends GetxController {
     });
   }
 
-
   // In OrderController class
 
-void listenToNotifications() {
-  try {
-    final notificationService = Get.find<NotificationService>();
-    
-    // Listen to notification stream
-    notificationService.notificationStream.listen((notification) {
-      _handleNotification(notification);
-    });
-    
-    print('✅ OrderController notification listener activated');
-  } catch (e) {
-    print('❌ Error setting up notification listener: $e');
-  }
-}
-
-void _handleNotification(Map<String, dynamic> notification) {
-  try {
-    final data = notification['data'];
-    final type = data['type'] ?? '';
-    
-    switch (type) {
-      case 'order_update':
-        _handleOrderUpdate(data);
-        break;
-      case 'promotion':
-      case 'promotion_activation':
-      case 'promotion_deactivation':
-      case 'new_promotion':
-        _handlePromotionNotification(data);
-        break;
-      default:
-        print('📱 Unknown notification type: $type');
-    }
-  } catch (e) {
-    print('❌ Error handling notification: $e');
-  }
-}
-
-void _handleOrderUpdate(Map<String, dynamic> data) {
-  final orderId = data['order_id'];
-  final status = data['status'];
-  
-  print('📱 Order notification received: $status for order $orderId');
-  
-  // Refresh orders list in background
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    refreshOrders();
-  });
-  
-  // Update specific order if selected
-  if (selectedOrder?.id.toString() == orderId.toString()) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      getOrderDetail(int.tryParse(orderId.toString()) ?? 0);
-    });
-  }
-  
-  // Show snackbar for important updates
-  _showOrderUpdateSnackbar(orderId, status);
-}
-
-// ADD THIS NEW METHOD FOR HANDLING PROMOTIONS
-void _handlePromotionNotification(Map<String, dynamic> data) {
-  final promotionId = data['promotion_id'];
-  final restaurantId = data['restaurant_id'];
-  
-  print('📱 Promotion notification received: $promotionId');
-  
-  // Refresh promotions in RestaurantController
-  WidgetsBinding.instance.addPostFrameCallback((_) {
+  void listenToNotifications() {
     try {
-      final restaurantController = Get.find<RestaurantController>();
-      restaurantController.getFeaturedItemsWithPromotions(showLoading: false);
-      
-      // Show promotion snackbar
-      Get.snackbar(
-        'New Promotion! 🎉',
-        'Check out the latest deals and discounts',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.purple,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-        onTap: (_) {
-          // Navigate to promotions screen
-          Get.toNamed('/promotions');
-        },
-        mainButton: TextButton(
-          onPressed: () {
+      final notificationService = Get.find<NotificationService>();
+
+      // Listen to notification stream
+      notificationService.notificationStream.listen((notification) {
+        _handleNotification(notification);
+      });
+
+      print('✅ OrderController notification listener activated');
+    } catch (e) {
+      print('❌ Error setting up notification listener: $e');
+    }
+  }
+
+  void _handleNotification(Map<String, dynamic> notification) {
+    try {
+      final data = notification['data'];
+      final type = data['type'] ?? '';
+
+      switch (type) {
+        case 'order_update':
+          _handleOrderUpdate(data);
+          break;
+        case 'promotion':
+        case 'promotion_activation':
+        case 'promotion_deactivation':
+        case 'new_promotion':
+          _handlePromotionNotification(data);
+          break;
+        default:
+          print('📱 Unknown notification type: $type');
+      }
+    } catch (e) {
+      print('❌ Error handling notification: $e');
+    }
+  }
+
+  void _handleOrderUpdate(Map<String, dynamic> data) {
+    final orderId = data['order_id'];
+    final status = data['status'];
+
+    print('📱 Order notification received: $status for order $orderId');
+
+    // Refresh orders list in background
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      refreshOrders();
+    });
+
+    // Update specific order if selected
+    if (selectedOrder?.id.toString() == orderId.toString()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        getOrderDetail(int.tryParse(orderId.toString()) ?? 0);
+      });
+    }
+
+    // Show snackbar for important updates
+    _showOrderUpdateSnackbar(orderId, status);
+  }
+
+  // ADD THIS NEW METHOD FOR HANDLING PROMOTIONS
+  void _handlePromotionNotification(Map<String, dynamic> data) {
+    final promotionId = data['promotion_id'];
+    final restaurantId = data['restaurant_id'];
+
+    print('📱 Promotion notification received: $promotionId');
+
+    // Refresh promotions in RestaurantController
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        final restaurantController = Get.find<RestaurantController>();
+        restaurantController.getFeaturedItemsWithPromotions(showLoading: false);
+
+        // Show promotion snackbar
+        Get.snackbar(
+          'New Promotion! 🎉',
+          'Check out the latest deals and discounts',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.purple,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 5),
+          onTap: (_) {
+            // Navigate to promotions screen
             Get.toNamed('/promotions');
           },
-          child: const Text(
-            'VIEW',
-            style: TextStyle(color: Colors.white),
+          mainButton: TextButton(
+            onPressed: () {
+              Get.toNamed('/promotions');
+            },
+            child: const Text('VIEW', style: TextStyle(color: Colors.white)),
           ),
-        ),
+        );
+
+        print('✅ Promotion notification handled successfully');
+      } catch (e) {
+        print('❌ Error handling promotion notification: $e');
+      }
+    });
+  }
+
+  void _showOrderUpdateSnackbar(String orderId, String status) {
+    final message = _getStatusMessage(status);
+    if (message != null) {
+      Get.snackbar(
+        'Order Update',
+        message.replaceAll('{orderId}', orderId.toString()),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: _getStatusColor(status),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
       );
-      
-      print('✅ Promotion notification handled successfully');
-    } catch (e) {
-      print('❌ Error handling promotion notification: $e');
     }
-  });
-}
-
-void _showOrderUpdateSnackbar(String orderId, String status) {
-  final message = _getStatusMessage(status);
-  if (message != null) {
-    Get.snackbar(
-      'Order Update',
-      message.replaceAll('{orderId}', orderId.toString()),
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: _getStatusColor(status),
-      colorText: Colors.white,
-      duration: const Duration(seconds: 4),
-    );
   }
-}
 
-String? _getStatusMessage(String status) {
-  switch (status.toLowerCase()) {
-    case 'pending':
-      return 'Order #{orderId} is pending confirmation';
-    case 'accepted':
-      return 'Order #{orderId} has been accepted by the restaurant';
-    case 'preparing':
-      return 'Order #{orderId} is being prepared';
-    case 'ready':
-      return 'Order #{orderId} is ready for pickup';
-    case 'out_for_delivery':
-      return 'Order #{orderId} is out for delivery';
-    case 'delivered':
-      return 'Order #{orderId} has been delivered';
-    case 'cancelled':
-      return 'Order #{orderId} has been cancelled';
-    default:
-      return null;
+  String? _getStatusMessage(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Order #{orderId} is pending confirmation';
+      case 'accepted':
+        return 'Order #{orderId} has been accepted by the restaurant';
+      case 'preparing':
+        return 'Order #{orderId} is being prepared';
+      case 'ready':
+        return 'Order #{orderId} is ready for pickup';
+      case 'out_for_delivery':
+        return 'Order #{orderId} is out for delivery';
+      case 'delivered':
+        return 'Order #{orderId} has been delivered';
+      case 'cancelled':
+        return 'Order #{orderId} has been cancelled';
+      default:
+        return null;
+    }
   }
-}
 
-Color _getStatusColor(String status) {
-  switch (status.toLowerCase()) {
-    case 'delivered':
-    case 'accepted':
-      return Colors.green;
-    case 'cancelled':
-      return Colors.orange;
-    case 'out_for_delivery':
-    case 'preparing':
-      return Colors.blue;
-    default:
-      return Colors.grey;
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+      case 'accepted':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.orange;
+      case 'out_for_delivery':
+      case 'preparing':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
   }
-}
 
   // Clear all notifications (mark orders as seen)
   Future<void> clearNotifications() async {
@@ -407,9 +404,12 @@ Color _getStatusColor(String status) {
     String? specialInstructions,
     String? paymentMethod = 'cash',
   }) async {
+    Order? localOrder;
     try {
       isLoading.value = true;
       error.value = '';
+
+      final localOrderId = DateTime.now().millisecondsSinceEpoch;
 
       print('📦 Creating order with delivery location:');
       print('📦   Address: $deliveryAddress');
@@ -421,7 +421,7 @@ Color _getStatusColor(String status) {
 
       // 1. FIRST: Create a local order immediately for UI feedback
       final localOrder = Order(
-        id: DateTime.now().millisecondsSinceEpoch, // Temporary local ID
+        id: localOrderId, // Temporary local ID
         status: 'pending',
         paymentStatus: 'pending', // ADD THIS REQUIRED PARAMETER
         items: [],
@@ -444,9 +444,13 @@ Color _getStatusColor(String status) {
 
       _addToLocalOrders(localOrder);
 
+      // Ensure backend receives a UUID cart id. Local-only carts use ids like
+      // "local_cart_*" and will be rejected by the order endpoint.
+      final backendCartId = await _ensureBackendCartId(cartId);
+
       // 2. THEN: Create order in backend and sync
       final orderData = {
-        'cart_id': cartId,
+        'cart_id': backendCartId,
         'delivery_address': deliveryAddress,
         'payment_method': paymentMethod,
         if (deliveryLocation != null) ...{
@@ -490,14 +494,14 @@ Color _getStatusColor(String status) {
       cartController.clearCartLocally();
       await GetStorage().remove('current_cart_id');
 
-      Get.snackbar(
-        'Order Placed!',
-        'Your order #${backendOrder.id} has been placed successfully',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-      );
+      // Get.snackbar(
+      //   'Order Placed!',
+      //   'Your order #${backendOrder.id} has been placed successfully',
+      //   snackPosition: SnackPosition.TOP,
+      //   backgroundColor: Colors.green,
+      //   colorText: Colors.white,
+      //   duration: const Duration(seconds: 5),
+      // );
 
       // Sync orders in background to get latest status
       _syncOrdersInBackground();
@@ -508,9 +512,9 @@ Color _getStatusColor(String status) {
       print('❌ Error placing order: $e');
 
       // Remove local order if backend creation failed
-      _localOrders.removeWhere(
-        (order) => order.id == DateTime.now().millisecondsSinceEpoch,
-      );
+      if (localOrder != null) {
+        _localOrders.removeWhere((order) => order.id == localOrder!.id);
+      }
 
       Get.snackbar(
         'Order Failed',
@@ -523,6 +527,46 @@ Color _getStatusColor(String status) {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  bool _isUuid(String value) {
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    );
+    return uuidRegex.hasMatch(value);
+  }
+
+  Future<String> _ensureBackendCartId(String cartId) async {
+    if (_isUuid(cartId)) return cartId;
+
+    print('🛒 Local cart detected, creating backend cart before checkout...');
+
+    final cartController = Get.find<CartController>();
+    var localItems = cartController.cartItems;
+    if (localItems.isEmpty) {
+      cartController.restoreLocalCartIfNeeded();
+      localItems = cartController.cartItems;
+    }
+    if (localItems.isEmpty) {
+      throw Exception('Your cart is empty. Please add items before checkout.');
+    }
+
+    final createdCart = await _apiService.post('orders/carts/', {});
+    final backendCartId = createdCart['id']?.toString();
+    if (backendCartId == null || !_isUuid(backendCartId)) {
+      throw Exception('Failed to prepare checkout cart. Please try again.');
+    }
+
+    for (final item in localItems) {
+      await _apiService.post('orders/carts/$backendCartId/items/', {
+        'menu_item_id': item.menuItem.id,
+        'qty': item.quantity,
+      });
+    }
+
+    await GetStorage().write('current_cart_id', backendCartId);
+    print('✅ Backend cart prepared for checkout: $backendCartId');
+    return backendCartId;
   }
 
   // FAST LOCAL ORDERS LOADING - Show local data immediately, sync in background

@@ -17,7 +17,7 @@ class CartController extends GetxController {
   final RxBool isSyncing = false.obs; // Track sync status
   final RxString error = ''.obs;
   final RxMap<String, bool> _itemProcessingStates = <String, bool>{}.obs;
-  
+
   // Track current user ID for data isolation
   int? _currentUserId;
 
@@ -40,7 +40,9 @@ class CartController extends GetxController {
   // Initialize local cart from storage - user-specific
   void _initializeLocalCart({int? userId}) {
     try {
-      final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+      final storageKey = userId != null
+          ? _getCartStorageKey(userId)
+          : 'local_cart';
       final localCartData = GetStorage().read(storageKey);
       if (localCartData != null) {
         _localCart.value = Cart.fromJson(localCartData);
@@ -68,13 +70,17 @@ class CartController extends GetxController {
   void _saveLocalCart({int? userId}) {
     if (_localCart.value != null) {
       try {
-        final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+        final storageKey = userId != null
+            ? _getCartStorageKey(userId)
+            : 'local_cart';
         GetStorage().write(storageKey, _localCart.value!.toJson());
       } catch (e) {
         print('❌ Error saving local cart: $e');
       }
     } else {
-      final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+      final storageKey = userId != null
+          ? _getCartStorageKey(userId)
+          : 'local_cart';
       GetStorage().remove(storageKey);
     }
   }
@@ -82,13 +88,14 @@ class CartController extends GetxController {
   // Clear local cart - user-specific
   void _clearLocalCart({int? userId}) {
     _localCart.value = null;
-    final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+    final storageKey = userId != null
+        ? _getCartStorageKey(userId)
+        : 'local_cart';
     GetStorage().remove(storageKey);
   }
 
   // Getters
-  Cart? get cart =>
-      _localCart.value ?? _cart.value;
+  Cart? get cart => _localCart.value ?? _cart.value;
   List<CartItem> get cartItems => cart?.items ?? [];
   int get cartItemCount {
     if (_localCart.value != null && _localCart.value!.items.isNotEmpty) {
@@ -157,7 +164,11 @@ class CartController extends GetxController {
       print('🛒 Adding ${menuItem.title} to cart, quantity: $quantity');
 
       // 1. FIRST: Add to local cart for immediate UI update
-      await _addToLocalCart(menuItem: menuItem, quantity: quantity, userId: userId);
+      await _addToLocalCart(
+        menuItem: menuItem,
+        quantity: quantity,
+        userId: userId,
+      );
 
       print('🛒 Local cart updated. Item count: $cartItemCount');
 
@@ -274,19 +285,30 @@ class CartController extends GetxController {
   }
 
   // Sync local cart with backend
-  Future<void> _syncWithBackend({required String accessToken, int? userId}) async {
+  Future<void> _syncWithBackend({
+    required String accessToken,
+    int? userId,
+  }) async {
     if (_localCart.value == null || _localCart.value!.items.isEmpty) return;
 
     try {
       isSyncing.value = true;
       print('🔄 Syncing local cart with backend...');
 
-      String cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
-      
+      String? cartId = userId != null
+          ? _getStoredCartId(userId)
+          : GetStorage().read('current_cart_id');
+
       if (cartId == null || _cart.value == null) {
         final cartResponse = await _apiService.post('orders/carts/', {});
-        cartId = cartResponse['id'];
-        
+        cartId = cartResponse['id']?.toString();
+
+        if (cartId == null || cartId.isEmpty) {
+          print('⚠️ No cart ID returned from backend, skipping sync');
+          isSyncing.value = false;
+          return;
+        }
+
         if (userId != null) {
           await _saveCartId(userId, cartId);
         } else {
@@ -353,6 +375,15 @@ class CartController extends GetxController {
       '📊 merging: Remote Items: ${_cart.value!.items.length}, Local Items: ${_localCart.value!.items.length}',
     );
 
+    // Backend sync can briefly return an empty cart while local cart still has
+    // items. Keep local items to avoid checkout seeing a false empty cart.
+    if (_cart.value!.items.isEmpty && _localCart.value!.items.isNotEmpty) {
+      _localCart.value = _localCart.value!.copyWith(id: _cart.value!.id);
+      _saveLocalCart(userId: _currentUserId);
+      print('⚠️ Preserved local cart items while backend cart is empty');
+      return;
+    }
+
     // Build a map of local menu items for quick lookup
     final localMenuItemsById = <int, MenuItem>{};
     for (final item in _localCart.value!.items) {
@@ -401,7 +432,7 @@ class CartController extends GetxController {
       restaurantId: _cart.value!.restaurantId,
       createdAt: _cart.value!.createdAt,
     );
-    _saveLocalCart();
+    _saveLocalCart(userId: _currentUserId);
   }
 
   // Revert local changes in case of error
@@ -490,7 +521,9 @@ class CartController extends GetxController {
     if (!itemId.startsWith('local_')) {
       // This is already a remote item, update directly
       try {
-        final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
+        final cartId = userId != null
+            ? _getStoredCartId(userId)
+            : GetStorage().read('current_cart_id');
         if (cartId == null) return;
 
         if (quantity <= 0) {
@@ -526,7 +559,11 @@ class CartController extends GetxController {
 
       // 2. THEN: Sync with backend if we have access token
       if (accessToken != null && accessToken.isNotEmpty) {
-        _syncRemoveWithBackend(itemId: itemId, accessToken: accessToken, userId: userId);
+        _syncRemoveWithBackend(
+          itemId: itemId,
+          accessToken: accessToken,
+          userId: userId,
+        );
       }
 
       Get.snackbar(
@@ -563,7 +600,9 @@ class CartController extends GetxController {
     if (!itemId.startsWith('local_')) {
       // This is a remote item, remove directly
       try {
-        final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
+        final cartId = userId != null
+            ? _getStoredCartId(userId)
+            : GetStorage().read('current_cart_id');
         if (cartId == null) return;
 
         await _apiService.delete('orders/carts/$cartId/items/$itemId/');
@@ -581,7 +620,7 @@ class CartController extends GetxController {
     try {
       // Update current user ID
       _currentUserId = userId;
-      
+
       // Ensure local cart is scoped to the current logged-in user.
       final previousOwner = GetStorage().read(_localCartOwnerKey);
       if (userId != null) {
@@ -595,6 +634,9 @@ class CartController extends GetxController {
         _clearLocalCart();
       }
 
+      // Always hydrate local cart first so checkout has immediate data.
+      _initializeLocalCart(userId: userId);
+
       if (accessToken != null && accessToken.isNotEmpty) {
         await getCart(userId: userId);
 
@@ -607,9 +649,20 @@ class CartController extends GetxController {
     }
   }
 
+  void restoreLocalCartIfNeeded({int? userId}) {
+    if (_localCart.value != null && _localCart.value!.items.isNotEmpty) {
+      return;
+    }
+
+    final scopedUserId = userId ?? _currentUserId;
+    _initializeLocalCart(userId: scopedUserId);
+  }
+
   Future<void> getCart({int? userId}) async {
     try {
-      final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
+      final cartId = userId != null
+          ? _getStoredCartId(userId)
+          : GetStorage().read('current_cart_id');
 
       if (cartId != null) {
         final response = await _apiService.get('orders/carts/$cartId/');
@@ -625,14 +678,16 @@ class CartController extends GetxController {
     try {
       _clearLocalCart(userId: userId);
 
-      final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
-      
+      final cartId = userId != null
+          ? _getStoredCartId(userId)
+          : GetStorage().read('current_cart_id');
+
       if (accessToken != null && accessToken.isNotEmpty && cartId != null) {
         await _apiService.delete('orders/carts/$cartId/');
       }
 
       _cart.value = null;
-      
+
       if (userId != null) {
         await _clearCartId(userId);
       } else {
