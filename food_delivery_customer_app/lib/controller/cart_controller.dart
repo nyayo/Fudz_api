@@ -295,13 +295,19 @@ class CartController extends GetxController {
       isSyncing.value = true;
       print('🔄 Syncing local cart with backend...');
 
-      String cartId = userId != null
+      String? cartId = userId != null
           ? _getStoredCartId(userId)
           : GetStorage().read('current_cart_id');
 
       if (cartId == null || _cart.value == null) {
         final cartResponse = await _apiService.post('orders/carts/', {});
-        cartId = cartResponse['id'];
+        cartId = cartResponse['id']?.toString();
+
+        if (cartId == null || cartId.isEmpty) {
+          print('⚠️ No cart ID returned from backend, skipping sync');
+          isSyncing.value = false;
+          return;
+        }
 
         if (userId != null) {
           await _saveCartId(userId, cartId);

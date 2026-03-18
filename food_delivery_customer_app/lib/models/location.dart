@@ -1,21 +1,70 @@
 // models/location.dart
-import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:latlong2/latlong2' as latlong2;
 
 class DeliveryLocation {
   final double latitude;
   final double longitude;
   String? address;
   final String? placeName;
+  String? street;
+  String? neighborhood;
+  String? city;
+  String? state;
+  String? country;
 
   DeliveryLocation({
     required this.latitude,
     required this.longitude,
     this.address,
     this.placeName,
+    this.street,
+    this.neighborhood,
+    this.city,
+    this.state,
+    this.country,
   });
 
-  // Convert to latlong2.LatLng for flutter_map
   latlong2.LatLng get latLng => latlong2.LatLng(latitude, longitude);
+
+  String get shortAddress {
+    if (street != null && street!.isNotEmpty) {
+      return street!;
+    }
+    if (neighborhood != null && neighborhood!.isNotEmpty) {
+      return neighborhood!;
+    }
+    if (placeName != null && placeName!.isNotEmpty) {
+      return placeName!;
+    }
+    if (address != null && address!.isNotEmpty) {
+      final parts = address!.split(',');
+      return parts.isNotEmpty ? parts.first.trim() : address!;
+    }
+    return 'Unknown location';
+  }
+
+  String get fullAddress {
+    if (address != null && address!.isNotEmpty) {
+      return address!;
+    }
+    final parts = <String>[];
+    if (street != null && street!.isNotEmpty) parts.add(street!);
+    if (neighborhood != null && neighborhood!.isNotEmpty) parts.add(neighborhood!);
+    if (city != null && city!.isNotEmpty) parts.add(city!);
+    if (parts.isEmpty) return shortAddress;
+    return parts.join(', ');
+  }
+
+  String get detailedAddress {
+    final parts = <String>[];
+    if (neighborhood != null && neighborhood!.isNotEmpty) {
+      parts.add(neighborhood!);
+    }
+    if (city != null && city!.isNotEmpty) {
+      parts.add(city!);
+    }
+    return parts.isEmpty ? fullAddress : parts.join(', ');
+  }
 
   factory DeliveryLocation.fromJson(Map<String, dynamic> json) {
     return DeliveryLocation(
@@ -23,6 +72,11 @@ class DeliveryLocation {
       longitude: json['longitude'] as double,
       address: json['address'] as String?,
       placeName: json['place_name'] as String?,
+      street: json['street'] as String?,
+      neighborhood: json['neighborhood'] as String?,
+      city: json['city'] as String?,
+      state: json['state'] as String?,
+      country: json['country'] as String?,
     );
   }
 
@@ -32,6 +86,11 @@ class DeliveryLocation {
       'longitude': longitude,
       'address': address,
       'place_name': placeName,
+      'street': street,
+      'neighborhood': neighborhood,
+      'city': city,
+      'state': state,
+      'country': country,
     };
   }
 

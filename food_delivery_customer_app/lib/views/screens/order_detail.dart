@@ -527,6 +527,27 @@ class OrderDetailPage extends StatelessWidget {
   }
 
   Widget _buildOrderInfoCard() {
+    String shortAddress = 'Loading...';
+    String detailedAddress = '';
+
+    if (order.dropoffLocation != null) {
+      final loc = order.dropoffLocation!;
+      if (loc['latitude'] != null && loc['longitude'] != null) {
+        shortAddress = loc['address']?.toString() ?? 
+                       '${loc['latitude'].toString().substring(0, 8)}, ${loc['longitude'].toString().substring(0, 8)}';
+        detailedAddress = loc['neighborhood']?.toString() ?? 
+                          loc['city']?.toString() ?? '';
+        if (detailedAddress.isEmpty && shortAddress.contains(',')) {
+          final parts = shortAddress.split(',');
+          if (parts.length > 1) {
+            detailedAddress = parts.sublist(1).map((e) => e.trim()).join(', ');
+          }
+        }
+      } else {
+        shortAddress = loc['address']?.toString() ?? 'Unknown address';
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -565,11 +586,11 @@ class OrderDetailPage extends StatelessWidget {
             _formatFullDate(order.placedAt),
           ),
           if (order.dropoffLocation != null)
-            _buildInfoTile(
+            _buildLocationTile(
               Icons.location_on,
               'Delivery Address',
-              order.dropoffLocation!['address'] ??
-                  order.dropoffLocation!.toString(),
+              shortAddress,
+              detailedAddress,
             ),
           if (order.paymentMethod != null && order.paymentMethod!.isNotEmpty)
             _buildInfoTile(
@@ -577,6 +598,56 @@ class OrderDetailPage extends StatelessWidget {
               'Payment Method',
               order.paymentMethod!,
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationTile(IconData icon, String label, String shortAddress, String detailedAddress) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.grey[600], size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  shortAddress,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: TColor.primaryText,
+                  ),
+                ),
+                if (detailedAddress.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    detailedAddress,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

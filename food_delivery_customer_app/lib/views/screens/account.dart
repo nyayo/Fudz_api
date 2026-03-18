@@ -64,13 +64,13 @@ class ProfilePage extends StatelessWidget {
                     if (isLoggedIn) const SizedBox(height: 24),
 
                     // Google Account Linking Section
-                    if (isLoggedIn && !_isPrimaryGoogleAccount(user))
+                    if (isLoggedIn && !_isPrimaryGoogleAccount(user, userController))
                       FadeSlideIn(
                         duration: const Duration(milliseconds: 500),
                         delay: const Duration(milliseconds: 350),
                         child: _buildGoogleLinkSection(userController),
                       ),
-                    if (isLoggedIn && !_isPrimaryGoogleAccount(user))
+                    if (isLoggedIn && !_isPrimaryGoogleAccount(user, userController))
                       const SizedBox(height: 24),
 
                     // Notification Preferences
@@ -547,9 +547,8 @@ class ProfilePage extends StatelessWidget {
     });
   }
 
-  bool _isPrimaryGoogleAccount(User? user) {
-    final provider = (user?.authProvider ?? '').trim().toLowerCase();
-    return provider.contains('google');
+  bool _isPrimaryGoogleAccount(User? user, UserController userController) {
+    return user?.googleLinked == true && userController.isGoogleLinked.value;
   }
 
   Widget _buildGoogleLinkButton(bool isLinked, UserController userController) {
