@@ -10,6 +10,7 @@ import 'package:get_storage/get_storage.dart';
 
 class WishlistController extends GetxController {
   final ApiService _apiService = Get.find();
+  static const String _localWishlistOwnerKey = 'local_wishlist_owner';
 
   final Rx<Wishlist?> _wishlist = Rx<Wishlist?>(null);
   final Rx<Wishlist?> _localWishlist = Rx<Wishlist?>(
@@ -19,6 +20,9 @@ class WishlistController extends GetxController {
   final RxBool isSyncing = false.obs; // Track sync status
   final RxString error = ''.obs;
   final RxMap<String, bool> _itemProcessingStates = <String, bool>{}.obs;
+  
+  // Track current user ID for data isolation
+  int? _currentUserId;
 
   Wishlist? get wishlist =>
       _localWishlist.value ?? _wishlist.value; // Prefer local for display
@@ -26,15 +30,18 @@ class WishlistController extends GetxController {
   int get wishlistItemCount => wishlistItems.length;
   bool get hasItems => wishlistItems.isNotEmpty;
 
+  String _getWishlistStorageKey(int userId) => 'local_wishlist_user_$userId';
+
   @override
   void onInit() {
     super.onInit();
     _initializeLocalWishlist();
   }
 
-  // Initialize local wishlist from storage
-  void _initializeLocalWishlist() {
-    final localWishlistData = GetStorage().read('local_wishlist');
+  // Initialize local wishlist from storage - user-specific
+  void _initializeLocalWishlist({int? userId}) {
+    final storageKey = userId != null ? _getWishlistStorageKey(userId) : 'local_wishlist';
+    final localWishlistData = GetStorage().read(storageKey);
     if (localWishlistData != null) {
       try {
         _localWishlist.value = Wishlist.fromJson(localWishlistData);
@@ -43,28 +50,49 @@ class WishlistController extends GetxController {
         );
       } catch (e) {
         print('❌ Error loading local wishlist: $e');
-        _clearLocalWishlist();
+        _clearLocalWishlist(userId: userId);
       }
     }
   }
 
-  // Save local wishlist to storage
-  void _saveLocalWishlist() {
+  // Save local wishlist to storage - user-specific
+  void _saveLocalWishlist({int? userId}) {
     if (_localWishlist.value != null) {
       try {
-        GetStorage().write('local_wishlist', _localWishlist.value!.toJson());
+        final storageKey = userId != null ? _getWishlistStorageKey(userId) : 'local_wishlist';
+        GetStorage().write(storageKey, _localWishlist.value!.toJson());
       } catch (e) {
         print('❌ Error saving local wishlist: $e');
       }
     } else {
-      GetStorage().remove('local_wishlist');
+      final storageKey = userId != null ? _getWishlistStorageKey(userId) : 'local_wishlist';
+      GetStorage().remove(storageKey);
     }
   }
 
-  // Clear local wishlist
-  void _clearLocalWishlist() {
+  // Clear local wishlist - user-specific
+  void _clearLocalWishlist({int? userId}) {
     _localWishlist.value = null;
-    GetStorage().remove('local_wishlist');
+    final storageKey = userId != null ? _getWishlistStorageKey(userId) : 'local_wishlist';
+    GetStorage().remove(storageKey);
+  }
+
+  String _resolveOwnerId(UserController userController) {
+    return userController.user?.id?.toString() ??
+        userController.user?.email ??
+        userController.accessToken ??
+        '';
+  }
+
+  Future<void> _ensureWishlistOwner(String ownerId, {int? userId}) async {
+    if (ownerId.isEmpty) return;
+    final storage = GetStorage();
+    final previousOwner = storage.read(_localWishlistOwnerKey);
+    if (previousOwner != ownerId) {
+      _clearLocalWishlist(userId: userId);
+      await storage.write(_localWishlistOwnerKey, ownerId);
+      _currentUserId = userId;
+    }
   }
 
   // Create a local wishlist item
@@ -109,6 +137,9 @@ class WishlistController extends GetxController {
         SnackbarService.showError('Please login to manage wishlist');
         return;
       }
+
+      final userId = userController.user?.id;
+      await _ensureWishlistOwner(_resolveOwnerId(userController), userId: userId);
 
       // 1. FIRST: Check current state
       final wasInWishlist = isItemInWishlist(menuItem.id);
@@ -284,12 +315,12 @@ class WishlistController extends GetxController {
     // For now, just replace local wishlist with remote wishlist after sync
     // You can implement more sophisticated merging logic here
     _localWishlist.value = _wishlist.value;
-    _saveLocalWishlist();
+    _saveLocalWishlist(userId: _currentUserId);
   }
 
   // Revert local changes in case of error
   void _revertLocalChanges() {
-    _initializeLocalWishlist(); // Reload from storage
+    _initializeLocalWishlist(userId: _currentUserId); // Reload from storage
   }
 
   // Load wishlist from backend (existing method with local merge)
@@ -301,6 +332,8 @@ class WishlistController extends GetxController {
         print('🛍️ User not logged in, skipping wishlist load');
         _wishlist.value = null;
         _localWishlist.value = null;
+        GetStorage().remove(_localWishlistOwnerKey);
+        _currentUserId = null;
         return;
       }
 
@@ -311,6 +344,17 @@ class WishlistController extends GetxController {
         _wishlist.value = null;
         return;
       }
+
+      final userId = userController.user?.id;
+      
+      // If user changed, clear previous user's local wishlist first
+      if (userId != null && _currentUserId != null && _currentUserId != userId) {
+        print('🛍️ User changed from $_currentUserId to $userId, clearing previous wishlist');
+        _clearLocalWishlist(userId: _currentUserId);
+      }
+      
+      _currentUserId = userId;
+      await _ensureWishlistOwner(_resolveOwnerId(userController), userId: userId);
 
       isLoading.value = true;
       error.value = '';
@@ -466,13 +510,25 @@ class WishlistController extends GetxController {
   void clearWishlist() {
     _wishlist.value = null;
     _localWishlist.value = null;
-    _clearLocalWishlist();
+    _clearLocalWishlist(userId: _currentUserId);
+    GetStorage().remove(_localWishlistOwnerKey);
+    _currentUserId = null;
     print('❤️ Wishlist cleared locally');
   }
 
   // Initialize wishlist services
   Future<void> initializeWishlist({required String? accessToken}) async {
     try {
+      final userController = Get.find<UserController>();
+      final userId = userController.user?.id;
+      
+      // If this is a new user (different from current), clear previous wishlist
+      if (userId != null && _currentUserId != null && _currentUserId != userId) {
+        _clearLocalWishlist(userId: _currentUserId);
+        _wishlist.value = null;
+        _localWishlist.value = null;
+      }
+      
       // Only try to get existing wishlist from backend if we have access token
       if (accessToken != null && accessToken.isNotEmpty) {
         await loadWishlist(accessToken);

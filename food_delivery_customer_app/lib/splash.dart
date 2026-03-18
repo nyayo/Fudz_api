@@ -70,32 +70,34 @@ class _SplashScreenState extends State<SplashScreen>
       perf.end('Total Startup');
       perf.finishStartup();
 
-      // Delay navigation to after build is complete
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (isLoggedIn && userController.user != null) {
-          print('✅ User is logged in: ${userController.user?.email}');
+      // Wait for animation to complete plus minimum display time
+      await Future.delayed(const Duration(milliseconds: 2000));
+      
+      // Continue to navigation after delay
+      if (isLoggedIn && userController.user != null) {
+        print('✅ User is logged in: ${userController.user?.email}');
 
-          // Fire-and-forget: user services in background (don't block navigation)
-          _initializeUserServices(userController).catchError((e) {
-            print('⚠️ User services error: $e');
-          });
+        // Fire-and-forget: user services in background (don't block navigation)
+        _initializeUserServices(userController).catchError((e) {
+          print('⚠️ User services error: $e');
+        });
 
-          Get.offAll(() => const MainTabView());
-        } else {
-          print('❌ No valid session, going to login screen');
-          Get.offAll(() => const GetStarted());
-        }
-      });
+        Get.offAll(() => const MainTabView());
+      } else {
+        print('❌ No valid session, going to login screen');
+        Get.offAll(() => const GetStarted());
+      }
     } catch (e, stackTrace) {
       print('❌ Error during app initialization: $e');
       print('Stack trace: $stackTrace');
       perf.end('Total Startup', success: false, error: '$e');
       perf.finishStartup();
 
+      // Wait a bit before navigating on error too
+      await Future.delayed(const Duration(milliseconds: 1500));
+      
       // Navigate to login on error
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.offAll(() => const GetStarted());
-      });
+      Get.offAll(() => const GetStarted());
     }
   }
 
@@ -160,7 +162,18 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset("assets/logo.png", height: 120, width: 120),
+                Image.asset(
+                  "assets/logo.png",
+                  height: 120,
+                  width: 120,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.restaurant_menu,
+                      size: 80,
+                      color: Colors.white,
+                    );
+                  },
+                ),
                 const SizedBox(height: 24),
                 const Text(
                   'FUDGO',

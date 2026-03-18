@@ -7,6 +7,7 @@ import 'package:get_storage/get_storage.dart';
 
 class CartController extends GetxController {
   final ApiService _apiService = Get.find();
+  static const String _localCartOwnerKey = 'local_cart_owner_user_id';
 
   final Rx<Cart?> _cart = Rx<Cart?>(null);
   final Rx<Cart?> _localCart = Rx<Cart?>(
@@ -15,8 +16,14 @@ class CartController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isSyncing = false.obs; // Track sync status
   final RxString error = ''.obs;
+  final RxMap<String, bool> _itemProcessingStates = <String, bool>{}.obs;
+  
+  // Track current user ID for data isolation
+  int? _currentUserId;
 
   static String _getCartKey(int userId) => 'cart_id_$userId';
+
+  String _getCartStorageKey(int userId) => 'local_cart_user_$userId';
 
   String? _getStoredCartId(int userId) {
     return GetStorage().read(_getCartKey(userId));
@@ -30,82 +37,11 @@ class CartController extends GetxController {
     await GetStorage().remove(_getCartKey(userId));
   }
 
-  Cart? get cart =>
-      _localCart.value ?? _cart.value; // Prefer local cart for display
-  List<CartItem> get cartItems => cart?.items ?? [];
-  int get cartItemCount {
-    if (_localCart.value != null && _localCart.value!.items.isNotEmpty) {
-      final count = _localCart.value!.items.fold(
-        0,
-        (sum, item) => sum + item.quantity,
-      );
-      print('🛒 cartItemCount calculated: $count');
-      return count;
-    } else if (_cart.value != null && _cart.value!.items.isNotEmpty) {
-      final count = _cart.value!.items.fold(
-        0,
-        (sum, item) => sum + item.quantity,
-      );
-      print('🛒 cartItemCount calculated from remote: $count');
-      return count;
-    }
-    print('🛒 cartItemCount: 0');
-    return 0;
-  }
-
-  double get cartTotal => cart?.totalPrice ?? 0.0;
-  bool get hasItems => cartItems.isNotEmpty;
-  final RxMap<String, bool> _itemProcessingStates = <String, bool>{}.obs;
-
-  // Add this to your CartController
-  final RxBool isCheckingOut = false.obs;
-
-  // Add this method to handle checkout process
-  Future<bool> proceedToCheckout() async {
+  // Initialize local cart from storage - user-specific
+  void _initializeLocalCart({int? userId}) {
     try {
-      isCheckingOut.value = true;
-      error.value = '';
-
-      // Simulate some processing time (you can remove this in production)
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Your existing checkout logic would go here
-      // For now, just return success
-      return true;
-    } catch (e) {
-      error.value = e.toString();
-      return false;
-    } finally {
-      isCheckingOut.value = false;
-    }
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    _initializeLocalCart();
-
-    // Listen for changes to force UI updates
-    ever(_localCart, (_) {
-      print('🛒 Local cart changed, updating badge count: $cartItemCount');
-      update(); // This forces UI to rebuild
-    });
-  }
-
-  void disposeSnackbars() {
-    try {
-      if (Get.isSnackbarOpen) {
-        Get.closeAllSnackbars();
-      }
-    } catch (e) {
-      print('Error closing snackbars: $e');
-    }
-  }
-
-  // Initialize local cart from storage
-  void _initializeLocalCart() {
-    try {
-      final localCartData = GetStorage().read('local_cart');
+      final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+      final localCartData = GetStorage().read(storageKey);
       if (localCartData != null) {
         _localCart.value = Cart.fromJson(localCartData);
         print('🛒 Local cart loaded: ${_localCart.value?.items.length} items');
@@ -124,28 +60,56 @@ class CartController extends GetxController {
       }
     } catch (e) {
       print('❌ Error loading local cart: $e');
-      _clearLocalCart();
+      _clearLocalCart(userId: userId);
     }
   }
 
-  // Save local cart to storage
-  void _saveLocalCart() {
+  // Save local cart to storage - user-specific
+  void _saveLocalCart({int? userId}) {
     if (_localCart.value != null) {
       try {
-        GetStorage().write('local_cart', _localCart.value!.toJson());
+        final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+        GetStorage().write(storageKey, _localCart.value!.toJson());
       } catch (e) {
         print('❌ Error saving local cart: $e');
       }
     } else {
-      GetStorage().remove('local_cart');
+      final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+      GetStorage().remove(storageKey);
     }
   }
 
-  // Clear local cart
-  void _clearLocalCart() {
+  // Clear local cart - user-specific
+  void _clearLocalCart({int? userId}) {
     _localCart.value = null;
-    GetStorage().remove('local_cart');
+    final storageKey = userId != null ? _getCartStorageKey(userId) : 'local_cart';
+    GetStorage().remove(storageKey);
   }
+
+  // Getters
+  Cart? get cart =>
+      _localCart.value ?? _cart.value;
+  List<CartItem> get cartItems => cart?.items ?? [];
+  int get cartItemCount {
+    if (_localCart.value != null && _localCart.value!.items.isNotEmpty) {
+      final count = _localCart.value!.items.fold(
+        0,
+        (sum, item) => sum + item.quantity,
+      );
+      return count;
+    } else if (_cart.value != null && _cart.value!.items.isNotEmpty) {
+      final count = _cart.value!.items.fold(
+        0,
+        (sum, item) => sum + item.quantity,
+      );
+      return count;
+    }
+    return 0;
+  }
+
+  double get cartTotal => cart?.totalPrice ?? 0.0;
+  bool get hasItems => cartItems.isNotEmpty;
+  final RxBool isCheckingOut = false.obs;
 
   // Create a local cart item
   CartItem _createLocalCartItem({
@@ -193,7 +157,7 @@ class CartController extends GetxController {
       print('🛒 Adding ${menuItem.title} to cart, quantity: $quantity');
 
       // 1. FIRST: Add to local cart for immediate UI update
-      await _addToLocalCart(menuItem: menuItem, quantity: quantity);
+      await _addToLocalCart(menuItem: menuItem, quantity: quantity, userId: userId);
 
       print('🛒 Local cart updated. Item count: $cartItemCount');
 
@@ -228,6 +192,7 @@ class CartController extends GetxController {
   Future _addToLocalCart({
     required MenuItem menuItem,
     required int quantity,
+    int? userId,
   }) async {
     // Create or get local cart
     if (_localCart.value == null) {
@@ -282,10 +247,10 @@ class CartController extends GetxController {
     }
 
     // Recalculate total
-    _recalculateLocalCartTotal();
+    _recalculateLocalCartTotal(userId: userId);
 
     // Save to local storage
-    _saveLocalCart();
+    _saveLocalCart(userId: userId);
 
     // Force UI update
     _localCart.refresh();
@@ -298,7 +263,7 @@ class CartController extends GetxController {
   }
 
   // Recalculate local cart total
-  void _recalculateLocalCartTotal() {
+  void _recalculateLocalCartTotal({int? userId}) {
     if (_localCart.value != null) {
       final total = _localCart.value!.items.fold(
         0.0,
@@ -614,6 +579,22 @@ class CartController extends GetxController {
   // Existing methods with local-first approach
   Future<void> initializeCart({int? userId, String? accessToken}) async {
     try {
+      // Update current user ID
+      _currentUserId = userId;
+      
+      // Ensure local cart is scoped to the current logged-in user.
+      final previousOwner = GetStorage().read(_localCartOwnerKey);
+      if (userId != null) {
+        if (previousOwner != userId) {
+          _clearLocalCart(userId: userId);
+          _cart.value = null;
+          await GetStorage().write(_localCartOwnerKey, userId);
+        }
+      } else {
+        await GetStorage().remove(_localCartOwnerKey);
+        _clearLocalCart();
+      }
+
       if (accessToken != null && accessToken.isNotEmpty) {
         await getCart(userId: userId);
 
@@ -642,7 +623,7 @@ class CartController extends GetxController {
 
   Future<void> clearCart({int? userId, String? accessToken}) async {
     try {
-      _clearLocalCart();
+      _clearLocalCart(userId: userId);
 
       final cartId = userId != null ? _getStoredCartId(userId) : GetStorage().read('current_cart_id');
       
@@ -731,7 +712,9 @@ class CartController extends GetxController {
   void clearCartLocally() {
     _localCart.value = null;
     _cart.value = null;
-    _clearLocalCart();
+    _clearLocalCart(userId: _currentUserId);
+    GetStorage().remove(_localCartOwnerKey);
+    _currentUserId = null;
     print('🛒 Cart cleared locally');
   }
 

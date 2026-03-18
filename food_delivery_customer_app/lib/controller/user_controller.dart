@@ -1071,11 +1071,12 @@ class UserController extends GetxController {
       final orderController = Get.find<OrderController>();
       orderController.clearOrders();
 
-      // Clear cart
+      // Clear cart and wishlist data on logout - CRITICAL for user data isolation
       final cartController = Get.find<CartController>();
-      if (_user.value?.id != null) {
-        await cartController.clearCartForUser(_user.value!.id);
-      }
+      cartController.clearCartLocally();
+
+      final wishlistController = Get.find<WishlistController>();
+      wishlistController.clearWishlist();
 
       // Unregister from notifications
       final notificationService = Get.find<NotificationService>();
@@ -1392,6 +1393,17 @@ class UserController extends GetxController {
     // Clear restaurant controller data
     final restaurantController = Get.find<RestaurantController>();
     await restaurantController.onUserLogout();
+
+    // Clear order local state
+    final orderController = Get.find<OrderController>();
+    orderController.clearOrders();
+
+    // Clear cart and wishlist for user data isolation
+    final cartController = Get.find<CartController>();
+    cartController.clearCartLocally();
+
+    final wishlistController = Get.find<WishlistController>();
+    wishlistController.clearWishlist();
 
     _user.value = null;
     _accessToken.value = '';
