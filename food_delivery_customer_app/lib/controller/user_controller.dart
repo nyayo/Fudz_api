@@ -1447,12 +1447,15 @@ class UserController extends GetxController {
     }
   }
 
-  /// Background token refresh (fire-and-forget)
+  /// Background token refresh
   Future<void> _refreshTokenIfNeeded() async {
     try {
       final isExpired = await _tokenService.isAccessTokenExpired();
       if (isExpired) {
-        refreshAuthToken();
+        final success = await refreshAuthToken();
+        if (!success) {
+          print('⚠️ Background token refresh failed, user may be logged out soon');
+        }
       }
       // Also try to refresh profile in background
       getProfile();

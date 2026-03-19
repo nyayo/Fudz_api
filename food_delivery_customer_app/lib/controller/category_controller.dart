@@ -472,6 +472,17 @@ void debugCacheStatus() {
     await getCategories(forceRefresh: true);
   }
 
+  /// Get category by ID from cache (sync)
+  Category? getCategoryById(int categoryId) {
+    return _categoryCache[categoryId];
+  }
+
+  /// Get category image URL by ID
+  String? getCategoryImageUrl(int categoryId) {
+    final category = _categoryCache[categoryId];
+    return category?.mapImageUrl();
+  }
+
   // Getters for cache info
   int get cachedCategoriesCount => _categoryCache.length;
   List<int> get cachedCategoryIds => _categoryCache.keys.toList();

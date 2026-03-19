@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
+import 'package:food_delivery_customer_app/controller/category_controller.dart';
 import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
@@ -31,6 +32,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
   final WishlistController wishlistController = Get.find<WishlistController>();
   final RestaurantController restaurantController =
       Get.find<RestaurantController>();
+  final CategoryController categoryController = Get.find<CategoryController>();
 
   int _quantity = 1;
 
@@ -43,6 +45,15 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
         widget.menuItemId,
         forceRefresh: true,
       );
+      
+      // Fetch category detail to get category image if not cached
+      final menuItem = menuController.selectedMenuItem.value;
+      if (menuItem != null) {
+        final cachedImage = categoryController.getCategoryImageUrl(menuItem.category);
+        if (cachedImage == null || cachedImage.isEmpty) {
+          categoryController.getCategoryDetail(menuItem.category);
+        }
+      }
     });
   }
 
@@ -772,6 +783,9 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
   }
 
   Widget _buildDetailsSection(MenuItem menuItem) {
+    // Get category image URL from cache
+    final categoryImageUrl = categoryController.getCategoryImageUrl(menuItem.category);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -803,10 +817,53 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
             ],
           ),
           const SizedBox(height: 14),
-          _buildDetailRow(
-            Icons.category,
-            'Category',
-            menuItem.categoryName ?? 'Category ${menuItem.category}',
+          // Category with image
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.category, color: Colors.grey[600], size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Category',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        menuItem.categoryName ?? 'Category ${menuItem.category}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: TColor.primaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (categoryImageUrl != null && categoryImageUrl.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedImage(
+                      imageUrl: categoryImageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      placeholderIcon: Icons.category,
+                    ),
+                  ),
+              ],
+            ),
           ),
           if (menuItem.prepTimeMinutes != null)
             _buildDetailRow(

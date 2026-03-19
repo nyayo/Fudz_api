@@ -30,9 +30,10 @@ class TokenService {
         await _storage.write(refreshTokenKey, refreshToken);
       }
       
-      // Calculate expiry (default to 1 hour if not provided)
-      final expiry = tokens['expires_in'] ?? tokens['expiry'] ?? 3600;
-      final expiryDuration = DateTime.now().add(Duration(seconds: expiry is int ? expiry : 3600));
+      // Calculate expiry - SIMPLE_JWT access token is 15 minutes (900 seconds)
+      // Backend doesn't return expires_in, so calculate from token lifetime
+      const expiry = 900; // 15 minutes matching SIMPLE_JWT ACCESS_TOKEN_LIFETIME
+      final expiryDuration = DateTime.now().add(const Duration(seconds: expiry));
       await _storage.write(tokenExpiryKey, expiryDuration.toIso8601String());
       
       print('✅ Tokens saved successfully');

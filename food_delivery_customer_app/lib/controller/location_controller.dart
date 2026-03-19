@@ -83,7 +83,7 @@ class LocationController extends GetxController {
   void _getAddressInBackground(DeliveryLocation location) async {
     try {
       print('📍 Getting address in background...');
-      final address = await _locationService.getDetailedAddress(
+      final locationWithAddress = await _locationService.getDetailedAddress(
         location.latitude,
         location.longitude,
       );
@@ -92,7 +92,10 @@ class LocationController extends GetxController {
       final updatedLocation = DeliveryLocation(
         latitude: location.latitude,
         longitude: location.longitude,
-        address: address,
+        address: locationWithAddress.address ?? locationWithAddress.fullAddress,
+        street: locationWithAddress.street,
+        neighborhood: locationWithAddress.neighborhood,
+        city: locationWithAddress.city,
       );
 
       _currentLocation.value = updatedLocation;
@@ -101,7 +104,7 @@ class LocationController extends GetxController {
         _selectedLocation.value = updatedLocation;
       }
 
-      print('✅ Address obtained: $address');
+      print('✅ Address obtained: ${updatedLocation.address}');
     } catch (e) {
       print('⚠️ Background address fetch failed: $e');
     }
@@ -197,7 +200,10 @@ class LocationController extends GetxController {
       return DeliveryLocation(
         latitude: point.latitude,
         longitude: point.longitude,
-        address: address,
+        address: address.address ?? address.fullAddress,
+        street: address.street,
+        neighborhood: address.neighborhood,
+        city: address.city,
       );
     } catch (e) {
       print('❌ Error getting location from map: $e');

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/models/cart.dart';
-
+import 'package:food_delivery_customer_app/services/order_storage.dart';
 import 'package:food_delivery_customer_app/utils/currency_formatter.dart';
 
 import 'package:intl/intl.dart';
@@ -42,10 +42,11 @@ class OrderDetailPage extends StatelessWidget {
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         // Status icon
                         Container(
@@ -68,6 +69,8 @@ class OrderDetailPage extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -76,6 +79,8 @@ class OrderDetailPage extends StatelessWidget {
                             fontSize: 14,
                             color: Colors.white.withOpacity(0.85),
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -527,24 +532,53 @@ class OrderDetailPage extends StatelessWidget {
   }
 
   Widget _buildOrderInfoCard() {
-    String shortAddress = 'Loading...';
+    // Try to get address from saved location first, then from order
+    String shortAddress = 'Address not specified';
     String detailedAddress = '';
-
-    if (order.dropoffLocation != null) {
-      final loc = order.dropoffLocation!;
-      if (loc['latitude'] != null && loc['longitude'] != null) {
-        shortAddress = loc['address']?.toString() ?? 
-                       '${loc['latitude'].toString().substring(0, 8)}, ${loc['longitude'].toString().substring(0, 8)}';
-        detailedAddress = loc['neighborhood']?.toString() ?? 
-                          loc['city']?.toString() ?? '';
-        if (detailedAddress.isEmpty && shortAddress.contains(',')) {
-          final parts = shortAddress.split(',');
-          if (parts.length > 1) {
-            detailedAddress = parts.sublist(1).map((e) => e.trim()).join(', ');
-          }
+    
+    // Check if we have saved location for this order
+    final savedLocation = OrderStorageService().getOrderLocation(order.id);
+    if (savedLocation != null) {
+      final savedStreet = savedLocation['street']?.toString();
+      final savedNeighborhood = savedLocation['neighborhood']?.toString();
+      final savedCity = savedLocation['city']?.toString();
+      final savedAddress = savedLocation['address']?.toString();
+      
+      if (savedStreet != null && savedStreet.isNotEmpty) {
+        shortAddress = savedNeighborhood != null && savedNeighborhood.isNotEmpty
+            ? '$savedStreet, $savedNeighborhood'
+            : savedStreet;
+        if (savedCity != null && savedCity.isNotEmpty) {
+          shortAddress = '$shortAddress, $savedCity';
         }
-      } else {
-        shortAddress = loc['address']?.toString() ?? 'Unknown address';
+      } else if (savedNeighborhood != null && savedNeighborhood.isNotEmpty) {
+        shortAddress = savedCity != null && savedCity.isNotEmpty
+            ? '$savedNeighborhood, $savedCity'
+            : savedNeighborhood;
+      } else if (savedAddress != null && savedAddress.isNotEmpty) {
+        shortAddress = savedAddress;
+      }
+    } else if (order.dropoffLocation != null) {
+      // Fallback to order's dropoffLocation
+      final dropoff = order.dropoffLocation!;
+      final street = dropoff['street']?.toString();
+      final neighborhood = dropoff['neighborhood']?.toString();
+      final city = dropoff['city']?.toString();
+      final address = dropoff['address']?.toString();
+      
+      if (street != null && street.isNotEmpty) {
+        shortAddress = neighborhood != null && neighborhood.isNotEmpty
+            ? '$street, $neighborhood'
+            : street;
+        if (city != null && city.isNotEmpty) {
+          shortAddress = '$shortAddress, $city';
+        }
+      } else if (neighborhood != null && neighborhood.isNotEmpty) {
+        shortAddress = city != null && city.isNotEmpty
+            ? '$neighborhood, $city'
+            : neighborhood;
+      } else if (address != null && address.isNotEmpty && !address.contains('Unknown')) {
+        shortAddress = address;
       }
     }
 
@@ -585,7 +619,7 @@ class OrderDetailPage extends StatelessWidget {
             'Placed',
             _formatFullDate(order.placedAt),
           ),
-          if (order.dropoffLocation != null)
+          if (shortAddress != 'Address not specified')
             _buildLocationTile(
               Icons.location_on,
               'Delivery Address',

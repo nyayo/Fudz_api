@@ -508,6 +508,7 @@ class CartController extends GetxController {
       _recalculateLocalCartTotal();
       _saveLocalCart();
       _localCart.refresh();
+      update(); // Notify GetBuilder listeners (bottom nav)
     }
   }
 
@@ -589,6 +590,7 @@ class CartController extends GetxController {
     _recalculateLocalCartTotal();
     _saveLocalCart();
     _localCart.refresh();
+    update(); // Notify GetBuilder listeners (bottom nav)
   }
 
   // Sync remove with backend
@@ -770,6 +772,7 @@ class CartController extends GetxController {
     _clearLocalCart(userId: _currentUserId);
     GetStorage().remove(_localCartOwnerKey);
     _currentUserId = null;
+    update(); // Notify GetBuilder listeners (bottom nav)
     print('🛒 Cart cleared locally');
   }
 

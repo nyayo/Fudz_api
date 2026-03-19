@@ -543,8 +543,11 @@ class RestaurantController extends GetxController {
           .toList();
 
       if (loadMore) {
-        allMenuItems.addAll(newList);
-        menuItems.addAll(newList);
+        // Deduplicate by ID before adding
+        final existingIds = allMenuItems.map((item) => item.id).toSet();
+        final uniqueNewItems = newList.where((item) => !existingIds.contains(item.id)).toList();
+        allMenuItems.addAll(uniqueNewItems);
+        menuItems.addAll(uniqueNewItems);
         currentMenuItemsPage.value++;
       } else {
         allMenuItems.value = newList;

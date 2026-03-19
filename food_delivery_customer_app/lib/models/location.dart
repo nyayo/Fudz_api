@@ -1,5 +1,5 @@
 // models/location.dart
-import 'package:latlong2/latlong2' as latlong2;
+import 'package:latlong2/latlong.dart' as latlong2;
 
 class DeliveryLocation {
   final double latitude;
