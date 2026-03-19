@@ -28,6 +28,16 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   String? _selectedMomoProvider; // Only shown when 'payment' is selected
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cartController.restoreLocalCartIfNeeded(
+        userId: _userController.user?.id,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
