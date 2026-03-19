@@ -35,7 +35,14 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
   void initState() {
     super.initState();
     // Initialize with all items
-    _filteredItems.value = restaurantController.menuItems;
+    _updateFilteredItems();
+
+    // Listen for menu items changes from controller
+    ever(restaurantController.menuItems, (_) {
+      if (!_isSearching.value) {
+        _updateFilteredItems();
+      }
+    });
 
     // Listen for search text changes
     _searchController.addListener(_onSearchChanged);
@@ -55,6 +62,14 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     });
   }
 
+  void _updateFilteredItems() {
+    // Deduplicate by ID before setting
+    final items = restaurantController.menuItems.toList();
+    final seenIds = <int>{};
+    final uniqueItems = items.where((item) => seenIds.add(item.id)).toList();
+    _filteredItems.value = uniqueItems;
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -68,12 +83,17 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     _isSearching.value = query.isNotEmpty;
 
     if (query.isEmpty) {
-      _filteredItems.value = restaurantController.menuItems;
+      _updateFilteredItems();
       return;
     }
 
     final searchLower = query.toLowerCase();
-    _filteredItems.value = restaurantController.menuItems.where((item) {
+    // Deduplicate before filtering
+    final items = restaurantController.menuItems.toList();
+    final seenIds = <int>{};
+    final uniqueItems = items.where((item) => seenIds.add(item.id)).toList();
+    
+    _filteredItems.value = uniqueItems.where((item) {
       // Search in title
       if (item.title.toLowerCase().contains(searchLower)) return true;
 
@@ -104,7 +124,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     _searchFocusNode.unfocus();
     _isSearching.value = false;
     _searchQuery.value = '';
-    _filteredItems.value = restaurantController.menuItems;
+    _updateFilteredItems();
   }
 
   @override

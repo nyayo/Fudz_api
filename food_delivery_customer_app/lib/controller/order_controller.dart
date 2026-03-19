@@ -482,12 +482,43 @@ class OrderController extends GetxController {
         await _storageService.saveOrderLocation(backendOrder.id, locationData);
       }
 
+      // Merge backend order with local location data if dropoffLocation is missing address
+      Order finalOrder = backendOrder;
+      final backendDropoff = backendOrder.dropoffLocation;
+      final hasValidAddress = backendDropoff != null &&
+          backendDropoff['address'] != null &&
+          backendDropoff['address'].toString().isNotEmpty &&
+          !backendDropoff['address'].toString().contains('Unknown');
+      
+      if (!hasValidAddress) {
+        final savedLocation = _storageService.getOrderLocation(backendOrder.id);
+        if (savedLocation != null) {
+          print('📍 Merging saved location with backend order');
+          finalOrder = backendOrder.copyWith(
+            dropoffLocation: savedLocation,
+            deliveryAddress: savedLocation['address'] ?? backendOrder.deliveryAddress,
+          );
+        } else if (deliveryLocation != null) {
+          // Fallback to the location we have from the app
+          finalOrder = backendOrder.copyWith(
+            dropoffLocation: {
+              'latitude': deliveryLocation.latitude,
+              'longitude': deliveryLocation.longitude,
+              'address': deliveryLocation.address ?? deliveryAddress,
+              'street': deliveryLocation.street,
+              'neighborhood': deliveryLocation.neighborhood,
+              'city': deliveryLocation.city,
+            },
+          );
+        }
+      }
+
       // Replace local order with backend order
       _localOrders.removeWhere((order) => order.id == localOrder.id);
-      _addToLocalOrders(backendOrder);
-      _orders.insert(0, backendOrder);
+      _addToLocalOrders(finalOrder);
+      _orders.insert(0, finalOrder);
 
-      print('🛒 Order created successfully: ${backendOrder.id}');
+      print('🛒 Order created successfully: ${finalOrder.id}');
 
       // Clear cart
       final cartController = Get.find<CartController>();
@@ -506,7 +537,7 @@ class OrderController extends GetxController {
       // Sync orders in background to get latest status
       _syncOrdersInBackground();
 
-      return backendOrder;
+      return finalOrder;
     } catch (e) {
       error.value = e.toString();
       print('❌ Error placing order: $e');

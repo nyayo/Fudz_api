@@ -42,11 +42,16 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
     _animationController.forward();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_userController.isLoggedIn && _cartController.cart == null) {
-        _cartController.initializeCart(
+      if (_userController.isLoggedIn) {
+        _cartController.restoreLocalCartIfNeeded(
           userId: _userController.user?.id,
-          accessToken: _userController.accessToken,
         );
+        if (_cartController.cart == null) {
+          _cartController.initializeCart(
+            userId: _userController.user?.id,
+            accessToken: _userController.accessToken,
+          );
+        }
       }
     });
   }

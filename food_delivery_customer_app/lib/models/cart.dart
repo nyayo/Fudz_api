@@ -1,8 +1,21 @@
 import 'dart:convert' as convert;
 
 import 'package:food_delivery_customer_app/models/menu_item.dart';
+import 'package:get_storage/get_storage.dart';
 
 // In cart.dart (models), update the Cart and CartItem fromJson methods
+
+// Helper to get saved location for an order
+Map<String, dynamic>? _getSavedLocation(int orderId) {
+  try {
+    final storage = GetStorage();
+    final locations = storage.read('order_locations') ?? {};
+    return locations[orderId.toString()];
+  } catch (e) {
+    return null;
+  }
+}
+
 class Cart {
   final String id;
   final List<CartItem> items;
@@ -348,18 +361,111 @@ class Order {
     );
   }
 
-  // Helper method to get the delivery address from dropoff location
+  // Helper method to get the delivery address from dropoff location or saved location
   String get displayDeliveryAddress {
-    // First try dropoff_location address
-    if (dropoffLocation != null && dropoffLocation!['address'] != null) {
-      return dropoffLocation!['address'].toString();
+    // First try saved location
+    Map<String, dynamic>? locationData = _getSavedLocation(id);
+    locationData ??= dropoffLocation;
+    
+    if (locationData != null) {
+      final address = locationData['address']?.toString();
+      final placeName = locationData['placeName']?.toString();
+      final street = locationData['street']?.toString();
+      final neighborhood = locationData['neighborhood']?.toString();
+      final city = locationData['city']?.toString();
+      final state = locationData['state']?.toString();
+      final country = locationData['country']?.toString();
+      
+      // Build a Glovo-style address
+      final parts = <String>[];
+      
+      // Add place name or street
+      if (street != null && street.isNotEmpty) {
+        parts.add(street);
+      }
+      
+      // Add neighborhood/district
+      if (neighborhood != null && neighborhood.isNotEmpty) {
+        parts.add(neighborhood);
+      }
+      
+      // Build city line with state/country
+      final cityLine = <String>[];
+      if (city != null && city.isNotEmpty) {
+        cityLine.add(city);
+      }
+      if (state != null && state.isNotEmpty && state != city) {
+        cityLine.add(state);
+      }
+      if (country != null && country.isNotEmpty) {
+        cityLine.add(country);
+      }
+      if (cityLine.isNotEmpty) {
+        parts.add(cityLine.join(', '));
+      }
+      
+      // If we have built parts, return them
+      if (parts.isNotEmpty) {
+        return parts.join('\n');
+      }
+      
+      // If we have place name, return it
+      if (placeName != null && placeName.isNotEmpty) {
+        return placeName;
+      }
+      
+      // If we have basic address, return it
+      if (address != null && address.isNotEmpty && !address.contains('Unknown')) {
+        return address;
+      }
     }
+    
     // Fallback to delivery_address field
     if (deliveryAddress != null && deliveryAddress!.isNotEmpty) {
       return deliveryAddress!;
     }
     // Final fallback
     return 'Delivery address not specified';
+  }
+
+  // Helper to get short address (one line)
+  String get shortDeliveryAddress {
+    // First try saved location
+    Map<String, dynamic>? locationData = _getSavedLocation(id);
+    locationData ??= dropoffLocation;
+    
+    if (locationData != null) {
+      final address = locationData['address']?.toString();
+      final street = locationData['street']?.toString();
+      final neighborhood = locationData['neighborhood']?.toString();
+      final city = locationData['city']?.toString();
+      
+      if (street != null && street.isNotEmpty) {
+        final shortAddr = neighborhood != null && neighborhood.isNotEmpty 
+            ? '$street, $neighborhood'
+            : street;
+        if (city != null && city.isNotEmpty) {
+          return '$shortAddr, $city';
+        }
+        return shortAddr;
+      }
+      
+      if (neighborhood != null && neighborhood.isNotEmpty) {
+        return city != null && city.isNotEmpty 
+            ? '$neighborhood, $city'
+            : neighborhood;
+      }
+      
+      if (address != null && address.isNotEmpty && !address.contains('Unknown')) {
+        return address;
+      }
+    }
+    
+    if (deliveryAddress != null && deliveryAddress!.isNotEmpty) {
+      return deliveryAddress!;
+    }
+    
+    return 'Address not specified';
   }
 
   // Helper method to get coordinates from dropoff location
