@@ -485,32 +485,37 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                         ),
                       const SizedBox(height: 12),
                       // Add to Cart Button with Quantity Counter
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.4,
-                        child: item.isAvailable
-                            ? QuantityCounter(
-                                cartController: cartController,
-                                menuItem: item,
-                                accessToken: userController.isLoggedIn
-                                    ? userController.accessToken
-                                    : null,
-                                userId: userController.user?.id,
-                                height: 40,
-                                compact: true,
-                              )
-                            : ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[400],
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.4,
+                          ),
+                          child: item.isAvailable
+                              ? QuantityCounter(
+                                  cartController: cartController,
+                                  menuItem: item,
+                                  accessToken: userController.isLoggedIn
+                                      ? userController.accessToken
+                                      : null,
+                                  userId: userController.user?.id,
+                                  height: 40,
+                                  compact: true,
+                                )
+                              : ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[400],
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
                                   ),
-                                  elevation: 0,
+                                  onPressed: null,
+                                  child: const Text('Unavailable'),
                                 ),
-                                onPressed: null,
-                                child: const Text('Unavailable'),
-                              ),
+                        ),
                       ),
                     ],
                   ),
