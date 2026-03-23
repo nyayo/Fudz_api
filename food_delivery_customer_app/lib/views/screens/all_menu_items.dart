@@ -406,7 +406,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       SizedBox(
                         height: 22,
                         child: hasPromotion
@@ -435,44 +435,48 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                               )
                             : const SizedBox.shrink(),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           Expanded(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Flexible(
-                                  child: Text(
+                            child: hasPromotion
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        priceText,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      Text(
+                                        originalPriceText ?? '',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[400],
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
                                     priceText,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
-                                      color: hasPromotion
-                                          ? Colors.red
-                                          : TColor.primary,
+                                      color: TColor.primary,
                                     ),
                                   ),
-                                ),
-                                if (originalPriceText != null) ...[
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      originalPriceText,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[400],
-                                        decoration: TextDecoration.lineThrough,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
                           ),
                           ConstrainedBox(
                             constraints: BoxConstraints(
