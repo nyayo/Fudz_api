@@ -233,71 +233,28 @@ class _PromoBannerWidgetState extends State<PromoBannerWidget> {
                                 ),
                                 const SizedBox(height: 8),
 
-                                // Items count + view
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.restaurant_menu_rounded,
-                                      color: Colors.white.withAlpha(160),
-                                      size: 14,
+                                const SizedBox(height: 10),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${items.length} items',
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withAlpha(30),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text(
+                                      'View all',
                                       style: TextStyle(
-                                        color: Colors.white.withAlpha(160),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    const Spacer(),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withAlpha(30),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Text(
-                                        'View all',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                // Time remaining
-                                if (promotion.endDate.isAfter(
-                                  DateTime.now(),
-                                )) ...[
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.timer_outlined,
-                                        color: Colors.redAccent.withAlpha(200),
-                                        size: 13,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${_getDaysRemaining(promotion.endDate)}d left',
-                                        style: TextStyle(
-                                          color: Colors.redAccent.withAlpha(
-                                            200,
-                                          ),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
                                   ),
-                                ],
+                                ),
                               ],
                             ),
                           ),

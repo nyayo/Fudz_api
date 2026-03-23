@@ -13,6 +13,7 @@ import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/utils/text_styles.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:ui' show lerpDouble;
 
 class RestaurantDetailPage extends StatefulWidget {
@@ -50,6 +51,42 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
     _selectedCategoryIndex.dispose();
     _selectedCategoryName.dispose();
     super.dispose();
+  }
+
+  void _shareRestaurant(RestaurantProfile restaurant) {
+    final addressText = restaurant.address.isNotEmpty
+        ? ' at ${restaurant.address}'
+        : '';
+    final message =
+        'Check out ${restaurant.restaurantName}$addressText on Fudz.';
+    Share.share(message, subject: restaurant.restaurantName);
+  }
+
+  void _showRestaurantActions(RestaurantProfile restaurant) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.share),
+                title: const Text('Share restaurant'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _shareRestaurant(restaurant);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // Extract categories specific to this restaurant
@@ -389,6 +426,11 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
     final cartController = Get.find<CartController>();
     final userController = Get.find<UserController>();
     final cardWidth = MediaQuery.of(context).size.width - 40;
+    final hasPromotion = menuItem.hasActivePromotions;
+    final priceText = hasPromotion
+        ? menuItem.formattedDiscountedPrice
+        : menuItem.formattedPrice;
+    final originalPriceText = hasPromotion ? menuItem.formattedPrice : null;
     return GestureDetector(
       onTap: () {
         Get.to(MenuItemDetailPage(menuItemId: menuItem.id));
@@ -414,21 +456,60 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
             SizedBox(
               width: 80,
               height: 80,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child:
-                    menuItem.imageUrl != null && menuItem.imageUrl!.isNotEmpty
-                    ? CachedImage(
-                        imageUrl: menuItem.imageUrl,
-                        fit: BoxFit.cover,
-                        width: 80,
-                        height: 80,
-                        placeholderIcon: Icons.fastfood,
-                      )
-                    : Container(
-                        color: Colors.grey[200],
-                        child: Icon(Icons.fastfood, color: Colors.grey[400]),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child:
+                        menuItem.imageUrl != null &&
+                            menuItem.imageUrl!.isNotEmpty
+                        ? CachedImage(
+                            imageUrl: menuItem.imageUrl,
+                            fit: BoxFit.cover,
+                            width: 80,
+                            height: 80,
+                            placeholderIcon: Icons.fastfood,
+                          )
+                        : Container(
+                            color: Colors.grey[200],
+                            child: Icon(
+                              Icons.fastfood,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                  ),
+                  if (hasPromotion)
+                    Positioned(
+                      top: -6,
+                      left: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.12),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          menuItem.activePromotions.first.formattedDiscount,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
+                    ),
+                ],
               ),
             ),
 
@@ -447,22 +528,6 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                   ),
 
                   const SizedBox(height: 4),
-
-                  if (menuItem.description != null &&
-                      menuItem.description!.isNotEmpty)
-                    Builder(
-                      builder: (context) => Text(
-                        menuItem.description!,
-                        style: ResponsiveText.caption(
-                          context,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-
-                  const SizedBox(height: 8),
 
                   // Dietary Info
                   if ((menuItem.dietaryInfo ?? '').isNotEmpty)
@@ -498,9 +563,39 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Builder(
-                        builder: (context) => Text(
-                          menuItem.formattedPrice,
-                          style: ResponsiveText.price(context),
+                        builder: (context) => SizedBox(
+                          width: 90,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Text(
+                                priceText,
+                                style: ResponsiveText.price(
+                                  context,
+                                ).copyWith(
+                                  color: hasPromotion
+                                      ? Colors.red
+                                      : TColor.primary,
+                                ),
+                              ),
+                              if (originalPriceText != null)
+                                Positioned(
+                                  right: -15,
+                                  top: -40,
+                                  child: RotatedBox(
+                                    quarterTurns: 1,
+                                    child: Text(
+                                      originalPriceText,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[400],
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                       if (menuItem.isAvailable)
@@ -685,6 +780,20 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: topPadding + 8,
+                right: 16,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.more_vert, color: TColor.primary),
+                    onPressed: () => _showRestaurantActions(restaurant),
                   ),
                 ),
               ),
