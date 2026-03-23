@@ -624,6 +624,9 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               ((expandedHeight - constraints.biggest.height) /
                       (expandedHeight - collapsedHeight))
                   .clamp(0.0, 1.0);
+          final logoOpacity = Curves.easeInOut.transform(progress);
+          final logoCollapsedTop =
+              topPadding + (kToolbarHeight - logoSize) / 2;
 
           final startLeft = 20.0;
           final endLeft = (constraints.maxWidth - logoSize) / 2;
@@ -638,6 +641,31 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               lerpDouble(startBottom, endBottom, progress) ?? startBottom;
 
           final animatedScale = lerpDouble(1.0, 0.86, progress) ?? 1.0;
+
+          final Widget logoWidget = Container(
+            width: logoSize,
+            height: logoSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: CachedImage(
+                imageUrl: restaurant.logoUrl,
+                width: logoSize,
+                height: logoSize,
+                fit: BoxFit.cover,
+                placeholderIcon: Icons.restaurant,
+              ),
+            ),
+          );
 
           return Stack(
             fit: StackFit.expand,
@@ -674,31 +702,22 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                 Positioned(
                   left: animatedLeft,
                   bottom: animatedBottom,
-                  child: Transform.scale(
-                    scale: animatedScale,
-                    child: Container(
-                      width: logoSize,
-                      height: logoSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: CachedImage(
-                          imageUrl: restaurant.logoUrl,
-                          width: logoSize,
-                          height: logoSize,
-                          fit: BoxFit.cover,
-                          placeholderIcon: Icons.restaurant,
-                        ),
-                      ),
+                  child: Opacity(
+                    opacity: 1 - logoOpacity,
+                    child: Transform.scale(
+                      scale: animatedScale,
+                      child: logoWidget,
+                    ),
+                  ),
+                ),
+              if (restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty)
+                Positioned(
+                  top: logoCollapsedTop,
+                  left: (constraints.maxWidth - logoSize) / 2,
+                  child: IgnorePointer(
+                    child: Opacity(
+                      opacity: logoOpacity,
+                      child: logoWidget,
                     ),
                   ),
                 ),
