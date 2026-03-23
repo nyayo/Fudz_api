@@ -337,126 +337,85 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
       margin: EdgeInsets.fromLTRB(16, 8, 16, isLastItem ? 20 : 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           onTap: () {
             Get.to(() => MenuItemDetailPage(menuItemId: item.id));
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Item Image with Promotion Badge
+                // Item image with badge
                 Stack(
                   children: [
                     SizedBox(
-                      width: 100,
-                      height: 100,
+                      width: 84,
+                      height: 84,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         child: _buildMenuItemImage(item),
                       ),
                     ),
                     if (hasPromotion)
                       Positioned(
-                        top: 0,
-                        left: 0,
+                        top: 6,
+                        left: 6,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
-                            vertical: 3,
+                            vertical: 2,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.red,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              bottomRight: Radius.circular(12),
-                            ),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             item.activePromotions.first.formattedDiscount,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                       ),
                   ],
                 ),
-                const SizedBox(width: 16),
-                // Item Details
+                const SizedBox(width: 12),
+                // Item details
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title and Price Row
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Builder(
-                              builder: (context) => Text(
-                                item.title,
-                                style: ResponsiveText.heading3(context),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Builder(
-                                builder: (context) => Text(
-                                  priceText,
-                                  style: ResponsiveText.priceSize(
-                                    context,
-                                    color: hasPromotion
-                                        ? Colors.red
-                                        : TColor.primary,
-                                  ),
-                                ),
-                              ),
-                              if (originalPriceText != null)
-                                Text(
-                                  originalPriceText,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
+                      Text(
+                        item.title,
+                        style: ResponsiveText.heading4(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
-                      // Promotion Name (fixed height to keep card height consistent)
                       SizedBox(
-                        height: 24,
+                        height: 22,
                         child: hasPromotion
                             ? Align(
                                 alignment: Alignment.centerLeft,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
-                                    vertical: 4,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.red.withOpacity(0.1),
@@ -465,7 +424,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                                   child: Text(
                                     item.activePromotions.first.name,
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       color: Colors.red,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -476,41 +435,78 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                               )
                             : const SizedBox.shrink(),
                       ),
-                      const SizedBox(height: 12),
-                      // Add to Cart Button with Quantity Counter
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.4,
-                          ),
-                          child: item.isAvailable
-                              ? QuantityCounter(
-                                  cartController: cartController,
-                                  menuItem: item,
-                                  accessToken: userController.isLoggedIn
-                                      ? userController.accessToken
-                                      : null,
-                                  userId: userController.user?.id,
-                                  height: 40,
-                                  compact: true,
-                                )
-                              : ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[400],
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    priceText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: hasPromotion
+                                          ? Colors.red
+                                          : TColor.primary,
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 0,
                                   ),
-                                  onPressed: null,
-                                  child: const Text('Unavailable'),
                                 ),
-                        ),
+                                if (originalPriceText != null) ...[
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      originalPriceText,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[400],
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.32,
+                            ),
+                            child: item.isAvailable
+                                ? QuantityCounter(
+                                    cartController: cartController,
+                                    menuItem: item,
+                                    accessToken: userController.isLoggedIn
+                                        ? userController.accessToken
+                                        : null,
+                                    userId: userController.user?.id,
+                                    height: 32,
+                                    compact: true,
+                                  )
+                                : ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey[400],
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    onPressed: null,
+                                    child: const Text('Unavailable'),
+                                  ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
