@@ -11,6 +11,7 @@ import 'package:food_delivery_customer_app/utils/text_styles.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 
 class AllMenuItemsPage extends StatefulWidget {
   const AllMenuItemsPage({super.key});
@@ -279,11 +280,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
       child: Row(
         children: [
           const SizedBox(width: 12),
-          Icon(
-            Icons.search,
-            color: Colors.grey[500],
-            size: 16,
-          ),
+          Icon(Icons.search, color: Colors.grey[500], size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
@@ -308,11 +305,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
           Obx(() {
             if (_searchQuery.value.isNotEmpty) {
               return IconButton(
-                icon: Icon(
-                  Icons.clear,
-                  color: Colors.grey[500],
-                  size: 16,
-                ),
+                icon: Icon(Icons.clear, color: Colors.grey[500], size: 16),
                 onPressed: _clearSearch,
                 padding: const EdgeInsets.all(2),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -375,16 +368,17 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 0.75,
+          crossAxisSpacing: 14,
+          childAspectRatio: 0.82,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final item = items[index];
-            return _buildMenuItemCard(item);
-          },
-          childCount: items.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final item = items[index];
+          return FadeSlideIn(
+            delay: Duration(milliseconds: 40 * (index % 6)),
+            slideOffset: const Offset(0, 0.08),
+            child: _buildMenuItemCard(item),
+          );
+        }, childCount: items.length),
       ),
     );
   }
@@ -399,6 +393,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     final String? originalPriceText = hasPromotion ? item.formattedPrice : null;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -410,99 +405,120 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Get.to(() => MenuItemDetailPage(menuItemId: item.id));
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    SizedBox(
-                      width: 78,
-                      height: 78,
-                      child: ClipOval(
-                        child: _buildMenuItemImage(item),
-                      ),
-                    ),
-                    if (hasPromotion)
-                      Positioned(
-                        top: -6,
-                        right: -6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            item.activePromotions.first.formattedDiscount,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
+      child: _PressScale(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {
+              Navigator.of(context).push(
+                SmoothPageRoute(
+                  page: MenuItemDetailPage(menuItemId: item.id),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.topCenter,
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            SizedBox(
+                              width: 64,
+                              height: 64,
+                              child: ClipOval(child: _buildMenuItemImage(item)),
                             ),
+                            if (hasPromotion)
+                              Positioned(
+                                top: -6,
+                                right: -6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    item.activePromotions.first.formattedDiscount,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          item.title,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: TColor.primaryText,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          priceText,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: hasPromotion ? Colors.red : TColor.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                    ),
+                  ),
+                  if (hasPromotion)
+                    Positioned(
+                      right: -8,
+                      top: 70,
+                      child: RotatedBox(
+                        quarterTurns: 1,
+                        child: Text(
+                          originalPriceText ?? '',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[400],
+                            decoration: TextDecoration.lineThrough,
                           ),
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  item.title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: TColor.primaryText,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      priceText,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: hasPromotion ? Colors.red : TColor.primary,
-                      ),
                     ),
-                    if (hasPromotion)
-                      Text(
-                        originalPriceText ?? '',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[400],
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _buildAddButton(item),
-              ],
+                  Positioned(
+                    bottom: -20,
+                    left: 0,
+                    right: 0,
+                    child: Center(child: _buildAddButton(item)),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -515,55 +531,45 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
       final isInCart = cartController.isItemInCart(item.id);
       final quantity = cartController.getItemQuantity(item.id);
       final isEnabled =
-          userController.isLoggedIn && item.isAvailable && !cartController.isItemProcessing('${item.id}_add');
+          userController.isLoggedIn &&
+          item.isAvailable &&
+          !cartController.isItemProcessing('${item.id}_add');
 
-      return Stack(
-        clipBehavior: Clip.none,
-        children: [
-          SizedBox(
-            width: 34,
-            height: 34,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isEnabled ? TColor.primary : Colors.grey[300],
-                shape: const CircleBorder(),
-                padding: EdgeInsets.zero,
-                elevation: 0,
-              ),
-              onPressed: isEnabled
-                  ? () async {
-                      await cartController.addToCart(
-                        menuItem: item,
-                        quantity: 1,
-                        accessToken: userController.accessToken,
-                        userId: userController.user?.id,
-                      );
-                    }
-                  : null,
-              child: const Icon(Icons.add, size: 18, color: Colors.white),
-            ),
+      if (isInCart) {
+        return QuantityCounter(
+          cartController: cartController,
+          menuItem: item,
+          accessToken: userController.isLoggedIn
+              ? userController.accessToken
+              : null,
+          userId: userController.user?.id,
+          height: 32,
+          compact: true,
+        );
+      }
+
+      return SizedBox(
+        width: 40,
+        height: 40,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEnabled ? TColor.primary : Colors.grey[300],
+            shape: const CircleBorder(),
+            padding: EdgeInsets.zero,
+            elevation: 2,
           ),
-          if (isInCart)
-            Positioned(
-              top: -6,
-              right: -6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: TColor.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  quantity.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-        ],
+          onPressed: isEnabled
+              ? () async {
+                  await cartController.addToCart(
+                    menuItem: item,
+                    quantity: 1,
+                    accessToken: userController.accessToken,
+                    userId: userController.user?.id,
+                  );
+                }
+              : null,
+          child: const Icon(Icons.add, size: 20, color: Colors.white),
+        ),
       );
     });
   }
@@ -588,16 +594,15 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                 _applyFilters();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? TColor.primary
-                      : Colors.white,
+                  color: isSelected ? TColor.primary : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected
-                        ? TColor.primary
-                        : Colors.grey[200]!,
+                    color: isSelected ? TColor.primary : Colors.grey[200]!,
                   ),
                   boxShadow: isSelected
                       ? [
@@ -769,4 +774,33 @@ class _CategoryOption {
   final String name;
 
   const _CategoryOption({required this.id, required this.name});
+}
+
+class _PressScale extends StatefulWidget {
+  final Widget child;
+
+  const _PressScale({required this.child});
+
+  @override
+  State<_PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<_PressScale> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
 }

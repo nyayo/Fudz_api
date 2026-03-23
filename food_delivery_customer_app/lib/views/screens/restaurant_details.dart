@@ -200,6 +200,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           slivers: [
             _buildAppBar(restaurant),
             _buildRestaurantInfo(restaurant),
+            _buildPromotionSection(restaurant),
             _buildRatingSection(restaurant),
             _buildCategoryList(),
             _buildMenuItemsHeader(),
@@ -603,17 +604,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         ),
       ),
       actions: [
-        Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: Icon(Icons.favorite_border, color: TColor.primary),
-            onPressed: () {},
-          ),
-        ),
+       
       ],
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
@@ -623,23 +614,23 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               ((expandedHeight - constraints.biggest.height) /
                       (expandedHeight - collapsedHeight))
                   .clamp(0.0, 1.0);
-          final logoOpacity = Curves.easeInOut.transform(progress);
-          final logoCollapsedTop = topPadding + (kToolbarHeight - logoSize) / 2;
+              final logoOpacity = Curves.easeInOut.transform(progress);
+              final logoCollapsedTop = topPadding + (kToolbarHeight - logoSize) / 2;
 
-          final startLeft = 20.0;
-          final endLeft = (constraints.maxWidth - logoSize) / 2;
-          final animatedLeft =
-              lerpDouble(startLeft, endLeft, progress) ?? startLeft;
+              final startLeft = 20.0;
+              final endLeft = (constraints.maxWidth - logoSize) / 2;
+              final animatedLeft =
+                lerpDouble(startLeft, endLeft, progress) ?? startLeft;
 
-          // Start above the title/subtitle block so the logo never covers text.
-          final startBottom = 92.0;
-          final endBottom =
-              expandedHeight -
-              (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
-          final animatedBottom =
-              lerpDouble(startBottom, endBottom, progress) ?? startBottom;
+              // Start at the bottom-left of the header image.
+              final startBottom = 16.0;
+              final endBottom =
+                expandedHeight -
+                (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
+              final animatedBottom =
+                lerpDouble(startBottom, endBottom, progress) ?? startBottom;
 
-          final animatedScale = lerpDouble(1.0, 0.86, progress) ?? 1.0;
+              final animatedScale = lerpDouble(1.0, 0.86, progress) ?? 1.0;
 
           final Widget logoWidget = Container(
             width: logoSize,
@@ -717,32 +708,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     child: Opacity(opacity: logoOpacity, child: logoWidget),
                   ),
                 ),
-              Positioned(
-                left: 20,
-                bottom: 20,
-                right: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      restaurant.restaurantName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Various Cuisine',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox.shrink(),
             ],
           );
         },
@@ -826,14 +792,40 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            // Show promotion banner if restaurant has active promotions
-            if (_getRestaurantPromoItems().isNotEmpty)
-              PromoBannerWidget(
-                featuredItemsWithPromotions: _getRestaurantPromoItems(),
+            const SizedBox(height: 12),
+            Text(
+              restaurant.restaurantName,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: TColor.primaryText,
               ),
+            ),
+            const SizedBox(height: 4),
+              Text(
+                'Various Cuisine',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            const SizedBox(height: 16),
           ],
         ),
+      ),
+    );
+  }
+
+  SliverToBoxAdapter _buildPromotionSection(RestaurantProfile restaurant) {
+    final promoItems = _getRestaurantPromoItems();
+    if (promoItems.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          PromoBannerWidget(featuredItemsWithPromotions: promoItems),
+          const SizedBox(height: 12),
+        ],
       ),
     );
   }
@@ -846,86 +838,58 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         final avg = _reviewController.averageRating;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Compact rating summary row ──
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    // Score + stars
-                    Text(
-                      avg.toStringAsFixed(1),
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
+              Row(
+                children: [
+                  Text(
+                    'Review',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: TColor.primaryText,
                     ),
-                    const SizedBox(width: 6),
-                    ...List.generate(5, (i) {
-                      return Icon(
-                        i < avg.floor()
-                            ? Icons.star_rounded
-                            : (i < avg.ceil() && avg % 1 >= 0.5)
-                            ? Icons.star_half_rounded
-                            : Icons.star_outline_rounded,
-                        color: Colors.amber,
-                        size: 14,
-                      );
-                    }),
-                    const SizedBox(width: 6),
-                    Text(
-                      '(${reviews.length})',
+                  ),
+                  const SizedBox(width: 10),
+                  Row(
+                    children: [
+                      ...List.generate(5, (i) {
+                        return Icon(
+                          i < avg.floor()
+                              ? Icons.star_rounded
+                              : (i < avg.ceil() && avg % 1 >= 0.5)
+                                  ? Icons.star_half_rounded
+                                  : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 16,
+                        );
+                      }),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${avg.toStringAsFixed(1)}/5',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  InkWell(
+                    onTap: () => _showRatingDialog(restaurant.id),
+                    child: Text(
+                      'See All',
                       style: TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: Colors.grey[500],
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const Spacer(),
-                    // Rate button
-                    InkWell(
-                      onTap: () => _showRatingDialog(restaurant.id),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: TColor.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.edit, size: 13, color: TColor.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Rate',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: TColor.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
               if (isLoading)
@@ -934,21 +898,19 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                   child: SizedBox(height: 2, child: LinearProgressIndicator()),
                 ),
 
-              // ── Horizontal mini review cards ──
               if (reviews.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 SizedBox(
-                  height: 74,
+                  height: 96,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: reviews.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (_, i) => _buildReviewCard(reviews[i]),
                   ),
                 ),
               ],
 
-              // Empty state — single compact line
               if (reviews.isEmpty && !isLoading)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
@@ -967,61 +929,83 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
   Widget _buildReviewCard(dynamic review) {
     final initial = (review.customerName ?? 'A')[0].toUpperCase();
     return Container(
-      width: 210,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      width: 260,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              // Avatar initial
               CircleAvatar(
-                radius: 10,
+                radius: 14,
                 backgroundColor: TColor.primary.withOpacity(0.15),
                 child: Text(
                   initial,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: TColor.primary,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              // Inline stars
-              ...List.generate(
-                5,
-                (j) => Icon(
-                  j < review.rating
-                      ? Icons.star_rounded
-                      : Icons.star_outline_rounded,
-                  color: Colors.amber,
-                  size: 12,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.customerName ?? 'Anonymous',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: TColor.primaryText,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: List.generate(
+                        5,
+                        (j) => Icon(
+                          j < review.rating
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Spacer(),
               Text(
                 _formatDate(review.createdAt),
-                style: TextStyle(fontSize: 9, color: Colors.grey[400]),
+                style: TextStyle(fontSize: 10, color: Colors.grey[400]),
               ),
             ],
           ),
           if (review.comment != null && review.comment.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               review.comment,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: Colors.grey[600],
-                height: 1.3,
+                height: 1.35,
               ),
             ),
           ],

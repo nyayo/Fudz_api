@@ -22,7 +22,8 @@ class CartPage extends StatefulWidget {
   State<CartPage> createState() => _CartPageState();
 }
 
-class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin {
+class _CartPageState extends State<CartPage>
+    with SingleTickerProviderStateMixin {
   final CartController _cartController = Get.find<CartController>();
   final UserController _userController = Get.find<UserController>();
   final LocationController _locationController = Get.find<LocationController>();
@@ -40,7 +41,7 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
     _animationController.forward();
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_userController.isLoggedIn) {
         _cartController.restoreLocalCartIfNeeded(
@@ -72,65 +73,65 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
         opacity: _fadeAnimation,
         child: SafeArea(
           child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 20,
-                right: 20,
-                // top: 20,
-                // bottom: 20,
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  // top: 20,
+                  // bottom: 20,
+                ),
+                child: Row(
+                  children: [
+                    const Spacer(),
+                    Text('My Cart', style: ResponsiveText.heading2(context)),
+                    const Spacer(),
+                    Obx(() {
+                      if (_cartController.hasItems) {
+                        return TextButton(
+                          onPressed: () => _showClearCartDialog(),
+                          child: Text(
+                            'Clear All',
+                            style: TextStyle(color: Colors.red, fontSize: 14),
+                          ),
+                        );
+                      }
+                      return const SizedBox();
+                    }),
+                  ],
+                ),
               ),
-              child: Row(
-                children: [
-                  const Spacer(),
-                  Text('My Cart', style: ResponsiveText.heading2(context)),
-                  const Spacer(),
-                  Obx(() {
-                    if (_cartController.hasItems) {
-                      return TextButton(
-                        onPressed: () => _showClearCartDialog(),
-                        child: Text(
-                          'Clear All',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      );
-                    }
-                    return const SizedBox();
-                  }),
-                ],
-              ),
-            ),
 
-            // Cart Content
-            Obx(() {
-              if (_cartController.isLoading.value) {
-                return Expanded(
-                  child: ListView.builder(
-                    itemCount: 3,
-                    itemBuilder: (context, index) => MenuItemCardShimmer(),
-                  ),
+              // Cart Content
+              Obx(() {
+                if (_cartController.isLoading.value) {
+                  return Expanded(
+                    child: ListView.builder(
+                      itemCount: 3,
+                      itemBuilder: (context, index) => MenuItemCardShimmer(),
+                    ),
+                  );
+                }
+
+                if (!_cartController.hasItems) {
+                  return _buildEmptyCart();
+                }
+
+                return _buildCartItems(media);
+              }),
+
+              // Order Summary
+              Obx(() {
+                if (!_cartController.hasItems) return const SizedBox();
+
+                return FadeSlideIn(
+                  duration: const Duration(milliseconds: 500),
+                  child: _buildOrderSummary(),
                 );
-              }
-
-              if (!_cartController.hasItems) {
-                return _buildEmptyCart();
-              }
-
-              return _buildCartItems(media);
-            }),
-
-            // Order Summary
-            Obx(() {
-              if (!_cartController.hasItems) return const SizedBox();
-
-              return FadeSlideIn(
-                duration: const Duration(milliseconds: 500),
-                child: _buildOrderSummary(),
-              );
-            }),
-          ],
-        ),
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -382,10 +383,7 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
                       const SizedBox(height: 4),
                       Text(
                         '${item.quantity} x ${CurrencyFormatter.format(itemPrice)}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                       ),
                     ],
                   ),

@@ -64,13 +64,15 @@ class ProfilePage extends StatelessWidget {
                     if (isLoggedIn) const SizedBox(height: 24),
 
                     // Google Account Linking Section
-                    if (isLoggedIn && !_isPrimaryGoogleAccount(user, userController))
+                    if (isLoggedIn &&
+                        !_isPrimaryGoogleAccount(user, userController))
                       FadeSlideIn(
                         duration: const Duration(milliseconds: 500),
                         delay: const Duration(milliseconds: 350),
                         child: _buildGoogleLinkSection(userController),
                       ),
-                    if (isLoggedIn && !_isPrimaryGoogleAccount(user, userController))
+                    if (isLoggedIn &&
+                        !_isPrimaryGoogleAccount(user, userController))
                       const SizedBox(height: 24),
 
                     // Notification Preferences
@@ -493,7 +495,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                   child: Center(
                     child: Image.asset(
-                      'assets/google_icon.png',
+                      'assets/google.png',
                       width: 22,
                       height: 22,
                       errorBuilder: (_, __, ___) => Icon(
