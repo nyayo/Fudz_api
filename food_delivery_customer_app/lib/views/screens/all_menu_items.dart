@@ -92,7 +92,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     final items = restaurantController.menuItems.toList();
     final seenIds = <int>{};
     final uniqueItems = items.where((item) => seenIds.add(item.id)).toList();
-    
+
     _filteredItems.value = uniqueItems.where((item) {
       // Search in title
       if (item.title.toLowerCase().contains(searchLower)) return true;
@@ -506,7 +506,9 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.grey[400],
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -530,13 +532,14 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
 
   Widget _buildMenuItemImage(MenuItem item) {
     String? imageUrl;
-    
+
     if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
       imageUrl = item.imageUrl;
-    } else if (item.images.isNotEmpty && item.images.first.imageUrl.isNotEmpty) {
+    } else if (item.images.isNotEmpty &&
+        item.images.first.imageUrl.isNotEmpty) {
       imageUrl = item.images.first.imageUrl;
     }
-    
+
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return CachedImage(
         imageUrl: imageUrl,
@@ -546,7 +549,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
         placeholderIcon: Icons.fastfood,
       );
     }
-    
+
     return Container(
       color: Colors.grey[200],
       child: Icon(Icons.fastfood, color: Colors.grey[400], size: 40),

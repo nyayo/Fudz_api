@@ -625,17 +625,17 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                       (expandedHeight - collapsedHeight))
                   .clamp(0.0, 1.0);
           final logoOpacity = Curves.easeInOut.transform(progress);
-          final logoCollapsedTop =
-              topPadding + (kToolbarHeight - logoSize) / 2;
+          final logoCollapsedTop = topPadding + (kToolbarHeight - logoSize) / 2;
 
           final startLeft = 20.0;
           final endLeft = (constraints.maxWidth - logoSize) / 2;
-          final animatedLeft = lerpDouble(startLeft, endLeft, progress) ??
-              startLeft;
+          final animatedLeft =
+              lerpDouble(startLeft, endLeft, progress) ?? startLeft;
 
-            // Start above the title/subtitle block so the logo never covers text.
-            final startBottom = 92.0;
-          final endBottom = expandedHeight -
+          // Start above the title/subtitle block so the logo never covers text.
+          final startBottom = 92.0;
+          final endBottom =
+              expandedHeight -
               (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
           final animatedBottom =
               lerpDouble(startBottom, endBottom, progress) ?? startBottom;
@@ -715,10 +715,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                   top: logoCollapsedTop,
                   left: (constraints.maxWidth - logoSize) / 2,
                   child: IgnorePointer(
-                    child: Opacity(
-                      opacity: logoOpacity,
-                      child: logoWidget,
-                    ),
+                    child: Opacity(opacity: logoOpacity, child: logoWidget),
                   ),
                 ),
               Positioned(

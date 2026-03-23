@@ -86,6 +86,14 @@ class _CachedImageState extends State<CachedImage> {
   bool _useFallback = false;
 
   @override
+  void didUpdateWidget(covariant CachedImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _useFallback = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (widget.imageUrl == null || widget.imageUrl!.isEmpty) {
       return _buildPlaceholder();
@@ -100,11 +108,13 @@ class _CachedImageState extends State<CachedImage> {
   /// Primary strategy: CachedNetworkImage with disk + memory cache.
   Widget _buildCachedImage() {
     return CachedNetworkImage(
+      key: ValueKey(widget.imageUrl),
       imageUrl: widget.imageUrl!,
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
       cacheManager: AppCacheManager.instance,
+      useOldImageOnUrlChange: false,
       placeholder: (context, url) {
         if (widget.showLoader) return _buildLoader();
         if (widget.useShimmer) return _buildShimmer();
@@ -132,6 +142,7 @@ class _CachedImageState extends State<CachedImage> {
   /// manager entirely. On Android this uses the platform HTTP stack.
   Widget _buildFallbackImage() {
     return Image.network(
+      key: ValueKey(widget.imageUrl),
       widget.imageUrl!,
       width: widget.width,
       height: widget.height,
