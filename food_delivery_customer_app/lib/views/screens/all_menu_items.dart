@@ -447,42 +447,35 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      // Promotion Name
-                      if (hasPromotion)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            item.activePromotions.first.name,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      // Description
-                      if (item.description != null &&
-                          item.description!.isNotEmpty)
-                        Text(
-                          item.description!,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      // Promotion Name (fixed height to keep card height consistent)
+                      SizedBox(
+                        height: 24,
+                        child: hasPromotion
+                            ? Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    item.activePromotions.first.name,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                       const SizedBox(height: 12),
                       // Add to Cart Button with Quantity Counter
                       Align(
