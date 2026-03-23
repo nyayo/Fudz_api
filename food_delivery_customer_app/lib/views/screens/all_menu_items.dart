@@ -26,6 +26,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
   final cartController = Get.find<CartController>();
   final userController = Get.find<UserController>();
   final ScrollController _scrollController = ScrollController();
+  late final Worker _menuItemsWorker;
 
   final RxList<MenuItem> _filteredItems = <MenuItem>[].obs;
   final RxBool _isSearching = false.obs;
@@ -34,15 +35,6 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize with all items
-    _updateFilteredItems();
-
-    // Listen for menu items changes from controller
-    ever(restaurantController.menuItems, (_) {
-      if (!_isSearching.value) {
-        _updateFilteredItems();
-      }
-    });
 
     // Listen for search text changes
     _searchController.addListener(_onSearchChanged);
@@ -51,6 +43,16 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     if (restaurantController.allMenuItems.isEmpty) {
       restaurantController.getMenuItems(showLoading: true);
     }
+
+    // Keep filtered list in sync when menu items change
+    _menuItemsWorker = ever(restaurantController.menuItems, (_) {
+      if (!_isSearching.value) {
+        _updateFilteredItems();
+      }
+    });
+
+    // Seed initial filtered items
+    _updateFilteredItems();
 
     // Scroll listener for pagination
     _scrollController.addListener(() {
@@ -72,6 +74,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
 
   @override
   void dispose() {
+    _menuItemsWorker.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -454,15 +457,18 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                                           color: Colors.red,
                                         ),
                                       ),
-                                      Text(
-                                        originalPriceText ?? '',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey[400],
-                                          decoration:
-                                              TextDecoration.lineThrough,
+                                      RotatedBox(
+                                        quarterTurns: 1,
+                                        child: Text(
+                                          originalPriceText ?? '',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[400],
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                          ),
                                         ),
                                       ),
                                     ],
