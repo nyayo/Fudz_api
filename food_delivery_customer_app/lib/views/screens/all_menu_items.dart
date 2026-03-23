@@ -92,7 +92,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
     final items = restaurantController.menuItems.toList();
     final seenIds = <int>{};
     final uniqueItems = items.where((item) => seenIds.add(item.id)).toList();
-    
+
     _filteredItems.value = uniqueItems.where((item) {
       // Search in title
       if (item.title.toLowerCase().contains(searchLower)) return true;
@@ -447,70 +447,70 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      // Promotion Name
-                      if (hasPromotion)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            item.activePromotions.first.name,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      // Description
-                      if (item.description != null &&
-                          item.description!.isNotEmpty)
-                        Text(
-                          item.description!,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      // Promotion Name (fixed height to keep card height consistent)
+                      SizedBox(
+                        height: 24,
+                        child: hasPromotion
+                            ? Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    item.activePromotions.first.name,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                       const SizedBox(height: 12),
                       // Add to Cart Button with Quantity Counter
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.4,
-                        child: item.isAvailable
-                            ? QuantityCounter(
-                                cartController: cartController,
-                                menuItem: item,
-                                accessToken: userController.isLoggedIn
-                                    ? userController.accessToken
-                                    : null,
-                                userId: userController.user?.id,
-                                height: 40,
-                                compact: true,
-                              )
-                            : ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[400],
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.4,
+                          ),
+                          child: item.isAvailable
+                              ? QuantityCounter(
+                                  cartController: cartController,
+                                  menuItem: item,
+                                  accessToken: userController.isLoggedIn
+                                      ? userController.accessToken
+                                      : null,
+                                  userId: userController.user?.id,
+                                  height: 40,
+                                  compact: true,
+                                )
+                              : ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[400],
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
                                   ),
-                                  elevation: 0,
+                                  onPressed: null,
+                                  child: const Text('Unavailable'),
                                 ),
-                                onPressed: null,
-                                child: const Text('Unavailable'),
-                              ),
+                        ),
                       ),
                     ],
                   ),
@@ -525,13 +525,14 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
 
   Widget _buildMenuItemImage(MenuItem item) {
     String? imageUrl;
-    
+
     if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
       imageUrl = item.imageUrl;
-    } else if (item.images.isNotEmpty && item.images.first.imageUrl.isNotEmpty) {
+    } else if (item.images.isNotEmpty &&
+        item.images.first.imageUrl.isNotEmpty) {
       imageUrl = item.images.first.imageUrl;
     }
-    
+
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return CachedImage(
         imageUrl: imageUrl,
@@ -541,7 +542,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
         placeholderIcon: Icons.fastfood,
       );
     }
-    
+
     return Container(
       color: Colors.grey[200],
       child: Icon(Icons.fastfood, color: Colors.grey[400], size: 40),

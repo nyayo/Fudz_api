@@ -180,13 +180,12 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Obx(() {
-        if (restaurantController.isLoadingDetails.value ||
-            restaurantController.selectedRestaurant.value == null) {
-          return _buildLoadingState();
-        }
-
         final restaurant = restaurantController.selectedRestaurant.value;
-        if (restaurant == null) {
+        final isDifferentRestaurant =
+            restaurant != null && restaurant.id != widget.restaurantId;
+        if (restaurantController.isLoadingDetails.value ||
+            restaurant == null ||
+            isDifferentRestaurant) {
           return _buildLoadingState();
         }
 
@@ -624,20 +623,48 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               ((expandedHeight - constraints.biggest.height) /
                       (expandedHeight - collapsedHeight))
                   .clamp(0.0, 1.0);
+          final logoOpacity = Curves.easeInOut.transform(progress);
+          final logoCollapsedTop = topPadding + (kToolbarHeight - logoSize) / 2;
 
           final startLeft = 20.0;
           final endLeft = (constraints.maxWidth - logoSize) / 2;
-          final animatedLeft = lerpDouble(startLeft, endLeft, progress) ??
-              startLeft;
+          final animatedLeft =
+              lerpDouble(startLeft, endLeft, progress) ?? startLeft;
 
-            // Start above the title/subtitle block so the logo never covers text.
-            final startBottom = 92.0;
-          final endBottom = expandedHeight -
+          // Start above the title/subtitle block so the logo never covers text.
+          final startBottom = 92.0;
+          final endBottom =
+              expandedHeight -
               (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
           final animatedBottom =
               lerpDouble(startBottom, endBottom, progress) ?? startBottom;
 
           final animatedScale = lerpDouble(1.0, 0.86, progress) ?? 1.0;
+
+          final Widget logoWidget = Container(
+            width: logoSize,
+            height: logoSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: CachedImage(
+                imageUrl: restaurant.logoUrl,
+                width: logoSize,
+                height: logoSize,
+                fit: BoxFit.cover,
+                placeholderIcon: Icons.restaurant,
+              ),
+            ),
+          );
 
           return Stack(
             fit: StackFit.expand,
@@ -674,32 +701,20 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                 Positioned(
                   left: animatedLeft,
                   bottom: animatedBottom,
-                  child: Transform.scale(
-                    scale: animatedScale,
-                    child: Container(
-                      width: logoSize,
-                      height: logoSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: CachedImage(
-                          imageUrl: restaurant.logoUrl,
-                          width: logoSize,
-                          height: logoSize,
-                          fit: BoxFit.cover,
-                          placeholderIcon: Icons.restaurant,
-                        ),
-                      ),
+                  child: Opacity(
+                    opacity: 1 - logoOpacity,
+                    child: Transform.scale(
+                      scale: animatedScale,
+                      child: logoWidget,
                     ),
+                  ),
+                ),
+              if (restaurant.logoUrl != null && restaurant.logoUrl!.isNotEmpty)
+                Positioned(
+                  top: logoCollapsedTop,
+                  left: (constraints.maxWidth - logoSize) / 2,
+                  child: IgnorePointer(
+                    child: Opacity(opacity: logoOpacity, child: logoWidget),
                   ),
                 ),
               Positioned(
