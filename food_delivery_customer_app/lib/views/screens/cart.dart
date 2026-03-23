@@ -239,29 +239,27 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
           _cartController.isItemProcessing('${item.id}_remove');
 
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: isDiscounted
-              ? Border.all(color: Colors.red.withOpacity(0.15), width: 1)
+              ? Border.all(color: Colors.red.withOpacity(0.12), width: 1)
               : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.06),
-              spreadRadius: 0.5,
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Stack(
           children: [
-            // Discount badge (top-right corner)
             if (isDiscounted)
               Positioned(
                 top: 0,
-                right: 0,
+                left: 0,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
@@ -270,173 +268,76 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Text(
-                    '${_calculateDiscountPercentage(originalPrice, discountedPrice)}%',
+                    '${_calculateDiscountPercentage(originalPrice, discountedPrice)}% OFF',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
               ),
-
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Food Image + Quantity counter aligned vertically
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Food Image
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(10),
+                // Circular food image
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Builder(
-                          builder: (context) {
-                            final imageUrl = item.menuItem.imageUrl;
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Builder(
+                      builder: (context) {
+                        final imageUrl = item.menuItem.imageUrl;
 
-                            if (imageUrl == null || imageUrl.isEmpty) {
-                              return Center(
-                                child: Icon(
-                                  Icons.fastfood,
-                                  color: Colors.grey[400],
-                                  size: 24,
-                                ),
-                              );
-                            }
+                        if (imageUrl == null || imageUrl.isEmpty) {
+                          return Center(
+                            child: Icon(
+                              Icons.fastfood,
+                              color: Colors.grey[400],
+                              size: 22,
+                            ),
+                          );
+                        }
 
-                            return CachedImage(
-                              imageUrl: imageUrl,
-                              width: 64,
-                              height: 64,
-                              fit: BoxFit.cover,
-                              placeholderIcon: Icons.fastfood,
-                            );
-                          },
-                        ),
-                      ),
+                        return CachedImage(
+                          imageUrl: imageUrl,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          placeholderIcon: Icons.fastfood,
+                        );
+                      },
                     ),
-                    const SizedBox(height: 8),
-                    // Horizontal quantity controls - aligned under image
-                    Container(
-                      width: 64,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: TColor.primary.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: TColor.primary.withOpacity(0.15),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          // Minus button
-                          Expanded(
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(7),
-                                  bottomLeft: Radius.circular(7),
-                                ),
-                                onTap: isProcessing
-                                    ? null
-                                    : () {
-                                        _cartController.updateQuantity(
-                                          itemId: item.id,
-                                          quantity: item.quantity - 1,
-                                          accessToken:
-                                              _userController.accessToken,
-                                        );
-                                      },
-                                child: Center(
-                                  child: Icon(
-                                    Icons.remove,
-                                    size: 14,
-                                    color: isProcessing
-                                        ? Colors.grey[400]
-                                        : TColor.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Quantity display
-                          Container(
-                            width: 1,
-                            color: TColor.primary.withOpacity(0.15),
-                          ),
-                          SizedBox(
-                            width: 22,
-                            child: Center(
-                              child: Text(
-                                item.quantity.toString(),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: TColor.primaryText,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            color: TColor.primary.withOpacity(0.15),
-                          ),
-                          // Plus button
-                          Expanded(
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(7),
-                                  bottomRight: Radius.circular(7),
-                                ),
-                                onTap: isProcessing
-                                    ? null
-                                    : () {
-                                        _cartController.updateQuantity(
-                                          itemId: item.id,
-                                          quantity: item.quantity + 1,
-                                          accessToken:
-                                              _userController.accessToken,
-                                        );
-                                      },
-                                child: Center(
-                                  child: Icon(
-                                    Icons.add,
-                                    size: 14,
-                                    color: isProcessing
-                                        ? Colors.grey[400]
-                                        : TColor.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(width: 12),
-
-                // Food Details
+                // Item details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Title
                       Text(
                         item.menuItem.title,
                         style: TextStyle(
@@ -448,62 +349,103 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      // Restaurant name
                       Text(
                         item.menuItem.safeRestaurantName,
                         style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
-
-                      // Unit price
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           Text(
                             CurrencyFormatter.format(itemPrice),
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
                               color: isDiscounted ? Colors.red : TColor.primary,
                             ),
                           ),
-                          if (isDiscounted)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: Text(
-                                CurrencyFormatter.format(originalPrice),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
+                          if (isDiscounted) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              CurrencyFormatter.format(originalPrice),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                                decoration: TextDecoration.lineThrough,
                               ),
                             ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 4),
-
-                      // Item total
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${item.quantity} x ${CurrencyFormatter.format(itemPrice)}',
+                      Text(
+                        '${item.quantity} x ${CurrencyFormatter.format(itemPrice)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Vertical quantity controls
+                Container(
+                  width: 36,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    color: TColor.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: TColor.primary.withOpacity(0.15),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      _CartQtyButton(
+                        icon: Icons.add,
+                        enabled: !isProcessing,
+                        onTap: () {
+                          _cartController.updateQuantity(
+                            itemId: item.id,
+                            quantity: item.quantity + 1,
+                            accessToken: _userController.accessToken,
+                          );
+                        },
+                      ),
+                      Container(
+                        height: 1,
+                        color: TColor.primary.withOpacity(0.15),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            item.quantity.toString(),
                             style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                          Text(
-                            CurrencyFormatter.format(itemTotal),
-                            style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: TColor.primary,
+                              color: TColor.primaryText,
                             ),
                           ),
-                        ],
+                        ),
+                      ),
+                      Container(
+                        height: 1,
+                        color: TColor.primary.withOpacity(0.15),
+                      ),
+                      _CartQtyButton(
+                        icon: Icons.remove,
+                        enabled: !isProcessing,
+                        onTap: () {
+                          _cartController.updateQuantity(
+                            itemId: item.id,
+                            quantity: item.quantity - 1,
+                            accessToken: _userController.accessToken,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -842,6 +784,37 @@ class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin
   Future<void> _proceedToCheckout() async {
     // Navigate to payment selection screen
     Get.to(() => const PaymentSelectionScreen());
+  }
+}
+
+class _CartQtyButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  const _CartQtyButton({
+    required this.icon,
+    required this.onTap,
+    required this.enabled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          child: Center(
+            child: Icon(
+              icon,
+              size: 14,
+              color: enabled ? TColor.primary : Colors.grey[400],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
