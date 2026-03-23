@@ -353,20 +353,7 @@ class _PromotionItemCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  if (item.safeDescription.isNotEmpty &&
-                      item.safeDescription != 'No description available')
-                    Text(
-                      item.safeDescription,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                        height: 1.3,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   // Price row
                   Row(
                     children: [
