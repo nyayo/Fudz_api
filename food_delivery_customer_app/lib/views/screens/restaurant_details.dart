@@ -180,13 +180,12 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Obx(() {
-        if (restaurantController.isLoadingDetails.value ||
-            restaurantController.selectedRestaurant.value == null) {
-          return _buildLoadingState();
-        }
-
         final restaurant = restaurantController.selectedRestaurant.value;
-        if (restaurant == null) {
+        final isDifferentRestaurant =
+            restaurant != null && restaurant.id != widget.restaurantId;
+        if (restaurantController.isLoadingDetails.value ||
+            restaurant == null ||
+            isDifferentRestaurant) {
           return _buildLoadingState();
         }
 
