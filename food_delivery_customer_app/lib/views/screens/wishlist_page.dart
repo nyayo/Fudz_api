@@ -4,6 +4,7 @@ import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
+import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/wishlist.dart';
 
 import 'package:food_delivery_customer_app/views/screens/all_menu_items.dart';
@@ -13,6 +14,7 @@ import 'package:food_delivery_customer_app/views/screens/get_started.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
 import 'package:food_delivery_customer_app/views/widgets/shimmer_widgets.dart';
 import 'package:food_delivery_customer_app/views/widgets/cached_image_widget.dart';
+import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
 import 'package:get/get.dart';
 
 class WishlistPage extends StatelessWidget {
@@ -33,44 +35,47 @@ class WishlistPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: Obx(() {
-        print(
-          '≡ƒöä WishlistPage Obx rebuilding - Loading: ${_wishlistController.isLoading}',
-        );
-        print(
-          '≡ƒöä WishlistPage Obx rebuilding - Error: ${_wishlistController.error}',
-        );
-        print(
-          '≡ƒöä WishlistPage Obx rebuilding - Item count: ${_wishlistController.wishlistItemCount}',
-        );
-
-        if (!_userController.isLoggedIn) {
-          print('≡ƒöÆ User not logged in, showing login required');
-          return _buildLoginRequired();
-        }
-
-        if (_wishlistController.isLoading.value) {
-          return ListView.builder(
-            itemCount: 5,
-            itemBuilder: (context, index) => MenuItemCardShimmer(),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Obx(() {
+          print(
+            '≡ƒöä WishlistPage Obx rebuilding - Loading: ${_wishlistController.isLoading}',
           );
-        }
+          print(
+            '≡ƒöä WishlistPage Obx rebuilding - Error: ${_wishlistController.error}',
+          );
+          print(
+            '≡ƒöä WishlistPage Obx rebuilding - Item count: ${_wishlistController.wishlistItemCount}',
+          );
 
-        if (_wishlistController.error.isNotEmpty) {
-          print('Γ¥î Wishlist error: ${_wishlistController.error}');
-          return _buildErrorState();
-        }
+          if (!_userController.isLoggedIn) {
+            print('≡ƒöÆ User not logged in, showing login required');
+            return _buildLoginRequired();
+          }
 
-        if (_wishlistController.wishlistItemCount == 0) {
-          print('≡ƒô¡ Wishlist is empty');
-          return _buildEmptyWishlist();
-        }
+          if (_wishlistController.isLoading.value) {
+            return ListView.builder(
+              itemCount: 5,
+              itemBuilder: (context, index) => MenuItemCardShimmer(),
+            );
+          }
 
-        print(
-          'Γ£à Displaying ${_wishlistController.wishlistItemCount} wishlist items',
-        );
-        return _buildWishlistItems();
-      }),
+          if (_wishlistController.error.isNotEmpty) {
+            print('Γ¥î Wishlist error: ${_wishlistController.error}');
+            return _buildErrorState();
+          }
+
+          if (_wishlistController.wishlistItemCount == 0) {
+            print('≡ƒô¡ Wishlist is empty');
+            return _buildEmptyWishlist();
+          }
+
+          print(
+            'Γ£à Displaying ${_wishlistController.wishlistItemCount} wishlist items',
+          );
+          return _buildWishlistItems();
+        }),
+      ),
     );
   }
 
@@ -229,385 +234,253 @@ class WishlistPage extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      // Use safe access pattern for length
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       itemCount: wishlist.items.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 14,
+        childAspectRatio: 0.82,
+      ),
       itemBuilder: (context, index) {
-        // Access items list only once and store in local variable
         final items = wishlist.items;
         if (index >= items.length) return const SizedBox.shrink();
 
         return FadeSlideIn(
           duration: Duration(milliseconds: 400 + (index * 50).clamp(0, 200)),
-          child: _buildWishlistItemCard(items[index]),
+          child: _buildWishlistItemCard(context, items[index]),
         );
       },
     );
   }
 
-  Widget _buildWishlistItemCard(WishlistItem wishlistItem) {
+  Widget _buildWishlistItemCard(
+    BuildContext context,
+    WishlistItem wishlistItem,
+  ) {
     final menuItem = wishlistItem.menuItem;
     final bool hasPromotion = menuItem.hasActivePromotions;
+    final String priceText = hasPromotion
+        ? menuItem.formattedDiscountedPrice
+        : menuItem.formattedPrice;
+    final String? originalPriceText = hasPromotion
+        ? menuItem.formattedPrice
+        : null;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12, top: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: hasPromotion
-            ? Border.all(color: Colors.red.withOpacity(0.3), width: 2)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            Get.to(() => MenuItemDetailPage(menuItemId: menuItem.id));
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Item Image with Promotion Badge
-                Stack(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.grey[200],
-                      ),
-                      child:
-                          menuItem.imageUrl != null &&
-                              menuItem.imageUrl!.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: CachedImage(
-                                imageUrl: menuItem.imageUrl,
-                                fit: BoxFit.cover,
-                                placeholderIcon: Icons.fastfood,
-                              ),
-                            )
-                          : Icon(
-                              Icons.fastfood,
-                              color: Colors.grey[400],
-                              size: 30,
-                            ),
-                    ),
-                    if (hasPromotion)
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(8),
-                              bottomRight: Radius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            menuItem.activePromotions.first.formattedDiscount,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+    return _PressScale(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12, top: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {
+              Navigator.of(context).push(
+                SmoothPageRoute(
+                  page: MenuItemDetailPage(menuItemId: menuItem.id),
                 ),
-                const SizedBox(width: 12),
-
-                // Item Details
-                Expanded(
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Title
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          SizedBox(
+                            width: 64,
+                            height: 64,
+                            child: ClipOval(
+                              child: menuItem.imageUrl != null &&
+                                      menuItem.imageUrl!.isNotEmpty
+                                  ? CachedImage(
+                                      imageUrl: menuItem.imageUrl,
+                                      fit: BoxFit.cover,
+                                      placeholderIcon: Icons.fastfood,
+                                    )
+                                  : Icon(
+                                      Icons.fastfood,
+                                      color: Colors.grey[400],
+                                    ),
+                            ),
+                          ),
+                          if (hasPromotion)
+                            Positioned(
+                              top: -6,
+                              right: -6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  menuItem.activePromotions.first.formattedDiscount,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         menuItem.title,
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                           color: TColor.primaryText,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
-
-                      // Promotion Banner
-                      if (hasPromotion)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '≡ƒöÑ ${menuItem.activePromotions.first.name}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-
-                      // Description
                       Text(
-                        menuItem.description ?? 'Delicious food item',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Price
-                      if (hasPromotion)
-                        Row(
-                          children: [
-                            Text(
-                              menuItem.formattedDiscountedPrice,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              menuItem.formattedPrice,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        Text(
-                          menuItem.formattedPrice,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: TColor.primary,
-                          ),
+                        priceText,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: hasPromotion ? Colors.red : TColor.primary,
                         ),
-                      const SizedBox(height: 8),
-
-                      // Action Buttons
-                      Row(
-                        children: [
-                          // Add to Cart Button / Quantity Counter
-                          Expanded(
-                            child: Obx(() {
-                              final isProcessing = _cartController
-                                  .isItemProcessing('${menuItem.id}_add');
-                              final isInCart = _cartController.isItemInCart(
-                                menuItem.id,
-                              );
-
-                              if (isInCart) {
-                                // Show quantity counter
-                                final quantity = _cartController
-                                    .getItemQuantity(menuItem.id);
-                                final cartItemId = _cartController
-                                    .getCartItemId(menuItem.id);
-                                final isUpdating = _cartController
-                                    .isItemProcessing('${cartItemId}_update');
-
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: TColor.primary.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(25),
-                                    border: Border.all(
-                                      color: TColor.primary.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 2,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      // Decrease / Remove button
-                                      SizedBox(
-                                        width: 32,
-                                        height: 32,
-                                        child: IconButton(
-                                          padding: EdgeInsets.zero,
-                                          icon: Icon(
-                                            quantity <= 1
-                                                ? Icons.delete_outline
-                                                : Icons.remove,
-                                            color: quantity <= 1
-                                                ? Colors.red
-                                                : TColor.primary,
-                                            size: 18,
-                                          ),
-                                          onPressed: isUpdating
-                                              ? null
-                                              : () {
-                                                  if (cartItemId != null) {
-                                                    _cartController
-                                                        .updateQuantity(
-                                                          itemId: cartItemId,
-                                                          quantity:
-                                                              quantity - 1,
-                                                          accessToken:
-                                                              _userController
-                                                                  .accessToken,
-                                                        );
-                                                  }
-                                                },
-                                        ),
-                                      ),
-                                      // Quantity display
-                                      isUpdating
-                                          ? const SizedBox(
-                                              height: 16,
-                                              width: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : Text(
-                                              '$quantity',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: TColor.primary,
-                                              ),
-                                            ),
-                                      // Increase button
-                                      SizedBox(
-                                        width: 32,
-                                        height: 32,
-                                        child: IconButton(
-                                          padding: EdgeInsets.zero,
-                                          icon: Icon(
-                                            Icons.add,
-                                            color: TColor.primary,
-                                            size: 18,
-                                          ),
-                                          onPressed: isUpdating
-                                              ? null
-                                              : () {
-                                                  if (cartItemId != null) {
-                                                    _cartController
-                                                        .updateQuantity(
-                                                          itemId: cartItemId,
-                                                          quantity:
-                                                              quantity + 1,
-                                                          accessToken:
-                                                              _userController
-                                                                  .accessToken,
-                                                        );
-                                                  }
-                                                },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-
-                              // Show Add to Cart button
-                              return ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: TColor.primary,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                ),
-                                onPressed: isProcessing
-                                    ? null
-                                    : () async {
-                                        await _cartController.addToCart(
-                                          menuItem: menuItem,
-                                          quantity: 1,
-                                          accessToken:
-                                              _userController.accessToken,
-                                          userId: _userController.user?.id,
-                                        );
-                                      },
-                                child: isProcessing
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation(
-                                            Colors.white,
-                                          ),
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Add to Cart',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                              );
-                            }),
-                          ),
-                          const SizedBox(width: 8),
-
-                          // Remove from Wishlist Button
-                          IconButton(
-                            icon: Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                              size: 24,
-                            ),
-                            onPressed: () {
-                              _wishlistController.removeFromWishlist(
-                                menuItemId: menuItem.id,
-                                accessToken: _userController.accessToken,
-                              );
-                            },
-                          ),
-                        ],
                       ),
+                      const SizedBox(height: 6),
                     ],
                   ),
                 ),
-              ],
+                if (hasPromotion)
+                  Positioned(
+                    right: -8,
+                    top: 70,
+                    child: RotatedBox(
+                      quarterTurns: 1,
+                      child: Text(
+                        originalPriceText ?? '',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[400],
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  top: -8,
+                  left: -8,
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(
+                      Icons.favorite_rounded,
+                      color: Colors.red,
+                      size: 18,
+                    ),
+                    onPressed: () {
+                      _wishlistController.removeFromWishlist(
+                        menuItemId: menuItem.id,
+                        accessToken: _userController.accessToken,
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  bottom: -20,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: _buildAddButton(menuItem)),
+                ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildAddButton(MenuItem menuItem) {
+    return Obx(() {
+      final isInCart = _cartController.isItemInCart(menuItem.id);
+      final isEnabled =
+          _userController.isLoggedIn &&
+          menuItem.isAvailable &&
+          !_cartController.isItemProcessing('${menuItem.id}_add');
+
+      if (isInCart) {
+        return QuantityCounter(
+          cartController: _cartController,
+          menuItem: menuItem,
+          accessToken: _userController.isLoggedIn
+              ? _userController.accessToken
+              : null,
+          userId: _userController.user?.id,
+          height: 32,
+          compact: true,
+        );
+      }
+
+      return SizedBox(
+        width: 40,
+        height: 40,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEnabled ? TColor.primary : Colors.grey[300],
+            shape: const CircleBorder(),
+            padding: EdgeInsets.zero,
+            elevation: 2,
+          ),
+          onPressed: isEnabled
+              ? () async {
+                  await _cartController.addToCart(
+                    menuItem: menuItem,
+                    quantity: 1,
+                    accessToken: _userController.accessToken,
+                    userId: _userController.user?.id,
+                  );
+                }
+              : null,
+          child: Icon(
+            Icons.add,
+            size: 20,
+            color: isEnabled ? Colors.white : Colors.grey[500],
+          ),
+        ),
+      );
+    });
   }
 
   void _showClearWishlistDialog() {
@@ -639,5 +512,49 @@ class WishlistPage extends StatelessWidget {
         accessToken: _userController.accessToken,
       );
     }
+  }
+}
+
+class _PressScale extends StatefulWidget {
+  final Widget child;
+
+  const _PressScale({required this.child});
+
+  @override
+  State<_PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<_PressScale>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+      reverseDuration: const Duration(milliseconds: 180),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(scale: _scale, child: widget.child),
+    );
   }
 }
