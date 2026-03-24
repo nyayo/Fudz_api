@@ -90,10 +90,8 @@ class PhoneAuthController extends GetxController {
     
     if (message.length > 120) message = '${message.substring(0, 120)}...';
     
-    if (debugInfo != null) {
-      debugPrint('DEBUG INFO: $debugInfo');
-    }
-    
+    debugPrint('DEBUG INFO: $debugInfo');
+      
     return message;
   }
 

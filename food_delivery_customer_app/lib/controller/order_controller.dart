@@ -542,11 +542,6 @@ class OrderController extends GetxController {
       error.value = e.toString();
       print('❌ Error placing order: $e');
 
-      // Remove local order if backend creation failed
-      if (localOrder != null) {
-        _localOrders.removeWhere((order) => order.id == localOrder!.id);
-      }
-
       Get.snackbar(
         'Order Failed',
         'Failed to place order: ${e.toString()}',

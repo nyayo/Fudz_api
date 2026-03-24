@@ -70,10 +70,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          TColor.primary,
-                          TColor.primary.withAlpha(150),
-                        ],
+                        colors: [TColor.primary, TColor.primary.withAlpha(150)],
                       ),
                       borderRadius: BorderRadius.circular(2),
                     ),
@@ -232,10 +229,10 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: accentColor.withAlpha(120),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                      spreadRadius: -2,
+                      color: accentColor.withAlpha(80),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                      spreadRadius: -4,
                     ),
                   ],
                 ),

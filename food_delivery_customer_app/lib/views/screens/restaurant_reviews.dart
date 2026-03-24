@@ -112,10 +112,7 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
         children: [
           Text(
             avg.toStringAsFixed(1),
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(width: 8),
           Row(
@@ -124,8 +121,8 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
                 i < avg.floor()
                     ? Icons.star_rounded
                     : (i < avg.ceil() && avg % 1 >= 0.5)
-                        ? Icons.star_half_rounded
-                        : Icons.star_outline_rounded,
+                    ? Icons.star_half_rounded
+                    : Icons.star_outline_rounded,
                 color: Colors.amber,
                 size: 16,
               );
@@ -134,10 +131,7 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
           const SizedBox(width: 8),
           Text(
             '($count)',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
           ),
         ],
       ),
@@ -296,8 +290,7 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'How was your experience?'
-                    ,
+                    'How was your experience?',
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                   const SizedBox(height: 16),

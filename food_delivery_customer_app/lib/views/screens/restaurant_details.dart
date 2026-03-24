@@ -570,9 +570,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                             children: [
                               Text(
                                 priceText,
-                                style: ResponsiveText.price(
-                                  context,
-                                ).copyWith(
+                                style: ResponsiveText.price(context).copyWith(
                                   color: hasPromotion
                                       ? Colors.red
                                       : TColor.primary,
@@ -698,9 +696,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           onPressed: () => Get.back(),
         ),
       ),
-      actions: [
-       
-      ],
+      actions: [],
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
           final topPadding = MediaQuery.of(context).padding.top;
@@ -709,23 +705,23 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               ((expandedHeight - constraints.biggest.height) /
                       (expandedHeight - collapsedHeight))
                   .clamp(0.0, 1.0);
-              final logoOpacity = Curves.easeInOut.transform(progress);
-              final logoCollapsedTop = topPadding + (kToolbarHeight - logoSize) / 2;
+          final logoOpacity = Curves.easeInOut.transform(progress);
+          final logoCollapsedTop = topPadding + (kToolbarHeight - logoSize) / 2;
 
-              final startLeft = 20.0;
-              final endLeft = (constraints.maxWidth - logoSize) / 2;
-              final animatedLeft =
-                lerpDouble(startLeft, endLeft, progress) ?? startLeft;
+          final startLeft = 20.0;
+          final endLeft = (constraints.maxWidth - logoSize) / 2;
+          final animatedLeft =
+              lerpDouble(startLeft, endLeft, progress) ?? startLeft;
 
-              // Start at the bottom-left of the header image.
-              final startBottom = 16.0;
-              final endBottom =
-                expandedHeight -
-                (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
-              final animatedBottom =
-                lerpDouble(startBottom, endBottom, progress) ?? startBottom;
+          // Start at the bottom-left of the header image.
+          final startBottom = 16.0;
+          final endBottom =
+              expandedHeight -
+              (topPadding + (kToolbarHeight - logoSize) / 2 + logoSize);
+          final animatedBottom =
+              lerpDouble(startBottom, endBottom, progress) ?? startBottom;
 
-              final animatedScale = lerpDouble(1.0, 0.86, progress) ?? 1.0;
+          final animatedScale = lerpDouble(1.0, 0.86, progress) ?? 1.0;
 
           final Widget logoWidget = Container(
             width: logoSize,
@@ -911,10 +907,10 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               ),
             ),
             const SizedBox(height: 4),
-              Text(
-                'Various Cuisine',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
+            Text(
+              'Various Cuisine',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -969,8 +965,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                           i < avg.floor()
                               ? Icons.star_rounded
                               : (i < avg.ceil() && avg % 1 >= 0.5)
-                                  ? Icons.star_half_rounded
-                                  : Icons.star_outline_rounded,
+                              ? Icons.star_half_rounded
+                              : Icons.star_outline_rounded,
                           color: Colors.amber,
                           size: 16,
                         );

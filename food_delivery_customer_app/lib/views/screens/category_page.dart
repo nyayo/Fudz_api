@@ -315,7 +315,9 @@ class _CategoryPageState extends State<CategoryPage> {
     final String priceText = hasPromotion
         ? menuItem.formattedDiscountedPrice
         : menuItem.formattedPrice;
-    final String? originalPriceText = hasPromotion ? menuItem.formattedPrice : null;
+    final String? originalPriceText = hasPromotion
+        ? menuItem.formattedPrice
+        : null;
 
     return GestureDetector(
       onTap: () {

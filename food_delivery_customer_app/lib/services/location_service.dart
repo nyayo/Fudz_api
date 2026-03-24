@@ -125,15 +125,15 @@ class LocationService {
       try {
         location = await getDetailedAddress(
           position!.latitude,
-          position!.longitude,
+          position.longitude,
         );
         debugPrint('📍 Address: ${location.address}');
       } catch (e) {
         debugPrint('⚠️ Address lookup failed: $e');
         location = DeliveryLocation(
           latitude: position!.latitude,
-          longitude: position!.longitude,
-          address: '${position!.latitude.toStringAsFixed(6)}, ${position!.longitude.toStringAsFixed(6)}',
+          longitude: position.longitude,
+          address: '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
         );
       }
 

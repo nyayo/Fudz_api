@@ -183,16 +183,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                             color: TColor.primaryText,
                           ),
                         ),
-                        const Spacer(),
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: TColor.primary.withOpacity(0.15),
-                          child: Icon(
-                            Icons.person,
-                            color: TColor.primary,
-                            size: 18,
-                          ),
-                        ),
+                        
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -412,9 +403,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
             borderRadius: BorderRadius.circular(20),
             onTap: () {
               Navigator.of(context).push(
-                SmoothPageRoute(
-                  page: MenuItemDetailPage(menuItemId: item.id),
-                ),
+                SmoothPageRoute(page: MenuItemDetailPage(menuItemId: item.id)),
               );
             },
             child: Padding(
@@ -459,7 +448,10 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                                     ],
                                   ),
                                   child: Text(
-                                    item.activePromotions.first.formattedDiscount,
+                                    item
+                                        .activePromotions
+                                        .first
+                                        .formattedDiscount,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
