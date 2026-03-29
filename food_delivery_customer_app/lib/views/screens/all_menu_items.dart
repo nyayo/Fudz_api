@@ -475,34 +475,34 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          priceText,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: hasPromotion ? Colors.red : TColor.primary,
-                          ),
+                        Column(
+                          children: [
+                            Text(
+                              priceText,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color:
+                                    hasPromotion ? Colors.red : TColor.primary,
+                              ),
+                            ),
+                            if (originalPriceText != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                originalPriceText,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 6),
                       ],
                     ),
                   ),
-                  if (hasPromotion)
-                    Positioned(
-                      right: -8,
-                      top: 70,
-                      child: RotatedBox(
-                        quarterTurns: 1,
-                        child: Text(
-                          originalPriceText ?? '',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey[400],
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                      ),
-                    ),
                   Positioned(
                     bottom: -20,
                     left: 0,
