@@ -29,6 +29,21 @@ class CategoryPage extends StatefulWidget {
 class _CategoryPageState extends State<CategoryPage> {
   final TextEditingController _searchController = TextEditingController();
   final CategoryController categoryController = Get.find();
+  final CartController _cartController = Get.find();
+  final UserController _userController = Get.find();
+  final ApiService _apiService = Get.find();
+  
+  final RxList<MenuItem> _categoryMenuItems = <MenuItem>[].obs;
+  final RxBool _isLoadingMenuItems = true.obs;
+  String _searchQuery = '';
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategoryMenuItems();
+  }
+
   Future<void> _loadCategoryMenuItems() async {
     try {
       _isLoadingMenuItems.value = true;

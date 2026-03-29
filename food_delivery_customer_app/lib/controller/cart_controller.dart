@@ -172,10 +172,7 @@ class CartController extends GetxController {
 
       print('🛒 Local cart updated. Item count: $cartItemCount');
 
-      // 2. Wait for 2 seconds to show loading indicator
-      await Future.delayed(const Duration(seconds: 2));
-
-      // 3. Show feedback after delay
+      // 2. Show feedback immediately
       String successMessage = '${menuItem.title} added to cart';
       if (menuItem.hasActivePromotions) {
         successMessage +=
@@ -397,6 +394,10 @@ class CartController extends GetxController {
     final mergedItems = <CartItem>[];
     for (final remoteItem in _cart.value!.items) {
       final localMenuItem = localMenuItemsById[remoteItem.menuItem.id];
+      final localCartItem = _localCart.value!.items.firstWhere(
+        (item) => item.menuItem.id == remoteItem.menuItem.id,
+        orElse: () => remoteItem,
+      );
       print(
         '🔗 Processing Remote Item [${remoteItem.menuItem.id}]: ${remoteItem.menuItem.title}',
       );
@@ -405,16 +406,23 @@ class CartController extends GetxController {
           (localMenuItem.imageUrl != null ||
               localMenuItem.restaurantName != null)) {
         // Use local menu item data which has more info (image, description, etc.)
+        // But preserve local quantity since it might be more up-to-date
+        final quantityToUse = localCartItem.quantity > remoteItem.quantity 
+            ? localCartItem.quantity 
+            : remoteItem.quantity;
+        final unitPrice = localCartItem.unitPrice > 0 
+            ? localCartItem.unitPrice 
+            : remoteItem.unitPrice;
         print(
-          '✅ Preserving local data for: ${localMenuItem.title}, Restaurant: ${localMenuItem.restaurantName}',
+          '✅ Preserving local data for: ${localMenuItem.title}, Restaurant: ${localMenuItem.restaurantName}, Quantity: $quantityToUse',
         );
         mergedItems.add(
           CartItem(
             id: remoteItem.id,
             menuItem: localMenuItem,
-            quantity: remoteItem.quantity,
-            totalPrice: remoteItem.totalPrice,
-            unitPrice: remoteItem.unitPrice,
+            quantity: quantityToUse,
+            totalPrice: unitPrice * quantityToUse,
+            unitPrice: unitPrice,
           ),
         );
       } else {
