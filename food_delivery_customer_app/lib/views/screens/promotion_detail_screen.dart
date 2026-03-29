@@ -375,23 +375,6 @@ class _PromotionItemCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            Positioned(
-              left: -30,
-              top: -28,
-              child: RotatedBox(
-                quarterTurns: 1,
-                child: Text(
-                  CurrencyFormatter.format(originalPrice),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[400],
-                    decoration: TextDecoration.lineThrough,
-                    decorationColor: Colors.grey[400],
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
 
             // Item details
             Expanded(
@@ -411,23 +394,31 @@ class _PromotionItemCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
-                    // Price row
-                    SizedBox(
-                      height: 22,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Text(
-                            CurrencyFormatter.format(discountedPrice),
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: TColor.primary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                    // Price block (discounted above original)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          CurrencyFormatter.format(discountedPrice),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: TColor.primary,
                           ),
-                        ],
-                      ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          CurrencyFormatter.format(originalPrice),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[500],
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: Colors.grey[500],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ],
                 ),

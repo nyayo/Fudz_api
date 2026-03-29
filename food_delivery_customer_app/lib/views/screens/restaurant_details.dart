@@ -565,8 +565,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                       Builder(
                         builder: (context) => SizedBox(
                           width: 90,
-                          child: Stack(
-                            clipBehavior: Clip.none,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 priceText,
@@ -576,22 +576,17 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                                       : TColor.primary,
                                 ),
                               ),
-                              if (originalPriceText != null)
-                                Positioned(
-                                  right: -15,
-                                  top: -40,
-                                  child: RotatedBox(
-                                    quarterTurns: 1,
-                                    child: Text(
-                                      originalPriceText,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[400],
-                                        decoration: TextDecoration.lineThrough,
-                                      ),
-                                    ),
+                              if (originalPriceText != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  originalPriceText,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey[500],
+                                    decoration: TextDecoration.lineThrough,
                                   ),
                                 ),
+                              ],
                             ],
                           ),
                         ),

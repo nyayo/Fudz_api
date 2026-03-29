@@ -17,34 +17,36 @@ class CategoryPage extends StatefulWidget {
   final String categoryName;
 
   const CategoryPage({
-    super.key,
-    required this.categoryId,
-    required this.categoryName,
-  });
-
-  @override
-  State<CategoryPage> createState() => _CategoryPageState();
-}
+                        Column(
+                          children: [
+                            Text(
+                              priceText,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color:
+                                    hasPromotion ? Colors.red : TColor.primary,
+                              ),
+                            ),
+                            if (originalPriceText != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                originalPriceText,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
 
 class _CategoryPageState extends State<CategoryPage> {
   final TextEditingController _searchController = TextEditingController();
   final CategoryController categoryController = Get.find();
   final ApiService _apiService = Get.find();
-  final UserController _userController = Get.find<UserController>();
-  final CartController _cartController = Get.find<CartController>();
-
-  String _searchQuery = '';
-  bool _isSearching = false;
-  final RxList<MenuItem> _categoryMenuItems = <MenuItem>[].obs;
-  final RxBool _isLoadingMenuItems = false.obs;
-
-  @override
-  void initState() {
-    super.initState();
-    print('🔵 CategoryPage initState - categoryId: ${widget.categoryId}');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCategoryMenuItems();
-    });
+              const SizedBox.shrink(),
   }
 
   Future<void> _loadCategoryMenuItems() async {
