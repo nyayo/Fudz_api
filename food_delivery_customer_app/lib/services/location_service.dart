@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../models/location.dart';
 
@@ -319,7 +319,7 @@ class LocationService {
 
   // ── Distance & routing ─────────────────────────────────────────────
 
-  double calculateDistance(latlong2.LatLng point1, latlong2.LatLng point2) {
+  double calculateDistance(LatLng point1, LatLng point2) {
     const double earthRadius = 6371000;
     double lat1 = point1.latitude * pi / 180;
     double lon1 = point1.longitude * pi / 180;

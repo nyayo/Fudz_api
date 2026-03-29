@@ -4,8 +4,7 @@ import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
 import 'package:food_delivery_customer_app/services/location_service.dart';
 import 'package:get/get.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../controller/location_controller.dart';
 import '../../../models/location.dart';
 
@@ -24,7 +23,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
   final FocusNode _searchFocusNode = FocusNode();
   List<DeliveryLocation> _searchResults = [];
   bool _isMapMoving = false;
-  latlong2.LatLng? _lastMapCenter;
+  LatLng? _lastMapCenter;
+  double _currentZoom = 15.0;
   bool _showSearchResults = false;
   
   // Bottom sheet animation
@@ -52,23 +52,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
     ));
     _bottomSheetController.forward();
 
-    // Listen to map movement
-    _locationController.mapController.mapEventStream.listen((event) {
-      if (event is MapEventMove && event.camera.center != _lastMapCenter) {
-        _lastMapCenter = event.camera.center;
-        if (!_isMapMoving) {
-          _isMapMoving = true;
-          _onMapMoved(event.camera.center);
-        }
-      }
-    });
-
     // Center map on current location after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (_locationController.currentLocation != null) {
-        _locationController.mapController.move(
+        _locationController.moveToLocation(
           _locationController.currentLocation!.latLng,
-          15.0,
+          zoom: 15.0,
         );
       }
     });
@@ -82,7 +71,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
     super.dispose();
   }
 
-  void _onMapMoved(latlong2.LatLng center) {
+  void _onMapMoved(LatLng center) {
     Future.delayed(const Duration(milliseconds: 800), () {
       if (_isMapMoving) {
         _isMapMoving = false;
@@ -91,11 +80,11 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
     });
   }
 
-  void _onMapTap(TapPosition tapPosition, latlong2.LatLng point) async {
+  void _onMapTap(LatLng point) async {
     await _updateLocationFromMap(point);
   }
 
-  Future<void> _updateLocationFromMap(latlong2.LatLng point) async {
+  Future<void> _updateLocationFromMap(LatLng point) async {
     try {
       final tempLocation = DeliveryLocation(
         latitude: point.latitude,
@@ -149,7 +138,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
 
   void _onSearchResultTap(DeliveryLocation location) {
     _locationController.updateSelectedLocation(location);
-    _locationController.mapController.move(location.latLng, 16.0);
+    _locationController.moveToLocation(location.latLng, zoom: 16.0);
     setState(() {
       _showSearchResults = false;
       _searchFocusNode.unfocus();
@@ -160,9 +149,9 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
   void _useCurrentLocation() async {
     await _locationController.initializeLocation();
     if (_locationController.currentLocation != null) {
-      _locationController.mapController.move(
+      _locationController.moveToLocation(
         _locationController.currentLocation!.latLng,
-        16.0,
+        zoom: 16.0,
       );
     }
   }
@@ -183,38 +172,47 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
         children: [
           // Full Screen Map
           Obx(() {
-            return FlutterMap(
-              mapController: _locationController.mapController,
-              options: MapOptions(
-                initialCenter:
-                    _locationController.currentLocation?.latLng ??
-                    const latlong2.LatLng(0.3476, 32.5825),
-                initialZoom: 15.0,
-                onTap: _onMapTap,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            final center = _locationController.currentLocation?.latLng ??
+                const LatLng(0.3476, 32.5825);
+
+            final circles = <Circle>{};
+            if (_locationController.currentLocation != null) {
+              circles.add(
+                Circle(
+                  circleId: const CircleId('accuracy'),
+                  center: _locationController.currentLocation!.latLng,
+                  radius: 30,
+                  fillColor: TColor.primary.withOpacity(0.12),
+                  strokeColor: TColor.primary.withOpacity(0.35),
+                  strokeWidth: 2,
                 ),
+              );
+            }
+
+            return GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: center,
+                zoom: 15.0,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: LocationService.osmTileLayer,
-                  userAgentPackageName: 'com.example.food_delivery',
-                ),
-                // Current location accuracy circle
-                if (_locationController.currentLocation != null)
-                  CircleLayer(
-                    circles: [
-                      CircleMarker(
-                        point: _locationController.currentLocation!.latLng,
-                        radius: 30,
-                        color: TColor.primary.withOpacity(0.1),
-                        borderColor: TColor.primary.withOpacity(0.3),
-                        borderStrokeWidth: 2,
-                      ),
-                    ],
-                  ),
-                MarkerLayer(markers: _locationController.markers),
-              ],
+              onMapCreated: _locationController.setMapController,
+              onTap: _onMapTap,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              compassEnabled: false,
+              mapToolbarEnabled: false,
+              markers: _locationController.markers.toSet(),
+              polylines: _locationController.polylines.toSet(),
+              circles: circles,
+              onCameraMove: (position) {
+                _lastMapCenter = position.target;
+                _currentZoom = position.zoom;
+                _isMapMoving = true;
+              },
+              onCameraIdle: () {
+                if (_isMapMoving && _lastMapCenter != null) {
+                  _onMapMoved(_lastMapCenter!);
+                }
+              },
             );
           }),
 
@@ -484,10 +482,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                     _ZoomButton(
                       icon: Icons.add,
                       onTap: () {
-                        final currentZoom = _locationController.mapController.camera.zoom;
-                        _locationController.mapController.move(
-                          _locationController.mapController.camera.center,
-                          currentZoom + 1,
+                        final center = _lastMapCenter ??
+                            _locationController.currentLocation?.latLng ??
+                            const LatLng(0.3476, 32.5825);
+                        _locationController.moveToLocation(
+                          center,
+                          zoom: _currentZoom + 1,
                         );
                       },
                     ),
@@ -499,10 +499,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                     _ZoomButton(
                       icon: Icons.remove,
                       onTap: () {
-                        final currentZoom = _locationController.mapController.camera.zoom;
-                        _locationController.mapController.move(
-                          _locationController.mapController.camera.center,
-                          currentZoom - 1,
+                        final center = _lastMapCenter ??
+                            _locationController.currentLocation?.latLng ??
+                            const LatLng(0.3476, 32.5825);
+                        _locationController.moveToLocation(
+                          center,
+                          zoom: _currentZoom - 1,
                         );
                       },
                     ),

@@ -1,5 +1,5 @@
 // models/location.dart
-import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class DeliveryLocation {
   final double latitude;
@@ -24,7 +24,7 @@ class DeliveryLocation {
     this.country,
   });
 
-  latlong2.LatLng get latLng => latlong2.LatLng(latitude, longitude);
+  LatLng get latLng => LatLng(latitude, longitude);
 
   String get shortAddress {
     if (street != null && street!.isNotEmpty) {
@@ -105,7 +105,7 @@ class DeliveryRoute {
   final DeliveryLocation dropoff;
   final double distance; // in meters
   final double duration; // in seconds
-  final List<latlong2.LatLng> polylinePoints;
+  final List<LatLng> polylinePoints;
 
   DeliveryRoute({
     required this.pickup,
