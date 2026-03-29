@@ -95,11 +95,9 @@ class QuantityCounter extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: TColor.primary.withOpacity(0.1),
+        color: const Color(0xFFDCF3E1),
         borderRadius: BorderRadius.circular(compact ? 20 : 25),
-        border: Border.all(
-          color: TColor.primary.withOpacity(0.3),
-        ),
+        border: Border.all(color: Colors.transparent),
       ),
       padding: EdgeInsets.symmetric(horizontal: compact ? 2 : 4),
       child: Row(

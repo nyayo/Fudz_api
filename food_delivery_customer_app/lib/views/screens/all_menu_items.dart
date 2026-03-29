@@ -571,9 +571,11 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
       if (_categories.isEmpty) return const SizedBox.shrink();
 
       return SizedBox(
-        height: 56,
+        height: 48,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.symmetric(vertical: 4),
           itemCount: _categories.length,
           separatorBuilder: (_, __) => const SizedBox(width: 10),
           itemBuilder: (context, index) {
@@ -588,7 +590,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
-                  vertical: 10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected ? TColor.primary : Colors.white,

@@ -53,7 +53,31 @@ class Promotion {
 
   bool get isCurrentlyActive {
     final now = DateTime.now();
-    return isActive && now.isAfter(startDate) && now.isBefore(endDate);
+    final localStart = startDate.toLocal();
+    final localEnd = _normalizeEndDate(endDate.toLocal());
+    return isActive && !now.isBefore(localStart) && !now.isAfter(localEnd);
+  }
+
+  static DateTime _normalizeEndDate(DateTime value) {
+    // If the backend sends date-only values, treat the end date as end-of-day.
+    if (value.hour == 0 &&
+        value.minute == 0 &&
+        value.second == 0 &&
+        value.millisecond == 0 &&
+        value.microsecond == 0) {
+      return DateTime(
+        value.year,
+        value.month,
+        value.day,
+        23,
+        59,
+        59,
+        999,
+        999,
+      );
+    }
+
+    return value;
   }
 
   String get formattedDiscount {

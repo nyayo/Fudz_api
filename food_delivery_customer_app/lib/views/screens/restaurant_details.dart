@@ -1006,9 +1006,11 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               if (reviews.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 96,
+                  height: 110,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
                     itemCount: reviews.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (_, i) => _buildReviewCard(reviews[i]),

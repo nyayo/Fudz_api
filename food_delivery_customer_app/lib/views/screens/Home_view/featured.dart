@@ -259,23 +259,33 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
-                          // Price row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          // Price block (discounted above original)
+                          Column(
                             children: [
-                              Flexible(
-                                child: Text(
-                                  priceText,
+                              Text(
+                                priceText,
+                                style: TextStyle(
+                                  fontSize: hasPromotion ? 15 : 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: hasPromotion
+                                      ? const Color(0xFFE53935)
+                                      : TColor.primary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (originalPriceText != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  originalPriceText,
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: hasPromotion
-                                        ? const Color(0xFFE53935)
-                                        : TColor.primary,
+                                    fontSize: 11,
+                                    color: Colors.grey[500],
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: Colors.grey[500],
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -292,24 +302,6 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                           ),
                         ],
                       ),
-                      if (originalPriceText != null)
-                        Positioned(
-                          right: 0,
-                          top: 30,
-                          child: RotatedBox(
-                            quarterTurns: 1,
-                            child: Text(
-                              originalPriceText,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey[500],
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: Colors.grey[500],
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
