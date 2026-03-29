@@ -17,30 +17,14 @@ class CategoryPage extends StatefulWidget {
   final String categoryName;
 
   const CategoryPage({
-                        Column(
-                          children: [
-                            Text(
-                              priceText,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color:
-                                    hasPromotion ? Colors.red : TColor.primary,
-                              ),
-                            ),
-                            if (originalPriceText != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                originalPriceText,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey[500],
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+    super.key,
+    required this.categoryId,
+    required this.categoryName,
+  });
+
+  @override
+  State<CategoryPage> createState() => _CategoryPageState();
+}
 
 class _CategoryPageState extends State<CategoryPage> {
   final TextEditingController _searchController = TextEditingController();
