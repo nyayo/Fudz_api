@@ -241,66 +241,73 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Title
-                          Text(
-                            title,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: TColor.primaryText,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          // Price block (discounted above original)
-                          Column(
-                            children: [
-                              Text(
-                                priceText,
-                                style: TextStyle(
-                                  fontSize: hasPromotion ? 15 : 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: hasPromotion
-                                      ? const Color(0xFFE53935)
-                                      : TColor.primary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                      Align(
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Title
+                            Text(
+                              title,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: TColor.primaryText,
+                                height: 1.2,
                               ),
-                              if (originalPriceText != null) ...[
-                                const SizedBox(height: 2),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            // Price block (discounted above original)
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
                                 Text(
-                                  originalPriceText,
+                                  priceText,
                                   style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[500],
-                                    decoration: TextDecoration.lineThrough,
-                                    decorationColor: Colors.grey[500],
+                                    fontSize: hasPromotion ? 15 : 14,
+                                    fontWeight: FontWeight.w800,
+                                    color: hasPromotion
+                                        ? const Color(0xFFE53935)
+                                        : TColor.primary,
                                   ),
                                   overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
                                 ),
+                                if (originalPriceText != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    originalPriceText,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                      decoration: TextDecoration.lineThrough,
+                                      decorationColor: Colors.grey[500],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          // Add to cart button with quantity counter
-                          QuantityCounter(
-                            cartController: cartController,
-                            menuItem: item,
-                            accessToken: userController.isLoggedIn
-                                ? userController.accessToken
-                                : null,
-                            userId: userController.user?.id,
-                            height: 32,
-                            compact: true,
-                          ),
-                        ],
+                            ),
+                            const SizedBox(height: 6),
+                            // Add to cart button with quantity counter
+                            QuantityCounter(
+                              cartController: cartController,
+                              menuItem: item,
+                              accessToken: userController.isLoggedIn
+                                  ? userController.accessToken
+                                  : null,
+                              userId: userController.user?.id,
+                              height: 32,
+                              compact: true,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

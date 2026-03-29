@@ -476,6 +476,8 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                         ),
                         const SizedBox(height: 4),
                         Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               priceText,
@@ -485,6 +487,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                                 color:
                                     hasPromotion ? Colors.red : TColor.primary,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                             if (originalPriceText != null) ...[
                               const SizedBox(height: 2),
@@ -495,6 +498,7 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                                   color: Colors.grey[500],
                                   decoration: TextDecoration.lineThrough,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ],
@@ -521,7 +525,6 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
   Widget _buildAddButton(MenuItem item) {
     return Obx(() {
       final isInCart = cartController.isItemInCart(item.id);
-      final quantity = cartController.getItemQuantity(item.id);
       final isEnabled =
           userController.isLoggedIn &&
           item.isAvailable &&
