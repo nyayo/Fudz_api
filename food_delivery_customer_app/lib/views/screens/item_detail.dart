@@ -20,35 +20,49 @@ class MenuItemDetailPage extends StatefulWidget {
 
   const MenuItemDetailPage({super.key, required this.menuItemId});
 
-  @override
-  State<MenuItemDetailPage> createState() => _MenuItemDetailPageState();
-}
-
-class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
-  final menu_controller.MenuItemController menuController =
-      Get.find<menu_controller.MenuItemController>();
-  final CartController cartController = Get.find<CartController>();
-  final UserController userController = Get.find<UserController>();
-  final WishlistController wishlistController = Get.find<WishlistController>();
-  final RestaurantController restaurantController =
-      Get.find<RestaurantController>();
-  final CategoryController categoryController = Get.find<CategoryController>();
-
-  int _quantity = 1;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await menuController.getMenuItemDetail(
-        widget.menuItemId,
-        forceRefresh: true,
-      );
-      
-      // Fetch category detail to get category image if not cached
-      final menuItem = menuController.selectedMenuItem.value;
+              blurRadius: 10,
+              offset: const Offset(0, 2),
       if (menuItem != null) {
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: TColor.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.storefront,
+                color: TColor.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    restaurantName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'View restaurant',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
         final cachedImage = categoryController.getCategoryImageUrl(menuItem.category);
         if (cachedImage == null || cachedImage.isEmpty) {
           categoryController.getCategoryDetail(menuItem.category);
