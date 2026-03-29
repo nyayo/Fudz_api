@@ -30,7 +30,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
   // Bottom sheet animation
   late AnimationController _bottomSheetController;
   late Animation<Offset> _slideAnimation;
-  double _bottomSheetHeight = 280.0;
+  final double _bottomSheetHeight = 280.0;
   
   // Recent locations (mock data for now)
   final List<DeliveryLocation> _recentLocations = [];

@@ -70,10 +70,7 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          TColor.primary,
-                          TColor.primary.withAlpha(150),
-                        ],
+                        colors: [TColor.primary, TColor.primary.withAlpha(150)],
                       ),
                       borderRadius: BorderRadius.circular(2),
                     ),
@@ -232,78 +229,78 @@ class _MenuItemsWidgetState extends State<MenuItemsWidget> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: accentColor.withAlpha(120),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                      spreadRadius: -2,
+                      color: accentColor.withAlpha(80),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                      spreadRadius: -4,
                     ),
                   ],
                 ),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 50, 12, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      // Title
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: TColor.primaryText,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // Price row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (originalPriceText != null) ...[
-                            Flexible(
-                              child: Text(
-                                originalPriceText,
+                          // Title
+                          Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: TColor.primaryText,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          // Price block (discounted above original)
+                          Column(
+                            children: [
+                              Text(
+                                priceText,
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey[500],
-                                  decoration: TextDecoration.lineThrough,
-                                  decorationColor: Colors.grey[500],
+                                  fontSize: hasPromotion ? 15 : 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: hasPromotion
+                                      ? const Color(0xFFE53935)
+                                      : TColor.primary,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                          ],
-                          Flexible(
-                            child: Text(
-                              priceText,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: hasPromotion
-                                    ? const Color(0xFFE53935)
-                                    : TColor.primary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              if (originalPriceText != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  originalPriceText,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[500],
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: Colors.grey[500],
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          // Add to cart button with quantity counter
+                          QuantityCounter(
+                            cartController: cartController,
+                            menuItem: item,
+                            accessToken: userController.isLoggedIn
+                                ? userController.accessToken
+                                : null,
+                            userId: userController.user?.id,
+                            height: 32,
+                            compact: true,
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 6),
-                      // Add to cart button with quantity counter
-                      QuantityCounter(
-                        cartController: cartController,
-                        menuItem: item,
-                        accessToken: userController.isLoggedIn
-                            ? userController.accessToken
-                            : null,
-                        userId: userController.user?.id,
-                        height: 32,
-                        compact: true,
                       ),
                     ],
                   ),

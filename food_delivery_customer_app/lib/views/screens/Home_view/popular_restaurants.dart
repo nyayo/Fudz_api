@@ -155,9 +155,9 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withAlpha(12),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                        color: Colors.black.withAlpha(3),
+                        blurRadius: 10,
+                        offset: const Offset(8, 0),
                       ),
                     ],
                   ),

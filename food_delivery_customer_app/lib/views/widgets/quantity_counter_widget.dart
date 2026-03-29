@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
-import 'package:food_delivery_customer_app/controller/user_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 
 class QuantityCounter extends StatelessWidget {
@@ -96,11 +95,9 @@ class QuantityCounter extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: TColor.primary.withOpacity(0.1),
+        color: const Color(0xFFDCF3E1),
         borderRadius: BorderRadius.circular(compact ? 20 : 25),
-        border: Border.all(
-          color: TColor.primary.withOpacity(0.3),
-        ),
+        border: Border.all(color: Colors.transparent),
       ),
       padding: EdgeInsets.symmetric(horizontal: compact ? 2 : 4),
       child: Row(

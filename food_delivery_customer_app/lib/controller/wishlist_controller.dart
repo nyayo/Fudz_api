@@ -78,7 +78,7 @@ class WishlistController extends GetxController {
   }
 
   String _resolveOwnerId(UserController userController) {
-    return userController.user?.id?.toString() ??
+    return userController.user?.id.toString() ??
         userController.user?.email ??
         userController.accessToken ??
         '';
@@ -304,7 +304,7 @@ class WishlistController extends GetxController {
       }
     }
     if (lastError != null) {
-      throw lastError!;
+      throw lastError;
     }
   }
 

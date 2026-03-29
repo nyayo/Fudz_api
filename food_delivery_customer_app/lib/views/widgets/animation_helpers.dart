@@ -173,9 +173,8 @@ class _ScalePopInState extends State<ScalePopIn>
 // Smooth page route transition  (shared across all Get.to calls)
 // ──────────────────────────────────────────────────────────────
 class SmoothPageRoute<T> extends PageRouteBuilder<T> {
-  SmoothPageRoute({required Widget page, RouteSettings? settings})
+  SmoothPageRoute({required Widget page, super.settings})
     : super(
-        settings: settings,
         transitionDuration: const Duration(milliseconds: 350),
         reverseTransitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (_, __, ___) => page,

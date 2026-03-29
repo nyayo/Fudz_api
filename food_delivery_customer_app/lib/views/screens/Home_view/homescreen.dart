@@ -67,7 +67,10 @@ class _HomePageState extends State<HomePage> {
 
           if (!cartController.hasItems && cartController.cart == null) {
             futures.add(
-              cartController.initializeCart(userId: userId, accessToken: accessToken),
+              cartController.initializeCart(
+                userId: userId,
+                accessToken: accessToken,
+              ),
             );
           }
           futures.add(
@@ -113,7 +116,12 @@ class _HomePageState extends State<HomePage> {
         Obx(() {
           final user = _userController.user;
           return Padding(
-            padding: const EdgeInsets.only(left: 10, right: 20, top: 10, bottom: 0),
+            padding: const EdgeInsets.only(
+              left: 10,
+              right: 20,
+              top: 10,
+              bottom: 0,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -168,7 +176,7 @@ class _HomePageState extends State<HomePage> {
                         locationController.selectedLocation != null;
                     final isGettingLocation =
                         locationController.isGettingLocationValue;
-          
+
                     if (isGettingLocation) {
                       return SizedBox(
                         width: 22,
@@ -179,7 +187,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       );
                     }
-          
+
                     return Container(
                       width: 32,
                       height: 32,
@@ -197,21 +205,24 @@ class _HomePageState extends State<HomePage> {
                     );
                   }),
                   const SizedBox(width: 10),
-          
+
                   // Address text
                   Expanded(
                     child: Obx(() {
                       final location = locationController.selectedLocation;
                       final isGettingLocation =
                           locationController.isGettingLocationValue;
-          
+
                       if (isGettingLocation) {
                         return Text(
                           "Getting your location...",
-                          style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
                         );
                       }
-          
+
                       return Text(
                         location?.address ?? "Set delivery location",
                         style: TextStyle(
@@ -226,7 +237,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     }),
                   ),
-          
+
                   const SizedBox(width: 6),
                   Obx(() {
                     final isGettingLocation =

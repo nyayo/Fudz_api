@@ -24,7 +24,7 @@ class PromotionController extends GetxController {
     try {
       print('═══════════════════════════════════════════════════');
       print('📦 PROMOTION CONTROLLER: Starting to load promotions...');
-      
+
       _isLoading.value = true;
       _error.value = '';
 
@@ -36,14 +36,14 @@ class PromotionController extends GetxController {
         // Backward-compatible fallback if backend routing differs by environment.
         response = await _apiService.get('promotions/');
       }
-      
+
       print('✅ API Response received');
       print('   Response type: ${response.runtimeType}');
       print('   Response: $response');
 
       if (response is Map) {
         print('⚠️  Response is a Map, checking for data/results key...');
-        
+
         // Try to extract list from map
         if (response.containsKey('data') && response['data'] is List) {
           print('✅ Found "data" key with List');
@@ -52,7 +52,8 @@ class PromotionController extends GetxController {
             list.map((json) => Promotion.fromJson(json)).toList(),
           );
           print('✅ Loaded ${_promotions.length} promotions from "data" key');
-        } else if (response.containsKey('results') && response['results'] is List) {
+        } else if (response.containsKey('results') &&
+            response['results'] is List) {
           print('✅ Found "results" key with List');
           final list = response['results'] as List;
           _promotions.assignAll(
@@ -74,7 +75,7 @@ class PromotionController extends GetxController {
         print('❌ Unexpected response type: ${response.runtimeType}');
         _error.value = 'Invalid response format - expected List or Map';
       }
-      
+
       // Log active vs inactive promotions
       final active = _promotions.where((p) => p.isActive).length;
       final inactive = _promotions.length - active;
@@ -82,14 +83,16 @@ class PromotionController extends GetxController {
       print('   Total: ${_promotions.length}');
       print('   Active: $active');
       print('   Inactive: $inactive');
-      
+
       if (_promotions.isNotEmpty) {
         print('📋 Promotion List:');
         for (var promo in _promotions) {
-          print('   - ID: ${promo.id}, Name: ${promo.name}, Active: ${promo.isActive}');
+          print(
+            '   - ID: ${promo.id}, Name: ${promo.name}, Active: ${promo.isActive}',
+          );
         }
       }
-      
+
       print('═══════════════════════════════════════════════════');
     } catch (e, stackTrace) {
       _error.value = 'Failed to load promotions: $e';

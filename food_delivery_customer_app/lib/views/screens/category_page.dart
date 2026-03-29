@@ -311,6 +311,14 @@ class _CategoryPageState extends State<CategoryPage> {
   }
 
   Widget _buildMenuItemCard(MenuItem menuItem) {
+    final bool hasPromotion = menuItem.hasActivePromotions;
+    final String priceText = hasPromotion
+        ? menuItem.formattedDiscountedPrice
+        : menuItem.formattedPrice;
+    final String? originalPriceText = hasPromotion
+        ? menuItem.formattedPrice
+        : null;
+
     return GestureDetector(
       onTap: () {
         Get.to(() => MenuItemDetailPage(menuItemId: menuItem.id));
@@ -328,142 +336,170 @@ class _CategoryPageState extends State<CategoryPage> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
           children: [
-            // Menu Item Image
-            Expanded(
-              flex: 3,
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                    child: Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      color: Colors.grey[100],
-                      child: menuItem.imageUrl != null
-                          ? CachedImage(
-                              imageUrl: menuItem.imageUrl,
-                              fit: BoxFit.cover,
-                              placeholderIcon: Icons.fastfood,
-                            )
-                          : Icon(
-                              Icons.fastfood,
-                              color: Colors.grey[400],
-                              size: 50,
+            Column(
+              children: [
+                // Image covers the top half of the card
+                Expanded(
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          color: Colors.grey[100],
+                          child: menuItem.imageUrl != null
+                              ? CachedImage(
+                                  imageUrl: menuItem.imageUrl,
+                                  fit: BoxFit.cover,
+                                  placeholderIcon: Icons.fastfood,
+                                )
+                              : Icon(
+                                  Icons.fastfood,
+                                  color: Colors.grey[400],
+                                  size: 50,
+                                ),
+                        ),
+                      ),
+                      if (hasPromotion)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                    ),
-                  ),
-
-                  // Promotion Badge
-                  if (menuItem.hasActivePromotions)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          menuItem.activePromotions.first.formattedDiscount,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              menuItem.activePromotions.first.formattedDiscount,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // Menu Item Info
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Title
-                    Text(
-                      menuItem.title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: TColor.primaryText,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    // Price and Add Button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ],
+                  ),
+                ),
+                // Content bottom half
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        // Price
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (menuItem.hasActivePromotions) ...[
-                              Text(
-                                menuItem.formattedDiscountedPrice,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: TColor.primary,
-                                ),
-                              ),
-                              Text(
-                                menuItem.formattedPrice,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                            ] else
-                              Text(
-                                menuItem.formattedPrice,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: TColor.primary,
-                                ),
-                              ),
-                          ],
+                        Text(
+                          menuItem.title,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: TColor.primaryText,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
-
-                        QuantityCounter(
-                          cartController: _cartController,
-                          menuItem: menuItem,
-                          accessToken: _userController.isLoggedIn
-                              ? _userController.accessToken
-                              : null,
-                          userId: _userController.user?.id,
-                          height: 36,
-                          compact: true,
+                        const SizedBox(height: 6),
+                        Text(
+                          priceText,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: hasPromotion ? Colors.red : TColor.primary,
+                          ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
+                ),
+              ],
+            ),
+            if (hasPromotion)
+              Positioned(
+                right: 5,
+                top: 105,
+                child: RotatedBox(
+                  quarterTurns: 1,
+                  child: Text(
+                    originalPriceText ?? '',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[400],
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
                 ),
               ),
+            Positioned(
+              bottom: -12,
+              left: 0,
+              right: 0,
+              child: Center(child: _buildAddButton(menuItem)),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAddButton(MenuItem menuItem) {
+    return Obx(() {
+      final isInCart = _cartController.isItemInCart(menuItem.id);
+      final isEnabled =
+          _userController.isLoggedIn &&
+          menuItem.isAvailable &&
+          !_cartController.isItemProcessing('${menuItem.id}_add');
+
+      if (isInCart) {
+        return QuantityCounter(
+          cartController: _cartController,
+          menuItem: menuItem,
+          accessToken: _userController.isLoggedIn
+              ? _userController.accessToken
+              : null,
+          userId: _userController.user?.id,
+          height: 32,
+          compact: true,
+        );
+      }
+
+      return SizedBox(
+        width: 40,
+        height: 40,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEnabled ? TColor.primary : Colors.grey[300],
+            shape: const CircleBorder(),
+            padding: EdgeInsets.zero,
+            elevation: 2,
+          ),
+          onPressed: isEnabled
+              ? () async {
+                  await _cartController.addToCart(
+                    menuItem: menuItem,
+                    quantity: 1,
+                    accessToken: _userController.accessToken,
+                    userId: _userController.user?.id,
+                  );
+                }
+              : null,
+          child: const Icon(Icons.add, size: 20, color: Colors.white),
+        ),
+      );
+    });
   }
 
   Widget _buildMenuItemsLoading() {

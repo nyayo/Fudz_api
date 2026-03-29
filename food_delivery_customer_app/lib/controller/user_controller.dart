@@ -875,9 +875,11 @@ class UserController extends GetxController {
       // Cart
       final cartController = Get.find<CartController>();
       futures.add(
-        cartController.initializeCart(userId: _user.value?.id, accessToken: token).catchError((e) {
-          print('⚠️ Cart init error: $e');
-        }),
+        cartController
+            .initializeCart(userId: _user.value?.id, accessToken: token)
+            .catchError((e) {
+              print('⚠️ Cart init error: $e');
+            }),
       );
 
       // Wishlist
@@ -1186,8 +1188,8 @@ class UserController extends GetxController {
       error.value = '';
 
       // Step 1: Get Google account
-      final GoogleSignInAccount? googleUser =
-          await _googleSignInService.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignInService
+          .signIn();
       if (googleUser == null) {
         _showSuccessSnackbar('Cancelled', 'Google linking was cancelled');
         return false;
@@ -1315,7 +1317,7 @@ class UserController extends GetxController {
               title: Row(
                 children: [
                   Image.asset(
-                    'assets/google_icon.png',
+                    'assets/google.png',
                     width: 24,
                     height: 24,
                     errorBuilder: (_, __, ___) => const Icon(
@@ -1427,7 +1429,9 @@ class UserController extends GetxController {
       // Sync token from storage synchronously if needed
       if (_accessToken.value.isEmpty) {
         final tokenFromStorage = GetStorage().read(TokenService.accessTokenKey);
-        if (tokenFromStorage != null && tokenFromStorage is String && tokenFromStorage.isNotEmpty) {
+        if (tokenFromStorage != null &&
+            tokenFromStorage is String &&
+            tokenFromStorage.isNotEmpty) {
           _accessToken.value = tokenFromStorage;
         }
       }
@@ -1438,7 +1442,7 @@ class UserController extends GetxController {
         if (cachedUser != null) {
           _user.value = cachedUser;
         }
-        
+
         // Background: refresh token if expired and sync profile
         _refreshTokenIfNeeded();
       }
@@ -1454,7 +1458,9 @@ class UserController extends GetxController {
       if (isExpired) {
         final success = await refreshAuthToken();
         if (!success) {
-          print('⚠️ Background token refresh failed, user may be logged out soon');
+          print(
+            '⚠️ Background token refresh failed, user may be logged out soon',
+          );
         }
       }
       // Also try to refresh profile in background

@@ -318,92 +318,119 @@ class _PromotionItemCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Item image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: 90,
-                height: 90,
-                child: item.hasImage
-                    ? CachedImage(
-                        imageUrl: item.safeImageUrl,
-                        width: 90,
-                        height: 90,
-                        fit: BoxFit.cover,
-                        borderRadius: 12,
-                        placeholderIcon: Icons.fastfood,
-                      )
-                    : _buildPlaceholder(),
+            // Item image + promo badge
+            SizedBox(
+              width: 90,
+              height: 90,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: item.hasImage
+                          ? CachedImage(
+                              imageUrl: item.safeImageUrl,
+                              width: 90,
+                              height: 90,
+                              fit: BoxFit.cover,
+                              borderRadius: 12,
+                              placeholderIcon: Icons.fastfood,
+                            )
+                          : _buildPlaceholder(),
+                    ),
+                  ),
+                  Positioned(
+                    top: -6,
+                    left: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.12),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        promotion.formattedDiscount,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 14),
+            Positioned(
+              left: -30,
+              top: -28,
+              child: RotatedBox(
+                quarterTurns: 1,
+                child: Text(
+                  CurrencyFormatter.format(originalPrice),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[400],
+                    decoration: TextDecoration.lineThrough,
+                    decorationColor: Colors.grey[400],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
 
             // Item details
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: TColor.primaryText,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: TColor.primaryText,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  // Price row
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          CurrencyFormatter.format(discountedPrice),
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: TColor.primary,
+                    const SizedBox(height: 6),
+                    // Price row
+                    SizedBox(
+                      height: 22,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Text(
+                            CurrencyFormatter.format(discountedPrice),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: TColor.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          CurrencyFormatter.format(originalPrice),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[400],
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: Colors.grey[400],
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      // Discount badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '-${promotion.formattedDiscount}',
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
 
