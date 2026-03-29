@@ -355,7 +355,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                 Text(
                   menuItem.formattedPrice,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 12,
                     color: Colors.grey[400],
                     decoration: TextDecoration.lineThrough,
                     decorationColor: Colors.grey[400],
@@ -441,48 +441,34 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-            // Restaurant icon
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: TColor.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.storefront, color: TColor.primary, size: 22),
-            ),
-            const SizedBox(width: 12),
-            // Restaurant name
-            Expanded(
-              child: Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    restaurantName,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: TColor.primaryText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    'Promo Price',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'View restaurant',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    menuItem.formattedDiscountedPrice,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: TColor.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    menuItem.formattedPrice,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[400],
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: Colors.grey[400],
+                    ),
                   ),
                 ],
               ),
-            ),
-            // Rating
             if (restaurantRating != null && restaurantRating > 0)
               Container(
                 padding: const EdgeInsets.symmetric(
