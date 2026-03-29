@@ -137,6 +137,21 @@ class CartController extends GetxController {
     );
   }
 
+  bool _isSameMenuItem(CartItem item, MenuItem menuItem) {
+    if (item.menuItem.id > 0 && menuItem.id > 0) {
+      return item.menuItem.id == menuItem.id;
+    }
+
+    if (item.menuItem.restaurantId != null && menuItem.restaurantId != null) {
+      return item.menuItem.restaurantId == menuItem.restaurantId &&
+          item.menuItem.title == menuItem.title &&
+          item.menuItem.price == menuItem.price;
+    }
+
+    return item.menuItem.title == menuItem.title &&
+        item.menuItem.price == menuItem.price;
+  }
+
   // Create a local cart
   Cart _createLocalCart() {
     return Cart(
@@ -229,7 +244,7 @@ class CartController extends GetxController {
     print('🛒 Using Unit Price: \$$unitPrice');
 
     final existingItemIndex = _localCart.value!.items.indexWhere(
-      (item) => item.menuItem.id == menuItem.id,
+      (item) => _isSameMenuItem(item, menuItem),
     );
 
     if (existingItemIndex != -1) {
@@ -733,6 +748,20 @@ class CartController extends GetxController {
     return false;
   }
 
+  bool isMenuItemInCart(MenuItem menuItem) {
+    if (_localCart.value != null) {
+      return _localCart.value!.items.any(
+        (item) => _isSameMenuItem(item, menuItem),
+      );
+    }
+    if (_cart.value != null) {
+      return _cart.value!.items.any(
+        (item) => _isSameMenuItem(item, menuItem),
+      );
+    }
+    return false;
+  }
+
   int getItemQuantity(int menuItemId) {
     if (_localCart.value != null) {
       final item = _localCart.value!.items.cast<CartItem?>().firstWhere(
@@ -751,6 +780,24 @@ class CartController extends GetxController {
     return 0;
   }
 
+  int getMenuItemQuantity(MenuItem menuItem) {
+    if (_localCart.value != null) {
+      final item = _localCart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => _isSameMenuItem(item!, menuItem),
+        orElse: () => null,
+      );
+      return item?.quantity ?? 0;
+    }
+    if (_cart.value != null) {
+      final item = _cart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => _isSameMenuItem(item!, menuItem),
+        orElse: () => null,
+      );
+      return item?.quantity ?? 0;
+    }
+    return 0;
+  }
+
   String? getCartItemId(int menuItemId) {
     if (_localCart.value != null) {
       final item = _localCart.value!.items.cast<CartItem?>().firstWhere(
@@ -762,6 +809,24 @@ class CartController extends GetxController {
     if (_cart.value != null) {
       final item = _cart.value!.items.cast<CartItem?>().firstWhere(
         (item) => item!.menuItem.id == menuItemId,
+        orElse: () => null,
+      );
+      return item?.id;
+    }
+    return null;
+  }
+
+  String? getMenuItemCartId(MenuItem menuItem) {
+    if (_localCart.value != null) {
+      final item = _localCart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => _isSameMenuItem(item!, menuItem),
+        orElse: () => null,
+      );
+      return item?.id;
+    }
+    if (_cart.value != null) {
+      final item = _cart.value!.items.cast<CartItem?>().firstWhere(
+        (item) => _isSameMenuItem(item!, menuItem),
         orElse: () => null,
       );
       return item?.id;

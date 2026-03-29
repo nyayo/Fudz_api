@@ -25,12 +25,12 @@ class QuantityCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final quantity = cartController.getItemQuantity(menuItem.id);
-      final cartItemId = cartController.getCartItemId(menuItem.id);
+        final quantity = cartController.getMenuItemQuantity(menuItem);
+        final cartItemId = cartController.getMenuItemCartId(menuItem);
       final isUpdating = cartItemId != null 
           ? cartController.isItemProcessing('${cartItemId}_update')
           : false;
-      final isInCart = cartController.isItemInCart(menuItem.id);
+        final isInCart = cartController.isMenuItemInCart(menuItem);
 
       if (!isInCart) {
         return _buildAddButton();
