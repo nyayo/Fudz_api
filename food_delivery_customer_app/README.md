@@ -2,6 +2,17 @@
 
 A new Flutter project.
 
+## Google Maps API keys
+
+This app uses Google Maps on Android and iOS. Add your API key in both places:
+
+- Android: update the value in [android/app/src/main/AndroidManifest.xml](android/app/src/main/AndroidManifest.xml)
+	under `com.google.android.geo.API_KEY`.
+- iOS: update the key in [ios/Runner/AppDelegate.swift](ios/Runner/AppDelegate.swift)
+	inside `GMSServices.provideAPIKey("YOUR_GOOGLE_MAPS_API_KEY")`.
+
+Make sure the key has the Maps SDK for Android and Maps SDK for iOS enabled.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
