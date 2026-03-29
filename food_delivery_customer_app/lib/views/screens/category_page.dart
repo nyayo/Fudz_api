@@ -45,10 +45,6 @@ class CategoryPage extends StatefulWidget {
 class _CategoryPageState extends State<CategoryPage> {
   final TextEditingController _searchController = TextEditingController();
   final CategoryController categoryController = Get.find();
-  final ApiService _apiService = Get.find();
-              const SizedBox.shrink(),
-  }
-
   Future<void> _loadCategoryMenuItems() async {
     try {
       _isLoadingMenuItems.value = true;
