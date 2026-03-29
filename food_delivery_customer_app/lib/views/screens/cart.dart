@@ -257,80 +257,85 @@ class _CartPageState extends State<CartPage>
         ),
         child: Stack(
           children: [
-            if (isDiscounted)
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    '${_calculateDiscountPercentage(originalPrice, discountedPrice)}% OFF',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-              ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Circular food image
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Builder(
-                      builder: (context) {
-                        final imageUrl = item.menuItem.imageUrl;
+                      child: ClipOval(
+                        child: Builder(
+                          builder: (context) {
+                            final imageUrl = item.menuItem.imageUrl;
 
-                        if (imageUrl == null || imageUrl.isEmpty) {
-                          return Center(
-                            child: Icon(
-                              Icons.fastfood,
-                              color: Colors.grey[400],
-                              size: 22,
-                            ),
-                          );
-                        }
+                            if (imageUrl == null || imageUrl.isEmpty) {
+                              return Center(
+                                child: Icon(
+                                  Icons.fastfood,
+                                  color: Colors.grey[400],
+                                  size: 22,
+                                ),
+                              );
+                            }
 
-                        return CachedImage(
-                          imageUrl: imageUrl,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          placeholderIcon: Icons.fastfood,
-                        );
-                      },
+                            return CachedImage(
+                              imageUrl: imageUrl,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              placeholderIcon: Icons.fastfood,
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                  ),
+                    if (isDiscounted)
+                      Positioned(
+                        top: -6,
+                        left: -6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            '${_calculateDiscountPercentage(originalPrice, discountedPrice)}% OFF',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 12),
                 // Item details
