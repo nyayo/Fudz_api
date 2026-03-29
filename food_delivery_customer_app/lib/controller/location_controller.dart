@@ -2,8 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/services/location_service.dart';
 import 'package:get/get.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/location.dart';
 
@@ -17,10 +16,10 @@ class LocationController extends GetxController {
   final RxBool isGettingLocation =
       false.obs; // Separate loading for location acquisition
   final RxString error = ''.obs;
-  final RxList<Marker> markers = <Marker>[].obs;
-  final RxList<Polyline> polylines = <Polyline>[].obs;
+  final RxSet<Marker> markers = <Marker>{}.obs;
+  final RxSet<Polyline> polylines = <Polyline>{}.obs;
 
-  final MapController mapController = MapController();
+  GoogleMapController? _mapController;
   final RxBool _isInitialized = false.obs;
 
   DeliveryLocation? get currentLocation => _currentLocation.value;
@@ -116,10 +115,11 @@ class LocationController extends GetxController {
     if (_currentLocation.value != null) {
       markers.add(
         Marker(
-          point: _currentLocation.value!.latLng,
-          width: 40,
-          height: 40,
-          child: const Icon(Icons.location_on, color: Colors.blue, size: 30),
+          markerId: const MarkerId('current_location'),
+          position: _currentLocation.value!.latLng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
         ),
       );
     }
@@ -128,18 +128,29 @@ class LocationController extends GetxController {
         _selectedLocation.value != _currentLocation.value) {
       markers.add(
         Marker(
-          point: _selectedLocation.value!.latLng,
-          width: 40,
-          height: 40,
-          child: const Icon(Icons.location_pin, color: Colors.red, size: 30),
+          markerId: const MarkerId('selected_location'),
+          position: _selectedLocation.value!.latLng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueRed,
+          ),
         ),
       );
     }
   }
 
-  void _moveToLocation(latlong2.LatLng point) {
+  void setMapController(GoogleMapController controller) {
+    _mapController = controller;
+  }
+
+  void moveToLocation(LatLng point, {double zoom = 15.0}) {
+    _moveToLocation(point, zoom: zoom);
+  }
+
+  void _moveToLocation(LatLng point, {double zoom = 15.0}) {
     try {
-      mapController.move(point, 15.0);
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(point, zoom),
+      );
       print('📍 Map moved to: $point');
     } catch (e) {
       print('⚠️ Could not move map: $e');
@@ -178,19 +189,20 @@ class LocationController extends GetxController {
     }
   }
 
-  void _updatePolyline(List<latlong2.LatLng> points) {
+  void _updatePolyline(List<LatLng> points) {
     polylines.clear();
     polylines.add(
       Polyline(
+        polylineId: const PolylineId('route'),
         points: points,
         color: Colors.blue.withOpacity(0.7),
-        strokeWidth: 4,
+        width: 4,
       ),
     );
   }
 
   // Get current location from map (when user moves map)
-  Future<DeliveryLocation?> getLocationFromMap(latlong2.LatLng point) async {
+  Future<DeliveryLocation?> getLocationFromMap(LatLng point) async {
     try {
       final address = await _locationService.getDetailedAddress(
         point.latitude,
@@ -217,7 +229,7 @@ class LocationController extends GetxController {
   }
 
   // Update location when map is moved
-  Future<void> updateLocationFromMap(latlong2.LatLng point) async {
+  Future<void> updateLocationFromMap(LatLng point) async {
     try {
       isGettingLocation.value = true;
       final location = await getLocationFromMap(point);
