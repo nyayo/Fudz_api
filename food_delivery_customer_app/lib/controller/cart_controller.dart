@@ -172,6 +172,10 @@ class CartController extends GetxController {
   }) async {
     final itemKey = '${menuItem.id}_add';
 
+    if (_itemProcessingStates.value[itemKey] == true) {
+      return false;
+    }
+
     try {
       _setItemProcessing(itemKey, true);
       error.value = '';
@@ -301,6 +305,7 @@ class CartController extends GetxController {
     required String accessToken,
     int? userId,
   }) async {
+    if (isSyncing.value) return;
     if (_localCart.value == null || _localCart.value!.items.isEmpty) return;
 
     try {
