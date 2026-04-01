@@ -16,6 +16,11 @@ class LocationService {
   static const String osmTileLayer =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const String nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
+  static const String googlePlacesBaseUrl =
+      'https://maps.googleapis.com/maps/api/place';
+  static const String googlePlacesApiKey = 'AIzaSyCwCOzPmqLPFeVnY0lDvUxtXnx-c-jliK4';
+    static const String googleDirectionsBaseUrl =
+      'https://maps.googleapis.com/maps/api/directions';
 
   /// Get current location with high accuracy using Geolocator.
   /// Falls back to lower accuracy if high-accuracy fails.
@@ -291,6 +296,14 @@ class LocationService {
   // ── Search ─────────────────────────────────────────────────────────
 
   Future<List<DeliveryLocation>> searchLocations(String query) async {
+    if (googlePlacesApiKey.isNotEmpty &&
+        googlePlacesApiKey != 'YOUR_GOOGLE_MAPS_API_KEY') {
+      final results = await _searchLocationsWithGoogle(query);
+      if (results.isNotEmpty) {
+        return results;
+      }
+    }
+
     try {
       final response = await http.get(
         Uri.parse(
@@ -314,6 +327,68 @@ class LocationService {
     } catch (e) {
       debugPrint('Error searching locations: $e');
       return [];
+    }
+  }
+
+  Future<List<DeliveryLocation>> _searchLocationsWithGoogle(String query) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '$googlePlacesBaseUrl/autocomplete/json?input=$query&key=$googlePlacesApiKey',
+        ),
+      );
+
+      if (response.statusCode != 200) return [];
+      final data = json.decode(response.body);
+      final predictions = (data['predictions'] as List? ?? []);
+
+      final results = <DeliveryLocation>[];
+      for (final prediction in predictions) {
+        final placeId = prediction['place_id']?.toString();
+        if (placeId == null || placeId.isEmpty) continue;
+
+        final details = await _getPlaceDetails(placeId);
+        if (details != null) {
+          results.add(details);
+        }
+      }
+
+      return results;
+    } catch (e) {
+      debugPrint('Error searching Google Places: $e');
+      return [];
+    }
+  }
+
+  Future<DeliveryLocation?> _getPlaceDetails(String placeId) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '$googlePlacesBaseUrl/details/json?place_id=$placeId&fields=geometry/location,name,formatted_address&key=$googlePlacesApiKey',
+        ),
+      );
+
+      if (response.statusCode != 200) return null;
+      final data = json.decode(response.body);
+      final result = data['result'];
+      if (result == null) return null;
+
+      final location = result['geometry']?['location'];
+      if (location == null) return null;
+
+      final lat = (location['lat'] as num?)?.toDouble();
+      final lng = (location['lng'] as num?)?.toDouble();
+      if (lat == null || lng == null) return null;
+
+      return DeliveryLocation(
+        latitude: lat,
+        longitude: lng,
+        address: result['formatted_address']?.toString() ?? 'Unknown',
+        placeName: result['name']?.toString(),
+      );
+    } catch (e) {
+      debugPrint('Error fetching place details: $e');
+      return null;
     }
   }
 
@@ -354,5 +429,87 @@ class LocationService {
       duration: estimatedDuration,
       polylinePoints: [pickup.latLng, dropoff.latLng],
     );
+  }
+
+  Future<DeliveryRoute?> getRoute(
+    DeliveryLocation pickup,
+    DeliveryLocation dropoff,
+  ) async {
+    if (googlePlacesApiKey.isEmpty) return null;
+
+    try {
+      final origin = '${pickup.latitude},${pickup.longitude}';
+      final destination = '${dropoff.latitude},${dropoff.longitude}';
+      final response = await http.get(
+        Uri.parse(
+          '$googleDirectionsBaseUrl/json?origin=$origin&destination=$destination&mode=driving&key=$googlePlacesApiKey',
+        ),
+      );
+
+      if (response.statusCode != 200) return null;
+      final data = json.decode(response.body);
+      final routes = (data['routes'] as List? ?? []);
+      if (routes.isEmpty) return null;
+
+      final route = routes.first as Map<String, dynamic>;
+      final overview = route['overview_polyline'] as Map<String, dynamic>?;
+      final polyline = overview?['points']?.toString();
+      if (polyline == null || polyline.isEmpty) return null;
+
+      final points = _decodePolyline(polyline);
+      final legs = (route['legs'] as List? ?? []);
+      final leg = legs.isNotEmpty ? legs.first as Map<String, dynamic> : null;
+      final distanceMeters =
+          (leg?['distance']?['value'] as num?)?.toDouble() ??
+              calculateDistance(pickup.latLng, dropoff.latLng);
+      final durationSeconds =
+          (leg?['duration']?['value'] as num?)?.toDouble() ??
+              (distanceMeters / 1000) / 25.0 * 3600;
+
+      return DeliveryRoute(
+        pickup: pickup,
+        dropoff: dropoff,
+        distance: distanceMeters,
+        duration: durationSeconds,
+        polylinePoints: points,
+      );
+    } catch (e) {
+      debugPrint('Error fetching route: $e');
+      return null;
+    }
+  }
+
+  List<LatLng> _decodePolyline(String encoded) {
+    final points = <LatLng>[];
+    int index = 0;
+    int lat = 0;
+    int lng = 0;
+
+    while (index < encoded.length) {
+      int shift = 0;
+      int result = 0;
+      int b;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20 && index < encoded.length);
+      final dlat = (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20 && index < encoded.length);
+      final dlng = (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+      lng += dlng;
+
+      points.add(LatLng(lat / 1e5, lng / 1e5));
+    }
+
+    return points;
   }
 }

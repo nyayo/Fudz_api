@@ -1,4 +1,5 @@
 // views/screens/location/location_selection.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
@@ -26,6 +27,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
   LatLng? _lastMapCenter;
   double _currentZoom = 15.0;
   bool _showSearchResults = false;
+  Timer? _searchDebounce;
   
   // Bottom sheet animation
   late AnimationController _bottomSheetController;
@@ -65,6 +67,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _bottomSheetController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -121,16 +124,24 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
   }
 
   void _onSearch() async {
-    if (_searchController.text.trim().isEmpty) return;
+    await _onSearchChanged(_searchController.text.trim());
+  }
+
+  Future<void> _onSearchChanged(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _showSearchResults = false;
+        _searchResults = [];
+      });
+      return;
+    }
 
     setState(() {
       _showSearchResults = true;
       _searchResults = [];
     });
 
-    final results = await LocationService().searchLocations(
-      _searchController.text.trim(),
-    );
+    final results = await LocationService().searchLocations(query);
     setState(() {
       _searchResults = results;
     });
@@ -204,11 +215,13 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
               polylines: _locationController.polylines.toSet(),
               circles: circles,
               onCameraMove: (position) {
+                if (_locationController.isProgrammaticMove) return;
                 _lastMapCenter = position.target;
                 _currentZoom = position.zoom;
                 _isMapMoving = true;
               },
               onCameraIdle: () {
+                if (_locationController.isProgrammaticMove) return;
                 if (_isMapMoving && _lastMapCenter != null) {
                   _onMapMoved(_lastMapCenter!);
                 }
@@ -245,8 +258,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
                             ],
@@ -263,10 +276,10 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(28),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withOpacity(0.08),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -278,12 +291,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                               decoration: InputDecoration(
                                 hintText: 'Search location...',
                                 hintStyle: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: Colors.grey[500],
                                   fontSize: 15,
                                 ),
                                 prefixIcon: Icon(
                                   Icons.search,
-                                  color: Colors.grey[400],
+                                  color: Colors.grey[500],
                                 ),
                                 suffixIcon: Obx(() {
                                   if (_locationController.isGettingLocationValue) {
@@ -312,6 +325,13 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                                 color: TColor.primaryText,
                               ),
                               onSubmitted: (_) => _onSearch(),
+                              onChanged: (value) {
+                                _searchDebounce?.cancel();
+                                _searchDebounce = Timer(
+                                  const Duration(milliseconds: 350),
+                                  () => _onSearchChanged(value.trim()),
+                                );
+                              },
                               onTap: () {
                                 setState(() {
                                   _showSearchResults = true;
@@ -331,19 +351,19 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
           // Search Results Dropdown
           if (_showSearchResults && _searchResults.isNotEmpty)
             Positioned(
-              top: 120,
+              top: 108,
               left: 16,
               right: 16,
               child: Material(
                 elevation: 8,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 color: Colors.white,
                 child: Container(
                   constraints: BoxConstraints(
                     maxHeight: MediaQuery.of(context).size.height * 0.5,
                   ),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: ListView.separated(
                     shrinkWrap: true,
@@ -424,8 +444,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 12,
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -470,8 +490,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 12,
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -530,6 +550,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
   }
 
   Widget _buildBottomSheet() {
+    const sheetHorizontalPadding = 20.0;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -564,29 +586,32 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
-              // Selected Location Card
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(
+                  sheetHorizontalPadding,
+                  16,
+                  sheetHorizontalPadding,
+                  20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Location Icon Row
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: TColor.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.location_on,
                             color: TColor.primary,
-                            size: 24,
+                            size: 22,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -623,11 +648,11 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                                 )
                               else if (selectedLocation != null)
                                 Text(
-                                  selectedLocation.street ?? 
-                                  selectedLocation.neighborhood ?? 
-                                  selectedLocation.placeName ??
-                                  selectedLocation.address ??
-                                  'Unknown Location',
+                                  selectedLocation.street ??
+                                      selectedLocation.neighborhood ??
+                                      selectedLocation.placeName ??
+                                      selectedLocation.address ??
+                                      'Unknown Location',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -649,15 +674,14 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                         ),
                       ],
                     ),
-                    
-                    // Full Address
                     if (selectedLocation != null && !isGettingLocation) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey[200]!),
                         ),
                         child: Row(
                           children: [
@@ -694,10 +718,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                         ),
                       ),
                     ],
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Confirm Button
+                    const SizedBox(height: 18),
                     SizedBox(
                       width: double.infinity,
                       height: 54,
@@ -714,7 +735,6 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                         ),
                         onPressed: selectedLocation != null && !isGettingLocation
                             ? () {
-                                // Add to recent locations
                                 if (!_recentLocations.any((loc) =>
                                     loc.latitude == selectedLocation.latitude &&
                                     loc.longitude == selectedLocation.longitude)) {
