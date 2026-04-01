@@ -127,6 +127,18 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
     await _onSearchChanged(_searchController.text.trim());
   }
 
+  Future<void> _openSearchPage() async {
+    final result = await Get.to(
+      () => _SearchLocationPage(
+        initialQuery: _searchController.text,
+      ),
+    );
+
+    if (result is DeliveryLocation) {
+      _onSearchResultTap(result);
+    }
+  }
+
   Future<void> _onSearchChanged(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -284,6 +296,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
+                              readOnly: true,
                               decoration: InputDecoration(
                                 hintText: 'Search location...',
                                 hintStyle: TextStyle(
@@ -321,18 +334,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                                 fontSize: 15,
                                 color: TColor.primaryText,
                               ),
-                              onSubmitted: (_) => _onSearch(),
-                              onChanged: (value) {
-                                _searchDebounce?.cancel();
-                                _searchDebounce = Timer(
-                                  const Duration(milliseconds: 350),
-                                  () => _onSearchChanged(value.trim()),
-                                );
-                              },
                               onTap: () {
-                                setState(() {
-                                  _showSearchResults = true;
-                                });
+                                _openSearchPage();
                               },
                             ),
                           ),
@@ -771,6 +774,224 @@ class _CenterPinWidget extends StatefulWidget {
 
   @override
   State<_CenterPinWidget> createState() => _CenterPinWidgetState();
+}
+
+class _SearchLocationPage extends StatefulWidget {
+  final String? initialQuery;
+
+  const _SearchLocationPage({this.initialQuery});
+
+  @override
+  State<_SearchLocationPage> createState() => _SearchLocationPageState();
+}
+
+class _SearchLocationPageState extends State<_SearchLocationPage> {
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  final List<DeliveryLocation> _results = [];
+  Timer? _debounce;
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = widget.initialQuery ?? '';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+      if (_controller.text.trim().isNotEmpty) {
+        _search(_controller.text.trim());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _results.clear();
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    final results = await LocationService().searchLocations(query);
+    if (!mounted) return;
+    setState(() {
+      _results
+        ..clear()
+        ..addAll(results);
+      _isSearching = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Get.back(),
+                      color: TColor.primaryText,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        decoration: InputDecoration(
+                          hintText: 'Search location...',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 15,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.grey[500],
+                          ),
+                          suffixIcon: _isSearching
+                              ? Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: TColor.primary,
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                        ),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: TColor.primaryText,
+                        ),
+                        onChanged: (value) {
+                          _debounce?.cancel();
+                          _debounce = Timer(
+                            const Duration(milliseconds: 350),
+                            () => _search(value.trim()),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _results.isEmpty
+                  ? Center(
+                      child: Text(
+                        _isSearching
+                            ? 'Searching...'
+                            : 'Start typing to search',
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _results.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: Colors.grey[200],
+                      ),
+                      itemBuilder: (context, index) {
+                        final location = _results[index];
+                        return ListTile(
+                          onTap: () => Get.back(result: location),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: TColor.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.location_on,
+                              color: TColor.primary,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            location.placeName ?? location.street ?? 'Location',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            location.fullAddress,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: const Icon(
+                            Icons.north_west,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _CenterPinWidgetState extends State<_CenterPinWidget>
