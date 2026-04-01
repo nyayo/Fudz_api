@@ -557,9 +557,11 @@ class ProfilePage extends StatelessWidget {
     User? user,
     UserController userController,
   ) {
+    final provider = (user?.authProvider ?? '').toLowerCase();
+    final isEmailOrPhone = provider == 'email' || provider == 'phone';
     final isLinked =
         userController.isGoogleLinked.value || user?.googleLinked == true;
-    return !isLinked;
+    return isEmailOrPhone && !isLinked;
   }
 
   Widget _buildGoogleLinkButton(bool isLinked, UserController userController) {
