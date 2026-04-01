@@ -691,7 +691,19 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           onPressed: () => Get.back(),
         ),
       ),
-      actions: [],
+      actions: [
+        Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: Icon(Icons.more_vert, color: TColor.primary),
+            onPressed: () => _showRestaurantActions(restaurant),
+          ),
+        ),
+      ],
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
           final topPadding = MediaQuery.of(context).padding.top;
@@ -771,20 +783,6 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: topPadding + 8,
-                right: 16,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.more_vert, color: TColor.primary),
-                    onPressed: () => _showRestaurantActions(restaurant),
                   ),
                 ),
               ),
