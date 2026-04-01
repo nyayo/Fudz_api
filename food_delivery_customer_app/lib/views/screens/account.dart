@@ -553,10 +553,7 @@ class ProfilePage extends StatelessWidget {
     return user?.googleLinked == true && userController.isGoogleLinked.value;
   }
 
-  bool _shouldShowGoogleLinkSection(
-    User? user,
-    UserController userController,
-  ) {
+  bool _shouldShowGoogleLinkSection(User? user, UserController userController) {
     final provider = (user?.authProvider ?? '').toLowerCase();
     final isEmailOrPhone = provider == 'email' || provider == 'phone';
     final isLinked =

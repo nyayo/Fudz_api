@@ -37,6 +37,24 @@ class CartController extends GetxController {
     await GetStorage().remove(_getCartKey(userId));
   }
 
+  String? _resolveCartId({int? userId}) {
+    final activeCartId = _cart.value?.id;
+    if (activeCartId != null && activeCartId.isNotEmpty) {
+      return activeCartId;
+    }
+
+    final localCartId = _localCart.value?.id;
+    if (localCartId != null &&
+        localCartId.isNotEmpty &&
+        !localCartId.startsWith('local_cart_')) {
+      return localCartId;
+    }
+
+    return userId != null
+        ? _getStoredCartId(userId)
+        : GetStorage().read('current_cart_id');
+  }
+
   // Initialize local cart from storage - user-specific
   void _initializeLocalCart({int? userId}) {
     try {
@@ -312,9 +330,8 @@ class CartController extends GetxController {
       isSyncing.value = true;
       print('🔄 Syncing local cart with backend...');
 
-      String? cartId = userId != null
-          ? _getStoredCartId(userId)
-          : GetStorage().read('current_cart_id');
+      String? cartId = _resolveCartId(userId: userId);
+      print('🧾 Using cartId for sync: $cartId');
 
       if (cartId == null || _cart.value == null) {
         final cartResponse = await _apiService.post('orders/carts/', {});
@@ -350,10 +367,10 @@ class CartController extends GetxController {
 
             if (response is Map && response['id'] != null) {
               final remoteId = response['id'].toString();
-              final remoteQty =
-                  (response['qty'] as int?) ?? localItem.quantity;
-              final unitPrice =
-                  localItem.unitPrice > 0 ? localItem.unitPrice : 0.0;
+              final remoteQty = (response['qty'] as int?) ?? localItem.quantity;
+              final unitPrice = localItem.unitPrice > 0
+                  ? localItem.unitPrice
+                  : 0.0;
               _localCart.value!.items[i] = CartItem(
                 id: remoteId,
                 menuItem: localItem.menuItem,
@@ -451,10 +468,10 @@ class CartController extends GetxController {
         // Prefer remote quantity once the item is synced to avoid inflated counts.
         final localIsUnsynced = localCartItem.id.startsWith('local_');
         final quantityToUse = localIsUnsynced
-          ? localCartItem.quantity
-          : remoteItem.quantity;
-        final unitPrice = localCartItem.unitPrice > 0 
-            ? localCartItem.unitPrice 
+            ? localCartItem.quantity
+            : remoteItem.quantity;
+        final unitPrice = localCartItem.unitPrice > 0
+            ? localCartItem.unitPrice
             : remoteItem.unitPrice;
         print(
           '✅ Preserving local data for: ${localMenuItem.title}, Restaurant: ${localMenuItem.restaurantName}, Quantity: $quantityToUse (localUnsynced: $localIsUnsynced)',
@@ -573,9 +590,8 @@ class CartController extends GetxController {
     if (!itemId.startsWith('local_')) {
       // This is already a remote item, update directly
       try {
-        final cartId = userId != null
-            ? _getStoredCartId(userId)
-            : GetStorage().read('current_cart_id');
+        final cartId = _resolveCartId(userId: userId);
+        print('🧾 Using cartId for quantity sync: $cartId');
         if (cartId == null) return;
 
         if (quantity <= 0) {
@@ -653,9 +669,8 @@ class CartController extends GetxController {
     if (!itemId.startsWith('local_')) {
       // This is a remote item, remove directly
       try {
-        final cartId = userId != null
-            ? _getStoredCartId(userId)
-            : GetStorage().read('current_cart_id');
+        final cartId = _resolveCartId(userId: userId);
+        print('🧾 Using cartId for remove: $cartId');
         if (cartId == null) return;
 
         await _apiService.delete('orders/carts/$cartId/items/$itemId/');
@@ -713,9 +728,8 @@ class CartController extends GetxController {
 
   Future<void> getCart({int? userId}) async {
     try {
-      final cartId = userId != null
-          ? _getStoredCartId(userId)
-          : GetStorage().read('current_cart_id');
+      final cartId = _resolveCartId(userId: userId);
+      print('🧾 Fetching cart with id: $cartId');
 
       if (cartId != null) {
         final response = await _apiService.get('orders/carts/$cartId/');
@@ -786,9 +800,7 @@ class CartController extends GetxController {
       );
     }
     if (_cart.value != null) {
-      return _cart.value!.items.any(
-        (item) => _isSameMenuItem(item, menuItem),
-      );
+      return _cart.value!.items.any((item) => _isSameMenuItem(item, menuItem));
     }
     return false;
   }
