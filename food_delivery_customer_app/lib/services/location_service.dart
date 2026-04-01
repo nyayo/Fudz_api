@@ -18,7 +18,8 @@ class LocationService {
   static const String nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
   static const String googlePlacesBaseUrl =
       'https://maps.googleapis.com/maps/api/place';
-  static const String googlePlacesApiKey = 'AIzaSyCwCOzPmqLPFeVnY0lDvUxtXnx-c-jliK4';
+  static const String googlePlacesApiKey =
+      'AIzaSyCwCOzPmqLPFeVnY0lDvUxtXnx-c-jliK4';
   static const String googleDirectionsBaseUrl =
       'https://maps.googleapis.com/maps/api/directions';
   static const String osrmBaseUrl =
@@ -140,7 +141,8 @@ class LocationService {
         location = DeliveryLocation(
           latitude: position!.latitude,
           longitude: position.longitude,
-          address: '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+          address:
+              '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
         );
       }
 
@@ -180,7 +182,10 @@ class LocationService {
     }
   }
 
-  Future<DeliveryLocation> _getAddressFromGeocoding(double lat, double lng) async {
+  Future<DeliveryLocation> _getAddressFromGeocoding(
+    double lat,
+    double lng,
+  ) async {
     try {
       List<geocoding.Placemark> placemarks = await geocoding
           .placemarkFromCoordinates(lat, lng);
@@ -202,7 +207,8 @@ class LocationService {
 
       final parts = <String>[];
       if (street != null && street.isNotEmpty) parts.add(street);
-      if (neighborhood != null && neighborhood.isNotEmpty) parts.add(neighborhood);
+      if (neighborhood != null && neighborhood.isNotEmpty)
+        parts.add(neighborhood);
       if (city != null && city.isNotEmpty) parts.add(city);
       if (state != null && state.isNotEmpty) parts.add(state);
 
@@ -228,7 +234,10 @@ class LocationService {
     }
   }
 
-  Future<DeliveryLocation> getAddressFromNominatim(double lat, double lng) async {
+  Future<DeliveryLocation> getAddressFromNominatim(
+    double lat,
+    double lng,
+  ) async {
     try {
       final response = await http
           .get(
@@ -251,22 +260,27 @@ class LocationService {
         }
 
         String? street = address['road']?.toString();
-        String? neighborhood = address['neighbourhood']?.toString() ?? 
-                              address['suburb']?.toString() ??
-                              address['quarter']?.toString();
-        String? city = address['city']?.toString() ?? 
-                       address['town']?.toString() ?? 
-                       address['village']?.toString();
+        String? neighborhood =
+            address['neighbourhood']?.toString() ??
+            address['suburb']?.toString() ??
+            address['quarter']?.toString();
+        String? city =
+            address['city']?.toString() ??
+            address['town']?.toString() ??
+            address['village']?.toString();
         String? state = address['state']?.toString();
         String? country = address['country']?.toString();
 
         final parts = <String>[];
         if (street != null && street.isNotEmpty) parts.add(street);
-        if (neighborhood != null && neighborhood.isNotEmpty) parts.add(neighborhood);
+        if (neighborhood != null && neighborhood.isNotEmpty)
+          parts.add(neighborhood);
         if (city != null && city.isNotEmpty) parts.add(city);
         if (state != null && state.isNotEmpty) parts.add(state);
 
-        final displayAddress = parts.isNotEmpty ? parts.join(', ') : 'Unknown Location';
+        final displayAddress = parts.isNotEmpty
+            ? parts.join(', ')
+            : 'Unknown Location';
 
         return DeliveryLocation(
           latitude: lat,
@@ -332,7 +346,9 @@ class LocationService {
     }
   }
 
-  Future<List<DeliveryLocation>> _searchLocationsWithGoogle(String query) async {
+  Future<List<DeliveryLocation>> _searchLocationsWithGoogle(
+    String query,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse(
@@ -473,10 +489,10 @@ class LocationService {
       final leg = legs.isNotEmpty ? legs.first as Map<String, dynamic> : null;
       final distanceMeters =
           (leg?['distance']?['value'] as num?)?.toDouble() ??
-              calculateDistance(pickup.latLng, dropoff.latLng);
+          calculateDistance(pickup.latLng, dropoff.latLng);
       final durationSeconds =
           (leg?['duration']?['value'] as num?)?.toDouble() ??
-              (distanceMeters / 1000) / 25.0 * 3600;
+          (distanceMeters / 1000) / 25.0 * 3600;
 
       return DeliveryRoute(
         pickup: pickup,
@@ -516,10 +532,10 @@ class LocationService {
       final points = _decodePolyline(polyline);
       final distanceMeters =
           (route['distance'] as num?)?.toDouble() ??
-              calculateDistance(pickup.latLng, dropoff.latLng);
+          calculateDistance(pickup.latLng, dropoff.latLng);
       final durationSeconds =
           (route['duration'] as num?)?.toDouble() ??
-              (distanceMeters / 1000) / 25.0 * 3600;
+          (distanceMeters / 1000) / 25.0 * 3600;
 
       return DeliveryRoute(
         pickup: pickup,

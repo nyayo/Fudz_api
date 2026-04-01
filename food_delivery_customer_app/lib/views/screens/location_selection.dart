@@ -28,30 +28,30 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
   double _currentZoom = 15.0;
   bool _showSearchResults = false;
   Timer? _searchDebounce;
-  
+
   // Bottom sheet animation
   late AnimationController _bottomSheetController;
   late Animation<Offset> _slideAnimation;
   final double _bottomSheetHeight = 280.0;
-  
+
   // Recent locations (mock data for now)
   final List<DeliveryLocation> _recentLocations = [];
 
   @override
   void initState() {
     super.initState();
-    
+
     _bottomSheetController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _bottomSheetController,
-      curve: Curves.easeOut,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _bottomSheetController,
+            curve: Curves.easeOut,
+          ),
+        );
     _bottomSheetController.forward();
 
     // Center map on current location after a short delay
@@ -183,7 +183,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
         children: [
           // Full Screen Map
           Obx(() {
-            final center = _locationController.currentLocation?.latLng ??
+            final center =
+                _locationController.currentLocation?.latLng ??
                 const LatLng(0.3476, 32.5825);
 
             final circles = <Circle>{};
@@ -201,10 +202,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
             }
 
             return GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: center,
-                zoom: 15.0,
-              ),
+              initialCameraPosition: CameraPosition(target: center, zoom: 15.0),
               onMapCreated: _locationController.setMapController,
               onTap: _onMapTap,
               myLocationEnabled: true,
@@ -233,9 +231,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
           if (_showSearchResults)
             GestureDetector(
               onTap: _closeSearch,
-              child: Container(
-                color: Colors.black.withOpacity(0.5),
-              ),
+              child: Container(color: Colors.black.withOpacity(0.5)),
             ),
 
           // Top Safe Area with Search
@@ -299,7 +295,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                                   color: Colors.grey[500],
                                 ),
                                 suffixIcon: Obx(() {
-                                  if (_locationController.isGettingLocationValue) {
+                                  if (_locationController
+                                      .isGettingLocationValue) {
                                     return Padding(
                                       padding: const EdgeInsets.all(12),
                                       child: SizedBox(
@@ -369,10 +366,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                     shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: _searchResults.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      color: Colors.grey[200],
-                    ),
+                    separatorBuilder: (_, __) =>
+                        Divider(height: 1, color: Colors.grey[200]),
                     itemBuilder: (context, index) {
                       final location = _searchResults[index];
                       return ListTile(
@@ -425,11 +420,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
             bottom: 0,
             left: 0,
             right: 0,
-            child: IgnorePointer(
-              child: Center(
-                child: _CenterPinWidget(),
-              ),
-            ),
+            child: IgnorePointer(child: Center(child: _CenterPinWidget())),
           ),
 
           // Current Location FAB
@@ -468,10 +459,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                               color: TColor.primary,
                             ),
                           )
-                        : Icon(
-                            Icons.my_location,
-                            color: TColor.primary,
-                          ),
+                        : Icon(Icons.my_location, color: TColor.primary),
                   );
                 }),
               ),
@@ -502,7 +490,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                     _ZoomButton(
                       icon: Icons.add,
                       onTap: () {
-                        final center = _lastMapCenter ??
+                        final center =
+                            _lastMapCenter ??
                             _locationController.currentLocation?.latLng ??
                             const LatLng(0.3476, 32.5825);
                         _locationController.moveToLocation(
@@ -511,15 +500,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                         );
                       },
                     ),
-                    Container(
-                      height: 1,
-                      width: 30,
-                      color: Colors.grey[200],
-                    ),
+                    Container(height: 1, width: 30, color: Colors.grey[200]),
                     _ZoomButton(
                       icon: Icons.remove,
                       onTap: () {
-                        final center = _lastMapCenter ??
+                        final center =
+                            _lastMapCenter ??
                             _locationController.currentLocation?.latLng ??
                             const LatLng(0.3476, 32.5825);
                         _locationController.moveToLocation(
@@ -724,7 +710,8 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                       height: 54,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: selectedLocation != null && !isGettingLocation
+                          backgroundColor:
+                              selectedLocation != null && !isGettingLocation
                               ? TColor.primary
                               : Colors.grey[300],
                           foregroundColor: Colors.white,
@@ -733,11 +720,16 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen>
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        onPressed: selectedLocation != null && !isGettingLocation
+                        onPressed:
+                            selectedLocation != null && !isGettingLocation
                             ? () {
-                                if (!_recentLocations.any((loc) =>
-                                    loc.latitude == selectedLocation.latitude &&
-                                    loc.longitude == selectedLocation.longitude)) {
+                                if (!_recentLocations.any(
+                                  (loc) =>
+                                      loc.latitude ==
+                                          selectedLocation.latitude &&
+                                      loc.longitude ==
+                                          selectedLocation.longitude,
+                                )) {
                                   _recentLocations.insert(0, selectedLocation);
                                   if (_recentLocations.length > 5) {
                                     _recentLocations.removeLast();
@@ -793,13 +785,11 @@ class _CenterPinWidgetState extends State<_CenterPinWidget>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    
-    _bounceAnimation = Tween<double>(begin: 0, end: -8).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+
+    _bounceAnimation = Tween<double>(
+      begin: 0,
+      end: -8,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -867,10 +857,7 @@ class _ZoomButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _ZoomButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _ZoomButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -879,11 +866,7 @@ class _ZoomButton extends StatelessWidget {
       borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       child: Container(
         padding: const EdgeInsets.all(12),
-        child: Icon(
-          icon,
-          color: TColor.primary,
-          size: 20,
-        ),
+        child: Icon(icon, color: TColor.primary, size: 20),
       ),
     );
   }

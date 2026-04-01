@@ -32,7 +32,7 @@ class _CategoryPageState extends State<CategoryPage> {
   final CartController _cartController = Get.find();
   final UserController _userController = Get.find();
   final ApiService _apiService = Get.find();
-  
+
   final RxList<MenuItem> _categoryMenuItems = <MenuItem>[].obs;
   final RxBool _isLoadingMenuItems = true.obs;
   String _searchQuery = '';
