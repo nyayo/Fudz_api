@@ -397,22 +397,24 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
         ],
       ),
       child: _PressScale(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () {
-              Navigator.of(context).push(
-                SmoothPageRoute(page: MenuItemDetailPage(menuItemId: item.id)),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.topCenter,
-                children: [
-                  Align(
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () {
+                  Navigator.of(context).push(
+                    SmoothPageRoute(
+                      page: MenuItemDetailPage(menuItemId: item.id),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Align(
                     alignment: Alignment.topCenter,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -507,16 +509,16 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
                       ],
                     ),
                   ),
-                  Positioned(
-                    bottom: -20,
-                    left: 0,
-                    right: 0,
-                    child: Center(child: _buildAddButton(item)),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+            Positioned(
+              bottom: -20,
+              left: 0,
+              right: 0,
+              child: Center(child: _buildAddButton(item)),
+            ),
+          ],
         ),
       ),
     );
