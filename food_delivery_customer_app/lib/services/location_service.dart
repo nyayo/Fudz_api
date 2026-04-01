@@ -19,8 +19,10 @@ class LocationService {
   static const String googlePlacesBaseUrl =
       'https://maps.googleapis.com/maps/api/place';
   static const String googlePlacesApiKey = 'AIzaSyCwCOzPmqLPFeVnY0lDvUxtXnx-c-jliK4';
-    static const String googleDirectionsBaseUrl =
+  static const String googleDirectionsBaseUrl =
       'https://maps.googleapis.com/maps/api/directions';
+  static const String osrmBaseUrl =
+      'https://router.project-osrm.org/route/v1/driving';
 
   /// Get current location with high accuracy using Geolocator.
   /// Falls back to lower accuracy if high-accuracy fails.
@@ -435,6 +437,16 @@ class LocationService {
     DeliveryLocation pickup,
     DeliveryLocation dropoff,
   ) async {
+    final googleRoute = await _getGoogleRoute(pickup, dropoff);
+    if (googleRoute != null) return googleRoute;
+
+    return _getOsrmRoute(pickup, dropoff);
+  }
+
+  Future<DeliveryRoute?> _getGoogleRoute(
+    DeliveryLocation pickup,
+    DeliveryLocation dropoff,
+  ) async {
     if (googlePlacesApiKey.isEmpty) return null;
 
     try {
@@ -475,6 +487,49 @@ class LocationService {
       );
     } catch (e) {
       debugPrint('Error fetching route: $e');
+      return null;
+    }
+  }
+
+  Future<DeliveryRoute?> _getOsrmRoute(
+    DeliveryLocation pickup,
+    DeliveryLocation dropoff,
+  ) async {
+    try {
+      final origin = '${pickup.longitude},${pickup.latitude}';
+      final destination = '${dropoff.longitude},${dropoff.latitude}';
+      final response = await http.get(
+        Uri.parse(
+          '$osrmBaseUrl/$origin;$destination?overview=full&geometries=polyline',
+        ),
+      );
+
+      if (response.statusCode != 200) return null;
+      final data = json.decode(response.body);
+      final routes = (data['routes'] as List? ?? []);
+      if (routes.isEmpty) return null;
+
+      final route = routes.first as Map<String, dynamic>;
+      final polyline = route['geometry']?.toString();
+      if (polyline == null || polyline.isEmpty) return null;
+
+      final points = _decodePolyline(polyline);
+      final distanceMeters =
+          (route['distance'] as num?)?.toDouble() ??
+              calculateDistance(pickup.latLng, dropoff.latLng);
+      final durationSeconds =
+          (route['duration'] as num?)?.toDouble() ??
+              (distanceMeters / 1000) / 25.0 * 3600;
+
+      return DeliveryRoute(
+        pickup: pickup,
+        dropoff: dropoff,
+        distance: distanceMeters,
+        duration: durationSeconds,
+        polylinePoints: points,
+      );
+    } catch (e) {
+      debugPrint('Error fetching OSRM route: $e');
       return null;
     }
   }
