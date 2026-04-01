@@ -959,8 +959,8 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                           i < avg.floor()
                               ? Icons.star_rounded
                               : (i < avg.ceil() && avg % 1 >= 0.5)
-                              ? Icons.star_half_rounded
-                              : Icons.star_outline_rounded,
+                                  ? Icons.star_half_rounded
+                                  : Icons.star_outline_rounded,
                           color: Colors.amber,
                           size: 16,
                         );
@@ -969,49 +969,19 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                       Text(
                         '${avg.toStringAsFixed(1)}/5',
                         style: TextStyle(
-                    InkWell(
-                      onTap: () => _showAllReviewsSheet(restaurant.id),
-                      child: Text(
-                        'See All',
-                        style: TextStyle(
                           fontSize: 12,
+                          color: Colors.grey[600],
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[500],
                         ),
                       ),
-                    ),
+                    ],
+                  ),
+                  const Spacer(),
+                  InkWell(
+                    onTap: () => _showAllReviewsSheet(restaurant.id),
+                    child: Text(
                       'See All',
                       style: TextStyle(
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      if (!userController.isLoggedIn) {
-                        Get.snackbar(
-                          'Login required',
-                          'Please login to add a review',
-                          snackPosition: SnackPosition.BOTTOM,
-                        );
-                        return;
-                      }
-                      _showRatingDialog(restaurant.id);
-                    },
-                    icon: Icon(Icons.rate_review, color: TColor.primary),
-                    label: Text(
-                      'Write a review',
-                      style: TextStyle(
-                        color: TColor.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                ),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[500],
@@ -1019,6 +989,36 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () {
+                    if (!userController.isLoggedIn) {
+                      Get.snackbar(
+                        'Login required',
+                        'Please login to add a review',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                      return;
+                    }
+                    _showRatingDialog(restaurant.id);
+                  },
+                  icon: Icon(Icons.rate_review, color: TColor.primary),
+                  label: Text(
+                    'Write a review',
+                    style: TextStyle(
+                      color: TColor.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
               ),
 
               if (isLoading)
