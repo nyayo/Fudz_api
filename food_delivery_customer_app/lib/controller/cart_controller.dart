@@ -441,20 +441,23 @@ class CartController extends GetxController {
       print(
         '🔗 Processing Remote Item [${remoteItem.menuItem.id}]: ${remoteItem.menuItem.title}',
       );
+      print(
+        '📦 Merge quantities - Local qty: ${localCartItem.quantity}, Remote qty: ${remoteItem.quantity}, Local id: ${localCartItem.id}',
+      );
 
       if (localMenuItem != null &&
           (localMenuItem.imageUrl != null ||
               localMenuItem.restaurantName != null)) {
-        // Use local menu item data which has more info (image, description, etc.)
-        // But preserve local quantity since it might be more up-to-date
-        final quantityToUse = localCartItem.quantity > remoteItem.quantity 
-            ? localCartItem.quantity 
-            : remoteItem.quantity;
+        // Prefer remote quantity once the item is synced to avoid inflated counts.
+        final localIsUnsynced = localCartItem.id.startsWith('local_');
+        final quantityToUse = localIsUnsynced
+          ? localCartItem.quantity
+          : remoteItem.quantity;
         final unitPrice = localCartItem.unitPrice > 0 
             ? localCartItem.unitPrice 
             : remoteItem.unitPrice;
         print(
-          '✅ Preserving local data for: ${localMenuItem.title}, Restaurant: ${localMenuItem.restaurantName}, Quantity: $quantityToUse',
+          '✅ Preserving local data for: ${localMenuItem.title}, Restaurant: ${localMenuItem.restaurantName}, Quantity: $quantityToUse (localUnsynced: $localIsUnsynced)',
         );
         mergedItems.add(
           CartItem(
