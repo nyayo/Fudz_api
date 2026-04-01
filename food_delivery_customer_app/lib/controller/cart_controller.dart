@@ -719,6 +719,9 @@ class CartController extends GetxController {
         await GetStorage().remove('current_cart_id');
       }
 
+      _localCart.refresh();
+      update(); // Notify GetBuilder listeners (bottom nav)
+
       Get.snackbar('Cleared', 'Cart cleared');
     } catch (e) {
       error.value = e.toString();

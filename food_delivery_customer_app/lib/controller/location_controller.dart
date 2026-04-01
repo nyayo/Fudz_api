@@ -20,12 +20,14 @@ class LocationController extends GetxController {
   final RxSet<Polyline> polylines = <Polyline>{}.obs;
 
   GoogleMapController? _mapController;
+  final RxBool _isProgrammaticMove = false.obs;
   final RxBool _isInitialized = false.obs;
 
   DeliveryLocation? get currentLocation => _currentLocation.value;
   DeliveryLocation? get selectedLocation => _selectedLocation.value;
   DeliveryRoute? get deliveryRoute => _deliveryRoute.value;
   bool get isInitialized => _isInitialized.value;
+  bool get isProgrammaticMove => _isProgrammaticMove.value;
 
   @override
   void onInit() {
@@ -148,9 +150,13 @@ class LocationController extends GetxController {
 
   void _moveToLocation(LatLng point, {double zoom = 15.0}) {
     try {
+      _isProgrammaticMove.value = true;
       _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(point, zoom),
       );
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _isProgrammaticMove.value = false;
+      });
       print('📍 Map moved to: $point');
     } catch (e) {
       print('⚠️ Could not move map: $e');
@@ -175,10 +181,14 @@ class LocationController extends GetxController {
 
     try {
       isLoading.value = true;
-      final route = _locationService.estimateRoute(
-        _currentLocation.value!,
-        _selectedLocation.value!,
-      );
+      final route = await _locationService.getRoute(
+            _currentLocation.value!,
+            _selectedLocation.value!,
+          ) ??
+          _locationService.estimateRoute(
+            _currentLocation.value!,
+            _selectedLocation.value!,
+          );
 
       _deliveryRoute.value = route;
       _updatePolyline(route.polylinePoints);
