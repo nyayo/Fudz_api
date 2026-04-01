@@ -32,6 +32,7 @@ class UserController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isRefreshingToken = false.obs;
   final RxString error = ''.obs;
+  final RxBool isGoogleAuthUser = false.obs;
 
   // Guard against duplicate service initialization
   bool _servicesInitialized = false;
@@ -50,6 +51,7 @@ class UserController extends GetxController {
     // checkAuthStatus() is called by SplashScreen to avoid duplicate work.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await syncTokenFromStorage();
+      await refreshGoogleAuthStatus();
     });
   }
 
@@ -444,6 +446,7 @@ class UserController extends GetxController {
         // Initialize services and go to home
         await _initializeUserServices();
         isGoogleLinked.value = true; // Logged in via Google = linked
+        isGoogleAuthUser.value = true;
         Get.offAllNamed('/home');
       } else if (needsRegistration) {
         // NEW USER: Needs to provide additional information
@@ -1098,6 +1101,7 @@ class UserController extends GetxController {
 
       // Sign out from Google
       await _googleSignInService.signOut();
+      isGoogleAuthUser.value = false;
 
       // Logout from backend
       if (_accessToken.value.isNotEmpty) {
@@ -1155,6 +1159,10 @@ class UserController extends GetxController {
       print('❌ Google auth status check error: $e');
       return false;
     }
+  }
+
+  Future<void> refreshGoogleAuthStatus() async {
+    isGoogleAuthUser.value = await checkGoogleAuthStatus();
   }
 
   // ── Google Account Linking ──────────────────────────────────────────
