@@ -47,7 +47,19 @@ class PaymentStatus:
 
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='carts'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+        ]
 
 
 class CartItem(models.Model):

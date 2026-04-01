@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
 
 from .models import RestaurantReview
+from .permissions import IsReviewOwnerOrReadOnly
 from .serializers import RestaurantReviewSerializer
 
 class RestaurantReviewListCreateView(generics.ListCreateAPIView):
@@ -22,4 +23,4 @@ class RestaurantReviewListCreateView(generics.ListCreateAPIView):
 class RestaurantReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = RestaurantReview.objects.all()
     serializer_class = RestaurantReviewSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsReviewOwnerOrReadOnly]

@@ -99,6 +99,11 @@ class CourierEarningsSerializer(serializers.ModelSerializer):
         fields = ["order_id", "restaurant_name", "amount", "commission_rate", "date"]
 
 
+class NearbyQuerySerializer(serializers.Serializer):
+    lat = serializers.FloatField(min_value=-90, max_value=90)
+    lng = serializers.FloatField(min_value=-180, max_value=180)
+
+
 class DeliveryTrackingSerializer(serializers.ModelSerializer):
     """Serializer for real-time delivery tracking"""
     latitude = serializers.FloatField(write_only=True, help_text="Current latitude of courier")

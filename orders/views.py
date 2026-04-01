@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Prefetch
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import action
@@ -7,12 +8,13 @@ from rest_framework.mixins import (
     DestroyModelMixin,
     RetrieveModelMixin,
 )
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from delivery.models import DeliveryRequest
 from delivery.tasks import auto_assign_courier
+from restaurants.models import Promotion
 
 from .models import Cart, CartItem, Order, OrderStatus
 from .serializers import (
@@ -30,10 +32,30 @@ class CartViewSet(
     CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet
 ):
     queryset = Cart.objects.prefetch_related(
-        "items__menu_item__images", "items__menu_item__promotions"
+        Prefetch(
+            'items',
+            queryset=CartItem.objects.select_related('menu_item').prefetch_related(
+                Prefetch(
+                    'menu_item__promotions',
+                    queryset=Promotion.objects.filter(is_active=True)
+                ),
+                'menu_item__images'
+            )
+        )
     ).all()
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = CartSerializer
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            return self.queryset.filter(user=self.request.user)
+        return Cart.objects.none()
+
+    def perform_create(self, serializer):
+        if self.request.user.is_authenticated:
+            serializer.save(user=self.request.user)
+        else:
+            serializer.save()
 
 
 class CartItemViewSet(ModelViewSet):

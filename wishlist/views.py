@@ -67,7 +67,13 @@ class RemoveFromWishlistView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, menu_item_id):
-        wishlist = Wishlist.objects.get(customer=request.user.customer_profile)
+        try:
+            wishlist = Wishlist.objects.get(customer=request.user.customer_profile)
+        except Wishlist.DoesNotExist:
+            return Response(
+                {"detail": "Wishlist not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         try:
             item = WishlistItem.objects.get(wishlist=wishlist, menu_item_id=menu_item_id)
             item.delete()

@@ -9,7 +9,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from .models import DeliveryRequest, DeliveryTracking, DeliveryStatus, CourierEarnings
-from .serializers import DeliveryRequestSerializer, DeliveryStatusUpdateSerializer, DeliveryTrackingSerializer, CourierEarningsSerializer
+from .serializers import DeliveryRequestSerializer, DeliveryStatusUpdateSerializer, DeliveryTrackingSerializer, CourierEarningsSerializer, NearbyQuerySerializer
 from users.models import CourierProfile
 from orders.models import OrderStatus
 
@@ -52,13 +52,12 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="nearby")
     def nearby(self, request):
         """Get nearby pending deliveries for courier"""
-        lat = request.query_params.get("lat")
-        lng = request.query_params.get("lng")
+        serializer = NearbyQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        lat = serializer.validated_data["lat"]
+        lng = serializer.validated_data["lng"]
 
-        if not lat or not lng:
-            return Response({"error": "lat and lng required"}, status=400)
-
-        point = Point(float(lng), float(lat), srid=4326)
+        point = Point(lng, lat, srid=4326)
         deliveries = (
             DeliveryRequest.objects.filter(status=DeliveryStatus.PENDING)
             .annotate(distance=Distance("pickup_location", point))
@@ -68,6 +67,7 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(deliveries, many=True)
         return Response(serializer.data)
 
+    @transaction.atomic
     @action(detail=True, methods=["post"], url_path="accept")
     def accept(self, request, pk=None):
         """Courier accepts delivery"""
@@ -80,6 +80,7 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         delivery.mark_status(DeliveryStatus.ACCEPTED)
         return Response({"message": "Delivery accepted"}, status=200)
 
+    @transaction.atomic
     @action(detail=True, methods=["post"], url_path="decline")
     def decline(self, request, pk=None):
         """Courier declines assigned delivery"""

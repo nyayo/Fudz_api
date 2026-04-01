@@ -25,6 +25,7 @@ class PromotionSerializer(serializers.ModelSerializer):
             "restaurant_name",
             "name",
             "description",
+            "banner",
             "discount",
             "start_date",
             "end_date",

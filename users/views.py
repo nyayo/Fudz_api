@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.permissions import IsRestaurantOwner
-from users.throttling import OTPRateThrottle
+from users.throttling import OTPRateThrottle, PasswordResetThrottle, GoogleAuthThrottle
 
 from .email_templates import get_email_template
 from .helpers import get_tokens_for_user, register_social_user
@@ -268,6 +268,7 @@ class GoogleOauthSignInview(generics.GenericAPIView):
     serializer_class = GoogleSignInSerializer
     queryset = User.objects.none()
     permission_classes = [AllowAny]
+    throttle_classes = [GoogleAuthThrottle]
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -303,6 +304,7 @@ class PasswordResetRequestView(GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
     queryset = User.objects.none()
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request):
         serializer = self.serializer_class(

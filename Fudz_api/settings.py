@@ -202,7 +202,10 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
         "otp": "5/minute",
+        "password_reset": "3/hour",
+        "google_auth": "10/minute",
     },
+    "EXCEPTION_HANDLER": "Fudz_api.exceptions.custom_exception_handler",
 }
 
 REDIS_URL = "redis://redis:6379/1"
@@ -282,3 +285,53 @@ GOOGLE_CLIENT_ID = (
 )
 GOOGLE_CLIENT_SECRET = "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"
 SOCIAL_AUTH_PASSWORD = "Fudz@12345"
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'users': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'orders': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'delivery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

@@ -12,6 +12,7 @@ class Promotion(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=225)
     discount = models.FloatField(validators=[MinValueValidator(0.0)])
+    banner = models.ImageField(upload_to="images/promotions/", validators=[validate_file_size], blank=True, null=True)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
@@ -104,6 +105,31 @@ class MenuItem(models.Model):
             start_date__lte=now,
             end_date__gte=now
         ).order_by('-discount').first()
+
+    def get_effective_price(self, at_time=None):
+        """
+        Calculate price after applying the best active promotion.
+        Returns tuple: (effective_price, applied_promotion or None)
+        """
+        from django.utils import timezone
+        from decimal import Decimal
+        
+        now = at_time or timezone.now()
+        
+        active_promotions = self.promotions.filter(
+            is_active=True,
+            start_date__lte=now,
+            end_date__gte=now
+        )
+        
+        if not active_promotions.exists():
+            return self.price, None
+        
+        best_promotion = max(active_promotions, key=lambda p: p.discount)
+        discount_amount = self.price * Decimal(str(best_promotion.discount / 100))
+        effective_price = self.price - discount_amount
+        
+        return round(effective_price, 2), best_promotion
 
 
 class MenuItemImage(models.Model):

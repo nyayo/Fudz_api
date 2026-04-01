@@ -1,3 +1,4 @@
+import hashlib
 import random
 import string
 
@@ -67,6 +68,15 @@ class User(AbstractUser, PermissionsMixin):
 
     objects = UserManager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['phone']),
+            models.Index(fields=['is_verified']),
+            models.Index(fields=['user_type', 'is_verified']),
+            models.Index(fields=['auth_provider']),
+        ]
+
     def save(self, *args, **kwargs):
         if not self.username:
             # Generate base username from email or phone
@@ -107,40 +117,110 @@ class User(AbstractUser, PermissionsMixin):
 
 class EmailVerification(models.Model):
     email = models.EmailField()
-    otp = models.CharField(max_length=6)
+    otp = models.CharField(max_length=64)  # Store hashed OTP
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_verified = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    MAX_ATTEMPTS = 5
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['email', 'is_verified']),
+            models.Index(fields=['expires_at']),
+        ]
 
     def __str__(self):
-        return f"{self.email} - {self.otp}"
+        return f"{self.email}"
 
     def is_expired(self):
         return timezone.now() > self.expires_at
 
-    def generate_otp(self):
-        self.otp = "".join(random.choices(string.digits, k=6))
+    def set_otp(self, otp):
+        """Hash and store OTP"""
+        self.otp = hashlib.sha256(otp.encode()).hexdigest()
         self.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+        self.attempts = 0
         self.save()
+
+    def verify_otp(self, otp):
+        """Verify OTP with attempt tracking"""
+        if self.attempts >= self.MAX_ATTEMPTS:
+            return False, "Too many attempts. Request new OTP."
+
+        if self.is_expired():
+            return False, "OTP expired."
+
+        otp_hash = hashlib.sha256(otp.encode()).hexdigest()
+        if self.otp == otp_hash:
+            self.is_verified = True
+            self.save()
+            return True, "Verified"
+
+        self.attempts += 1
+        self.save()
+        return False, f"Invalid OTP. {self.MAX_ATTEMPTS - self.attempts} attempts remaining."
+
+    def generate_otp(self):
+        """Generate a new OTP and return the plain text version"""
+        plain_otp = "".join(random.choices(string.digits, k=6))
+        self.set_otp(plain_otp)
+        return plain_otp
 
 
 class PhoneVerification(models.Model):
     phone = models.CharField(max_length=17)
-    otp = models.CharField(max_length=6)
+    otp = models.CharField(max_length=64)  # Store hashed OTP
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_verified = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    MAX_ATTEMPTS = 5
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['phone', 'is_verified']),
+            models.Index(fields=['expires_at']),
+        ]
 
     def __str__(self):
-        return f"{self.phone} - {self.otp}"
+        return f"{self.phone}"
 
     def is_expired(self):
         return timezone.now() > self.expires_at
 
-    def generate_otp(self):
-        self.otp = "".join(random.choices(string.digits, k=6))
+    def set_otp(self, otp):
+        """Hash and store OTP"""
+        self.otp = hashlib.sha256(otp.encode()).hexdigest()
         self.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+        self.attempts = 0
         self.save()
+
+    def verify_otp(self, otp):
+        """Verify OTP with attempt tracking"""
+        if self.attempts >= self.MAX_ATTEMPTS:
+            return False, "Too many attempts. Request new OTP."
+
+        if self.is_expired():
+            return False, "OTP expired."
+
+        otp_hash = hashlib.sha256(otp.encode()).hexdigest()
+        if self.otp == otp_hash:
+            self.is_verified = True
+            self.save()
+            return True, "Verified"
+
+        self.attempts += 1
+        self.save()
+        return False, f"Invalid OTP. {self.MAX_ATTEMPTS - self.attempts} attempts remaining."
+
+    def generate_otp(self):
+        """Generate a new OTP and return the plain text version"""
+        plain_otp = "".join(random.choices(string.digits, k=6))
+        self.set_otp(plain_otp)
+        return plain_otp
 
 
 class CustomerProfile(models.Model):

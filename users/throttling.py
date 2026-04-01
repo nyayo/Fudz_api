@@ -1,3 +1,4 @@
+from rest_framework import throttling
 from rest_framework.throttling import AnonRateThrottle
 
 
@@ -18,3 +19,13 @@ class OTPRateThrottle(AnonRateThrottle):
             "scope": self.scope,
             "ident": ident,
         }
+
+
+class PasswordResetThrottle(throttling.AnonRateThrottle):
+    rate = '3/hour'
+    scope = 'password_reset'
+
+
+class GoogleAuthThrottle(throttling.AnonRateThrottle):
+    rate = '10/minute'
+    scope = 'google_auth'
