@@ -934,6 +934,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         final reviews = _reviewController.reviews;
         final isLoading = _reviewController.isLoading.value;
         final avg = _reviewController.averageRating;
+        final userController = Get.find<UserController>();
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -968,19 +969,49 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
                       Text(
                         '${avg.toStringAsFixed(1)}/5',
                         style: TextStyle(
+                    InkWell(
+                      onTap: () => _showAllReviewsSheet(restaurant.id),
+                      child: Text(
+                        'See All',
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
                           fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
                         ),
                       ),
-                    ],
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: () => _showRatingDialog(restaurant.id),
-                    child: Text(
+                    ),
                       'See All',
                       style: TextStyle(
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      if (!userController.isLoggedIn) {
+                        Get.snackbar(
+                          'Login required',
+                          'Please login to add a review',
+                          snackPosition: SnackPosition.BOTTOM,
+                        );
+                        return;
+                      }
+                      _showRatingDialog(restaurant.id);
+                    },
+                    icon: Icon(Icons.rate_review, color: TColor.primary),
+                    label: Text(
+                      'Write a review',
+                      style: TextStyle(
+                        color: TColor.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[500],
@@ -1023,6 +1054,95 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           ),
         );
       }),
+    );
+  }
+
+  void _showAllReviewsSheet(int restaurantId) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.92,
+          builder: (context, scrollController) {
+            return Obx(() {
+              final reviews = _reviewController.reviews;
+              final isLoading = _reviewController.isLoading.value;
+              return Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Text(
+                          'All reviews',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: TColor.primaryText,
+                          ),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => _showRatingDialog(restaurantId),
+                          child: Text(
+                            'Write review',
+                            style: TextStyle(
+                              color: TColor.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: LinearProgressIndicator(),
+                    ),
+                  Expanded(
+                    child: reviews.isEmpty && !isLoading
+                        ? Center(
+                            child: Text(
+                              'No reviews yet.',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          )
+                        : ListView.separated(
+                            controller: scrollController,
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                            itemCount: reviews.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            itemBuilder: (_, i) {
+                              final review = reviews[i];
+                              return _buildReviewCard(review);
+                            },
+                          ),
+                  ),
+                ],
+              );
+            });
+          },
+        );
+      },
     );
   }
 
