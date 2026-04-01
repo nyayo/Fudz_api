@@ -335,7 +335,8 @@ class CartController extends GetxController {
       }
 
       // Sync each item with backend
-      for (final localItem in _localCart.value!.items) {
+      for (var i = 0; i < _localCart.value!.items.length; i++) {
+        final localItem = _localCart.value!.items[i];
         if (localItem.id.startsWith('local_')) {
           // This is a local item that needs to be synced
           try {
@@ -347,6 +348,21 @@ class CartController extends GetxController {
               },
             );
 
+            if (response is Map && response['id'] != null) {
+              final remoteId = response['id'].toString();
+              final remoteQty =
+                  (response['qty'] as int?) ?? localItem.quantity;
+              final unitPrice =
+                  localItem.unitPrice > 0 ? localItem.unitPrice : 0.0;
+              _localCart.value!.items[i] = CartItem(
+                id: remoteId,
+                menuItem: localItem.menuItem,
+                quantity: remoteQty,
+                totalPrice: unitPrice * remoteQty,
+                unitPrice: unitPrice,
+              );
+            }
+
             print('✅ Synced item: ${localItem.menuItem.title}');
           } catch (e) {
             print(
@@ -356,6 +372,10 @@ class CartController extends GetxController {
           }
         }
       }
+
+      _saveLocalCart(userId: userId);
+      _localCart.refresh();
+      update();
 
       // Refresh remote cart to get updated data
       await getCart(userId: userId);
