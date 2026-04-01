@@ -410,13 +410,31 @@ class _CategoryPageState extends State<CategoryPage> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          priceText,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: hasPromotion ? Colors.red : TColor.primary,
-                          ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              priceText,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: hasPromotion
+                                    ? Colors.red
+                                    : TColor.primary,
+                              ),
+                            ),
+                            if (originalPriceText != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                originalPriceText,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
@@ -424,22 +442,6 @@ class _CategoryPageState extends State<CategoryPage> {
                 ),
               ],
             ),
-            if (hasPromotion)
-              Positioned(
-                right: 5,
-                top: 105,
-                child: RotatedBox(
-                  quarterTurns: 1,
-                  child: Text(
-                    originalPriceText ?? '',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[400],
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                  ),
-                ),
-              ),
             Positioned(
               bottom: -12,
               left: 0,
