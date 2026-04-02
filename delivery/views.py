@@ -31,8 +31,6 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
             return DeliveryStatusUpdateSerializer
         return DeliveryRequestSerializer
 
-    """----------- Custom Actions -----------"""
-
     @action(detail=True, methods=["post"], url_path="assign")
     def assign(self, request, pk=None):
         """Assign courier manually (done after restaurant accepts order)"""
@@ -107,7 +105,6 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 serializer.save()
                 
-                # Update order status to match delivery status
                 if new_status == DeliveryStatus.PICKED_UP:
                     delivery.order.status = OrderStatus.PICKED_UP
                     delivery.order.save()
@@ -118,7 +115,6 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
                     delivery.order.status = OrderStatus.CANCELLED
                     delivery.order.save()
 
-                # Reset courier availability when delivery is completed or cancelled
                 if new_status in DeliveryStatus.COMPLETED_STATUSES and delivery.courier:
                     delivery.courier.is_available = True
                     if new_status == DeliveryStatus.DELIVERED:
@@ -140,7 +136,6 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
         if delivery.status not in DeliveryStatus.IN_PROGRESS_STATUSES:
             return Response({"error": "Delivery is not in progress"}, status=400)
 
-        # Get or create tracking record
         tracking, created = DeliveryTracking.objects.get_or_create(
             delivery=delivery,
             courier=courier,

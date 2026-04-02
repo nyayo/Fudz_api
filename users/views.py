@@ -4,7 +4,6 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import timezone
 from django.utils.encoding import DjangoUnicodeDecodeError, smart_str
 from django.utils.http import urlsafe_base64_decode
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from push_notifications.models import APNSDevice, GCMDevice, WebPushDevice
 from rest_framework import generics
@@ -19,7 +18,6 @@ from rest_framework.views import APIView
 from users.permissions import IsRestaurantOwner
 from users.throttling import OTPRateThrottle, PasswordResetThrottle, GoogleAuthThrottle
 
-from .email_templates import get_email_template
 from .helpers import get_tokens_for_user, register_social_user
 from .models import (
     EmailVerification,
@@ -43,7 +41,7 @@ from .serializers import (
     VerifyOTPSerializer,
     VerifyPhoneOTPSerializer,
 )
-from .services import OTPService, PlunkEmailService, SMSService
+from .services import OTPService
 from .tasks import send_push_notification_to_user, send_sms_otp_task, send_templated_email_task
 
 logger = logging.getLogger(__name__)
@@ -55,8 +53,6 @@ class RequestOTPView(GenericAPIView):
     throttle_classes = [OTPRateThrottle]
 
     def post(self, request):
-        from .services import send_normal_email
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -75,18 +71,16 @@ class RequestOTPView(GenericAPIView):
                 otp_obj.is_verified = False
                 otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
 
-            otp_obj.generate_otp()
+            plain_otp = otp_obj.generate_otp()
+            otp_obj.save()
 
-            verification_code = otp_obj.otp
-
-            # Send verification email asynchronously via Celery
             send_templated_email_task.delay(
                 email,
                 "email_verification",
-                {"user_name": email, "verification_code": verification_code},
+                {"user_name": email, "verification_code": plain_otp},
             )
 
-            OTPService.send_otp(email, otp_obj.otp)
+            OTPService.send_otp(email, plain_otp)
 
             return Response(
                 {"message": "OTP sent successfully to your email"},
@@ -125,10 +119,10 @@ class RequestPhoneOTPView(GenericAPIView):
                 otp_obj.is_verified = False
                 otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
 
-            otp_obj.generate_otp()
+            plain_otp = otp_obj.generate_otp()
+            otp_obj.save()
 
-            # Send OTP via SMS asynchronously using Celery
-            send_sms_otp_task.delay(phone, otp_obj.otp)
+            send_sms_otp_task.delay(phone, plain_otp)
 
             return Response(
                 {"message": "OTP sent successfully to your phone number"},
@@ -639,7 +633,6 @@ class LinkGoogleAccountView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-        # Prevent unlinking if Google is the only auth method
         if user.auth_provider == 'google' and not user.has_usable_password():
             return Response(
                 {"message": "Cannot unlink Google account as it's your only login method. Set a password first."},

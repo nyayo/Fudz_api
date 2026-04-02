@@ -45,7 +45,7 @@ class VerifyPhoneOTPSerializer(serializers.Serializer):
     def validate(self, data):
         try:
             record = PhoneVerification.objects.get(
-                phone=data["phone"], otp=data["otp"], is_verified=False
+                phone=data["phone"], is_verified=False
             )
         except PhoneVerification.DoesNotExist:
             raise serializers.ValidationError("Invalid OTP or phone number.")
@@ -53,16 +53,18 @@ class VerifyPhoneOTPSerializer(serializers.Serializer):
         if record.is_expired():
             raise serializers.ValidationError("OTP expired.")
 
+        if not record.verify_otp(data["otp"]):
+            raise serializers.ValidationError("Invalid OTP or phone number.")
+
         user_exists = User.objects.filter(phone=data["phone"]).exists()
         data["user_exists"] = user_exists
         data["requires_registration"] = not user_exists
+        data["_record"] = record
 
         return data
 
     def create(self, validated_data):
-        record = PhoneVerification.objects.get(
-            phone=validated_data["phone"], otp=validated_data["otp"]
-        )
+        record = validated_data.pop("_record")
         record.is_verified = True
         record.save()
 
@@ -84,23 +86,25 @@ class VerifyOTPSerializer(serializers.Serializer):
 
     def validate(self, data):
         try:
-            record = EmailVerification.objects.get(email=data["email"], otp=data["otp"])
+            record = EmailVerification.objects.get(email=data["email"], is_verified=False)
         except EmailVerification.DoesNotExist:
             raise serializers.ValidationError("Invalid OTP or email.")
 
         if record.is_expired():
             raise serializers.ValidationError("OTP expired.")
 
+        if not record.verify_otp(data["otp"]):
+            raise serializers.ValidationError("Invalid OTP or email.")
+
         user_exists = User.objects.filter(email=data["email"]).exists()
         data["user_exists"] = user_exists
         data["requires_registration"] = not user_exists
+        data["_record"] = record
 
         return data
 
     def create(self, validated_data):
-        record = EmailVerification.objects.get(
-            email=validated_data["email"], otp=validated_data["otp"]
-        )
+        record = validated_data.pop("_record")
         record.is_verified = True
         record.save()
 
