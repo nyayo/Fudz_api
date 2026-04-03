@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from decouple import config, Csv
 
 import firebase_admin
 from firebase_admin import credentials
@@ -8,11 +9,11 @@ from firebase_admin import credentials
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = "django-insecure-kg!c-z-901tmp@)+aw^z!q$(=!@m$m2vp3@_dsl93mh%x6%bqf"
+SECRET_KEY = config("SECRET_KEY")
 
-DEBUG = True
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-INSTALLED_APPS = [
+DJANGO_APPS = [
     "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -21,6 +22,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
+]
+
+THIRD_PARTY_APPS = [
     "drf_spectacular",
     "channels",
     "django_filters",
@@ -33,6 +37,9 @@ INSTALLED_APPS = [
     "django_celery_results",
     "push_notifications",
     "storages",
+]
+
+LOCAL_APPS = [
     "users",
     "restaurants",
     "orders",
@@ -40,6 +47,10 @@ INSTALLED_APPS = [
     "reviews",
     "wishlist",
 ]
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -55,21 +66,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "Fudz_api.urls"
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "www.unshifter.site",
-    "unshifter.site",
-    "129.151.165.133",
-]
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=Csv())
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://www.unshifter.site",
-    "https://unshifter.site",
-    "https://129.151.165.133",
-]
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=True, cast=bool)
 
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -105,12 +106,12 @@ WSGI_APPLICATION = "Fudz_api.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "fudz_delivery",
-        "USER": "fudz",
-        "PASSWORD": "password",
-        "HOST": "db",
-        "PORT": 5432,
+        "ENGINE": config("DB_ENGINE", default="django.contrib.gis.db.backends.postgis"),
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST"),
+        "PORT": config("DB_PORT", default=5432),
     }
 }
 
@@ -163,10 +164,10 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
 PUSH_NOTIFICATIONS_SETTINGS = {
-    "APNS_CERTIFICATE": "/path/to/apns/certificate.pem",
-    "APNS_TOPIC": "com.yourapp.bundle",
-    "WP_PRIVATE_KEY": "your-vapid-private-key",
-    "WP_CLAIMS": {"sub": "mailto:your-email@example.com"},
+    "APNS_CERTIFICATE": config("APNS_CERTIFICATE_PATH"),
+    "APNS_TOPIC": config("APNS_TOPIC"),
+    "WP_PRIVATE_KEY": config("WP_PRIVATE_KEY"),
+    "WP_CLAIMS": {"sub": config("WP_CLAIMS_SUB")},
 }
 
 
@@ -208,9 +209,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "Fudz_api.exceptions.custom_exception_handler",
 }
 
-REDIS_URL = "redis://redis:6379/1"
-
-CELERY_BROKER_URL = REDIS_URL
+CELERY_BROKER_URL = config("REDIS_URL")
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_TIMEZONE = "UTC"
 CELERY_ENABLE_UTC = True
@@ -222,7 +221,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [(config("REDIS_HOST"), config("REDIS_PORT"))],
         },
     },
 }
@@ -230,7 +229,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
+        "LOCATION": config("REDIS_URL"),
     }
 }
 
@@ -251,25 +250,25 @@ SPECTACULAR_SETTINGS = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "localhost"
-EMAIL_HOST_USER = ""
-EMAIL_HOST_PASSWORD = ""
-DEFAULT_FROM_EMAIL = "info@henryjwtauth.com"
-EMAIL_USE_TLS = True
-EMAIL_PORT = 2525
-EMAIL_PLUNK_API_KEY = "sk_2f4f1a3140079af8c4d647fdfc09945f74b390414d6e1e02"
+EMAIL_HOST = config("EMAIL_HOST", default="smtp.mailtrap.io")
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True)
+EMAIL_PORT = config("EMAIL_PORT", default=2525)
+EMAIL_PLUNK_API_KEY = config("EMAIL_PLUNK_API_KEY")
 
-TEXTBEE_API_KEY = "e44f6ff0-a9be-4d33-9f92-06df98e132ac"
-TEXTBEE_DEVICE_ID = "69a740cbb0517dc9071e908f"
+TEXTBEE_API_KEY = config("TEXTBEE_API_KEY")
+TEXTBEE_DEVICE_ID = config("TEXTBEE_DEVICE_ID")
 
 
-R2_ACCOUNT_ID = "9f582a41da5edb96b1d7aa0d56dac0b1"
-R2_ACCESS_KEY_ID = "5de5dff55055eb06d7462fa81ad724fa"
+R2_ACCOUNT_ID = config("R2_ACCOUNT_ID")
+R2_ACCESS_KEY_ID = config("R2_ACCESS_KEY_ID")
 R2_SECRET_ACCESS_KEY = (
-    "c32e2e3aff3afb63a10f4ae0c7619e83f8b05b0f361da856fec91bee6c33f011"
+    config("R2_SECRET_ACCESS_KEY")
 )
-R2_BUCKET_NAME = "fudgo"
-R2_CUSTOM_DOMAIN = "pub-5937158922ec4cd89a4f0924ecda1ba9.r2.dev"
+R2_BUCKET_NAME = config("R2_BUCKET_NAME")
+R2_CUSTOM_DOMAIN = config("R2_CUSTOM_DOMAIN")
 
 STORAGES = {
     "default": {
@@ -281,12 +280,11 @@ STORAGES = {
 }
 
 GOOGLE_CLIENT_ID = (
-    "420175212968-lqga32ger8fcfrve7jp99259ljrd0elm.apps.googleusercontent.com"
+    config("GOOGLE_CLIENT_ID")
 )
-GOOGLE_CLIENT_SECRET = "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"
-SOCIAL_AUTH_PASSWORD = "Fudz@12345"
+GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET")
+SOCIAL_AUTH_PASSWORD = config("SOCIAL_AUTH_PASSWORD")
 
-# Logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
