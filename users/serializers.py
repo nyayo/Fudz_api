@@ -138,13 +138,11 @@ class RegistrationSerializer(serializers.Serializer):
         if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError("Passwords do not match")
 
-        # Check for duplicate email
         if User.objects.filter(email=attrs["email"]).exists():
             raise serializers.ValidationError(
                 "An account with this email already exists. Please login instead."
             )
 
-        # Check for duplicate phone
         if User.objects.filter(phone=attrs["phone"]).exists():
             raise serializers.ValidationError(
                 "An account with this phone number already exists. Please login instead."
