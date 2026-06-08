@@ -900,6 +900,7 @@ requires-dist = [
     { name = "msgpack", marker = "python_full_version >= '3.9'", specifier = "==1.1.2" },
     { name = "packaging", marker = "python_full_version >= '3.8'", specifier = "==25.0" },
     { name = "pillow", marker = "python_full_version >= '3.9'", specifier = "==11.3.0" },
+    { name = "prometheus-client", specifier = ">=0.23.1" },
     { name = "prometheus-client", marker = "python_full_version >= '3.9'", specifier = "==0.23.1" },
     { name = "prompt-toolkit", marker = "python_full_version >= '3.8'", specifier = "==3.0.52" },
     { name = "proto-plus", marker = "python_full_version >= '3.7'", specifier = "==1.26.1" },

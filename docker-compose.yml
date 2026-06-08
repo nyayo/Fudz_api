@@ -8,12 +8,18 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+      - monitoring
   api:
     build: .
     env_file:
       - .env
     ports:
       - "8000:8000"
+    networks:
+      - internal
+      - monitoring
     depends_on:
       - redis
       - db
@@ -27,11 +33,17 @@ services:
       - "8001:8001"
     volumes:
       - .:/app
+    networks:
+      - internal
+      - monitoring
 
   redis:
     image: redis:7-alpine
     ports:
       - "6389:6379"
+    networks:
+      - internal
+      - monitoring
 
   celery:
     build: .
@@ -40,18 +52,27 @@ services:
     command: uv run celery -A Fudz_api worker --loglevel=info
     volumes:
       - .:/app
-
+    networks:
+      - internal
+      - monitoring
+      
   celery-beat:
     build: .
     env_file:
       - .env
-
     command: uv run celery -A Fudz_api beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - .:/app
+    networks:
+      - internal
+      - monitoring
     depends_on:
       - redis
       - db
 
 volumes:
   postgres_data:
+
+networks:
+  monitoring:
+    external: true

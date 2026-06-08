@@ -957,107 +957,682 @@ Thanks for choosing Fudgo, {user_name}!
         return {"subject": f"🍽️ Delivered! Rate Your Order – #{order_id}", "html": html, "plain": plain}
 
     # ============================================================
-    # PROMOTION DISCOUNT - Bold, attention-grabbing, urgent
+    # PROMOTION DISCOUNT - Bold food delivery promo (index.html style)
     # ============================================================
+    
+    PROMO_STYLES = """
+    @media only screen and (min-width: 620px) {
+      .u-row { width: 600px !important; }
+      .u-row .u-col { vertical-align: top; }
+      .u-row .u-col-50 { width: 300px !important; }
+      .u-row .u-col-100 { width: 600px !important; }
+    }
+    @media only screen and (max-width: 620px) {
+      .u-row-container { max-width: 100% !important; padding: 0 !important; }
+      .u-row { width: 100% !important; }
+      .u-row .u-col { display: block !important; width: 100% !important; min-width: 320px !important; max-width: 100% !important; }
+      .u-row .u-col > div { margin: 0 auto; }
+      .food-item-cell { width: 50% !important; }
+    }
+    body { margin: 0; padding: 0; }
+    table, td, tr { border-collapse: collapse; vertical-align: top; }
+    .ie-container table, .mso-container table { table-layout: fixed; }
+    * { line-height: inherit; }
+    a[x-apple-data-detectors=true] { color: inherit !important; text-decoration: none !important; }
+    """
+    
     @classmethod
     def promotion_discount(
-        cls, user_name: str, promo_code: str, discount_amount: str,
-        description: str, expiry_date: str, min_order: str = None,
-        featured_items: list = None, restaurant_name: str = None
+        cls, user_name: str, discount_amount: str,
+        description: str, expiry_date: str,
+        hero_image_url: str = None,
+        hero_title: str = "HUNGRY?",
+        hero_subtitle: str = "Let us deliver the best food",
+        food_items: list = None,
+        restaurants: list = None,
+        min_order: str = None,
+        cta_text: str = "Order Now",
+        cta_link: str = "https://fudgo.com",
+        contact_phone: str = None,
+        contact_address: str = None,
+        contact_hours: str = None
     ) -> Dict[str, str]:
-        """Promotion - bold sale/discount design with featured product images and dark mode"""
+        """
+        Promotion email - vibrant food delivery style matching index.html design.
         
-        min_html = f'<p style="color: #6b7280; font-size: 13px; margin-top: 8px;">Min. order: {min_order}</p>' if min_order else ""
+        Args:
+            user_name: Customer name
+            discount_amount: e.g., "20%", "$10"
+            description: Promotion description
+            expiry_date: When the promotion expires
+            hero_image_url: Background image for hero section
+            hero_title: Main headline (default: "HUNGRY?")
+            hero_subtitle: Subtitle text
+            food_items: List of dicts [{name, image_url, price, original_price}] - MAX 4 displayed
+            restaurants: List of dicts [{name, image_url, cuisines, link}] - restaurant cover images
+            min_order: Minimum order requirement
+            cta_text: Call-to-action button text
+            cta_link: CTA button link
+            contact_phone: Contact phone number
+            contact_address: Business address
+            contact_hours: Operating hours
+        """
+        
+        # Default hero image
+        default_hero = "https://cdn.templates.unlayer.com/assets/1638077528255-f.jpg"
+        hero_bg = hero_image_url or default_hero
+        
+        # Build header section (logo + phone)
+        phone_display = contact_phone or "+1 234-567-890"
+        header_section = f'''
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #22c55e;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;" bgcolor="transparent"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#22c55e"><tr style="background-color: #22c55e;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 15px 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 24px; color: #ffffff; line-height: 100%; text-align: left; word-wrap: break-word;">
+                      <span style="font-family: Rubik, sans-serif; font-weight: bold;">🍔 Fudgo</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 15px 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 16px; color: #ffffff; line-height: 100%; text-align: right; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif;">{phone_display}</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+        
+        # Build hero section with background image and overlay pattern
+        # SVG wave pattern encoded as data URI for email compatibility
+        wave_svg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 44' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' d='M0,22 Q150,44 300,22 T600,22 L600,44 L0,44 Z'/%3E%3C/svg%3E"
+        
+        hero_section = f'''
+<!--[if gte mso 9]>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600">
+  <tr>
+    <td background="{hero_bg}" valign="top">
+      <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;">
+        <v:fill type="frame" src="{hero_bg}" />
+        <v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0">
+<![endif]-->
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #22c55e;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-image: url('{hero_bg}'); background-repeat: no-repeat; background-position: center center; background-size: cover; background-color: #22c55e;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr style="background-image: url('{hero_bg}'); background-repeat: no-repeat; background-position: center center;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <!-- Spacer to push content down and show background image -->
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="padding: 120px 10px 0px; font-family: arial, helvetica, sans-serif;" align="left">
+                    &nbsp;
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- Text overlay with semi-transparent background for readability -->
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 30px 20px; font-family: arial, helvetica, sans-serif; background: linear-gradient(180deg, rgba(34,197,94,0.85) 0%, rgba(34,197,94,0.95) 100%); background-color: rgba(34,197,94,0.9);" align="left">
+                    <div style="font-size: 48px; color: #ffffff; line-height: 100%; text-align: center; word-wrap: break-word; text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">
+                      <span style="font-family: Rubik, sans-serif;"><strong>{hero_title}</strong></span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px 20px 15px; font-family: arial, helvetica, sans-serif; background-color: rgba(34,197,94,0.9);" align="left">
+                    <div style="font-size: 28px; color: #ffffff; line-height: 130%; text-align: center; word-wrap: break-word; text-shadow: 1px 1px 4px rgba(0,0,0,0.3);">
+                      <span style="font-family: Raleway, sans-serif;"><strong>{hero_subtitle}</strong></span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 20px 10px 40px; font-family: arial, helvetica, sans-serif; background-color: rgba(34,197,94,0.9);" align="left">
+                    <div align="center">
+                      <!--[if mso]><table role="presentation" border="0" cellspacing="0" cellpadding="0"><tr><td align="center" bgcolor="#ffffff" style="padding:12px 30px;" valign="top"><![endif]-->
+                      <a href="{cta_link}" target="_blank" style="box-sizing: border-box; display: inline-block; text-decoration: none; text-align: center; color: #22c55e; background-color: #ffffff; border-radius: 4px; font-size: 16px; padding: 14px 35px; font-family: Raleway, sans-serif; font-weight: bold; border: 1px solid #ffffff; border-width: 1px 3px 3px 1px; box-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
+                        {cta_text.upper()}
+                      </a>
+                      <!--[if mso]></td></tr></table><![endif]-->
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>
+<!--[if gte mso 9]>
+        </v:textbox>
+      </v:rect>
+    </td>
+  </tr>
+</table>
+<![endif]-->
+<!-- Wave pattern divider -->
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #22c55e;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#22c55e"><tr style="background-color: #22c55e;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-right: 0px; padding-left: 0px;" align="center">
+                          <img align="center" border="0" src="{wave_svg}" alt="" style="outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; clear: both; display: inline-block !important; border: none; height: auto; float: none; width: 100%; max-width: 600px;" width="600" height="44"/>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+        
+        # Build food items section (max 4 items in 2x2 grid)
+        food_section = ""
+        if food_items:
+            items = food_items[:4]  # Limit to 4 items
+            
+            # Section header
+            food_section = '''
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #ffffff;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff"><tr style="background-color: #ffffff;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 14px; color: #22c55e; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif; font-size: 16px;">GREAT DEALS</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px 10px 25px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 34px; color: #5f5f5f; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Rubik, sans-serif;"><strong>Featured Items</strong></span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+            
+            # Build 2x2 grid of food items
+            for i in range(0, len(items), 2):
+                row_items = items[i:i+2]
+                food_section += '''
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #ffffff;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff"><tr style="background-color: #ffffff;"><![endif]-->'''
+                
+                for item in row_items:
+                    name = item.get('name', 'Food Item')
+                    image_url = item.get('image_url', '')
+                    price = item.get('price', '')
+                    original_price = item.get('original_price', '')
+                    
+                    price_html = ""
+                    if original_price:
+                        price_html = f'''<span style="text-decoration: line-through; color: #9ca3af; font-size: 14px; margin-right: 8px;">{original_price}</span><span style="color: #22c55e; font-weight: bold; font-size: 18px;">{price}</span>'''
+                    elif price:
+                        price_html = f'''<span style="color: #22c55e; font-weight: bold; font-size: 18px;">{price}</span>'''
+                    
+                    food_section += f'''
+      <!--[if (mso)|(IE)]><td align="center" width="299" style="width: 299px; padding: 0px; border-right: 1px solid #22c55e; border-top: 0px; border-left: 0px; border-bottom: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-50 food-item-cell" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px; border-right: 1px solid #f0f0f0;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-right: 0px; padding-left: 0px;" align="center">
+                          <img align="center" border="0" src="{image_url}" alt="{name}" title="{name}" style="outline: none; text-decoration: none; clear: both; display: inline-block !important; border: none; height: auto; float: none; width: 100%; max-width: 260px; border-radius: 8px;" width="260"/>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 5px 10px 20px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 22px; color: #5f5f5f; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Rubik, sans-serif;"><strong>{name}</strong></span>
+                    </div>
+                    <div style="font-size: 14px; color: #5f5f5f; line-height: 150%; text-align: center; word-wrap: break-word; margin-top: 8px;">
+                      {price_html}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td><![endif]-->'''
+                
+                food_section += '''
+      <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+        
+        # Build restaurants section
+        restaurant_section = ""
+        if restaurants:
+            restaurant_section = '''
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #f1f1f1;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f1f1f1"><tr style="background-color: #f1f1f1;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 14px; color: #22c55e; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif; font-size: 16px;">ENJOY IT</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px 10px 25px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 34px; color: #4e4e4e; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Rubik, sans-serif;"><strong>Top Restaurants</strong></span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+            
+            # Restaurant cards (2 per row)
+            for i in range(0, len(restaurants[:4]), 2):
+                row_restaurants = restaurants[i:i+2]
+                restaurant_section += '''
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #f1f1f1;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f1f1f1"><tr style="background-color: #f1f1f1;"><![endif]-->'''
+                
+                for rest in row_restaurants:
+                    name = rest.get('name', 'Restaurant')
+                    image_url = rest.get('image_url', '')
+                    cuisines = rest.get('cuisines', '')
+                    link = rest.get('link', cta_link)
+                    
+                    restaurant_section += f'''
+      <!--[if (mso)|(IE)]><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-right: 0px; padding-left: 0px;" align="center">
+                          <img align="center" border="0" src="{image_url}" alt="{name}" title="{name}" style="outline: none; text-decoration: none; clear: both; display: inline-block !important; border: none; height: auto; float: none; width: 100%; max-width: 300px;" width="300"/>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 16px 10px 9px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 24px; color: #474747; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Rubik, sans-serif;">{name}</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 5px 10px 15px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 14px; color: #22c55e; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{cuisines}</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px 10px 35px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div align="center">
+                      <a href="{link}" target="_blank" style="box-sizing: border-box; display: inline-block; text-decoration: none; text-align: center; color: #ffffff; background-color: #22c55e; border-radius: 4px; font-size: 14px; padding: 12px 25px; font-family: Raleway, sans-serif;">
+                        Order Now
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td><![endif]-->'''
+                
+                restaurant_section += '''
+      <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+        
+        # Build expiry notice
+        expiry_section = f'''
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #fef3c7;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#fef3c7"><tr style="background-color: #fef3c7;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 20px 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 16px; color: #92400e; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif;"><strong>⏰ {discount_amount} OFF - Expires: {expiry_date}</strong></span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+        
+        # Build footer section
+        address_display = contact_address or "Your City, Your Street"
+        hours_display = contact_hours or "Mon - Sun: 10AM - 11PM"
+        
+        footer_section = f'''
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #166534;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#166534"><tr style="background-color: #166534;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 6px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 26px; color: #ffffff; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Rubik, sans-serif;"><strong>Contact Us</strong></span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 8px 10px 0px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{address_display}</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 8px 10px 0px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{hours_display}</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 8px 10px 30px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{phone_display}</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 6px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 26px; color: #ffffff; line-height: 100%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Rubik, sans-serif;"><strong>Quick Links</strong></span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="text-align: center;">
+                      <a href="{cta_link}" style="padding: 5px 15px; display: inline-block; color: #bbf7d0; font-family: arial, helvetica, sans-serif; font-size: 14px; text-decoration: none;">Order Now</a>
+                      <a href="#" style="padding: 5px 15px; display: inline-block; color: #bbf7d0; font-family: arial, helvetica, sans-serif; font-size: 14px; text-decoration: none;">Contact</a>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px 10px 30px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="text-align: center;">
+                      <a href="#" style="padding: 5px 15px; display: inline-block; color: #bbf7d0; font-family: arial, helvetica, sans-serif; font-size: 14px; text-decoration: none;">Unsubscribe</a>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>
+<div class="u-row-container" style="padding: 0px; background-color: transparent;">
+  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #15803d;">
+    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
+      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#15803d"><tr style="background-color: #15803d;"><![endif]-->
+      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
+      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
+        <div style="height: 100%; width: 100% !important;">
+          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
+            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
+              <tbody>
+                <tr>
+                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 20px 10px; font-family: arial, helvetica, sans-serif;" align="left">
+                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
+                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">©️ {cls._get_year()} Fudgo. All rights reserved.</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
+    </div>
+  </div>
+</div>'''
+        
+        # Assemble full HTML email
+        html = f'''<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<!--[if gte mso 9]>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:AllowPNG/>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+<![endif]-->
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <!--[if !mso]><!--><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--<![endif]-->
+  <title>Fudgo - {discount_amount} OFF</title>
+  <style type="text/css">
+    {cls.PROMO_STYLES}
+  </style>
+  <!--[if !mso]><!--><link href="https://fonts.googleapis.com/css?family=Raleway:400,700&display=swap" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css?family=Rubik:400,700&display=swap" rel="stylesheet" type="text/css"><!--<![endif]-->
+</head>
+<body class="clean-body u_body" style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; background-color: #f0fdf4; color: #000000;">
+  <!--[if IE]><div class="ie-container"><![endif]-->
+  <!--[if mso]><div class="mso-container"><![endif]-->
+  <table role="presentation" id="u_body" style="border-collapse: collapse; table-layout: fixed; border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; vertical-align: top; min-width: 320px; Margin: 0 auto; background-color: #f0fdf4; width: 100%;" cellpadding="0" cellspacing="0">
+  <tbody>
+  <tr style="vertical-align: top">
+    <td style="word-break: break-word; border-collapse: collapse !important; vertical-align: top;">
+    <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="background-color: #f0fdf4;" bgcolor="#f0fdf4"><![endif]-->
+    
+{header_section}
+{hero_section}
+{food_section}
+{expiry_section}
+{restaurant_section}
+{footer_section}
+
+    <!--[if (mso)|(IE)]></td></tr></table><![endif]-->
+    </td>
+  </tr>
+  </tbody>
+  </table>
+  <!--[if mso]></div><![endif]-->
+  <!--[if IE]></div><![endif]-->
+</body>
+</html>'''
+        
+        # Build plain text version
+        items_text = ""
+        if food_items:
+            items_text = "\n\n🍽️ FEATURED ITEMS:\n" + "\n".join([
+                f"  • {item.get('name', '')} - {item.get('price', '')}" 
+                for item in food_items[:4]
+            ])
+        
+        restaurants_text = ""
+        if restaurants:
+            restaurants_text = "\n\n🏪 TOP RESTAURANTS:\n" + "\n".join([
+                f"  • {r.get('name', '')} ({r.get('cuisines', '')})" 
+                for r in restaurants[:4]
+            ])
+        
         min_text = f"\nMin. order: {min_order}" if min_order else ""
         
-        # Featured items gallery
-        items_gallery = ""
-        if featured_items:
-            items_html = ""
-            for item in featured_items[:3]:  # Show max 3 featured items
-                image_url = item.get('image_url', '')
-                name = item.get('name', '')
-                price = item.get('price', '')
-                original_price = item.get('original_price', '')
-                
-                if image_url:
-                    original_html = f'<span style="text-decoration: line-through; color: #9ca3af; font-size: 12px; margin-right: 6px;">{original_price}</span>' if original_price else ""
-                    items_html += f"""
-            <td style="padding: 6px; vertical-align: top;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 140px;">
-                <tr><td><img src="{image_url}" alt="{name}" style="width: 140px; height: 100px; object-fit: cover;"></td></tr>
-                <tr><td style="padding: 12px;">
-                  <p style="font-size: 13px; font-weight: 600; color: #1f2937; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{name}</p>
-                  <p style="margin: 6px 0 0;">{original_html}<span style="color: #22c55e; font-weight: 700;">{price}</span></p>
-                </td></tr>
-              </table>
-            </td>"""
-            
-            items_gallery = f"""
-          <p style="color: #6b7280; font-size: 14px; font-weight: 600; margin: 28px 0 16px;">🔥 Featured Deals</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
-            <tr>{items_html}</tr>
-          </table>"""
-        
-        restaurant_html = f'<p style="margin-top: 12px;"><span class="highlight">🏪 {restaurant_name}</span></p>' if restaurant_name else ""
-        
-        header = cls._header(
-            f"{discount_amount} OFF! 🔥",
-            f"{description}{restaurant_html}",
-            "🔥"
-        )
-        
-        code_box = cls._code_box(promo_code, "Your Promo Code")
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          {items_gallery}
-          
-          {code_box}
-          {min_html}
-          
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fef3c7; border-radius: 8px; padding: 12px 24px; margin: 20px 0;">
-            <tr><td>
-              <p style="color: #92400e; font-size: 14px; font-weight: 600; margin: 0;">⏰ Expires: {expiry_date}</p>
-            </td></tr>
-          </table>
-          
-          <a href="#" class="btn-primary" style="padding: 18px 40px; font-size: 18px;">Use Code Now 🔥</a>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer(f"Happy eating, {user_name}! 🍔")
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"{discount_amount} OFF with code {promo_code}"
-        )
-        
-        items_text = ""
-        if featured_items:
-            items_text = "\n\nFeatured items:\n" + "\n".join([f"  • {item.get('name', '')} - {item.get('price', '')}" for item in featured_items[:3]])
-        
-        plain = f"""🔥 {discount_amount} OFF!
+        plain = f"""🍔 FUDGO - {discount_amount} OFF!
 
-{description}{items_text}
+{hero_title}
+{hero_subtitle}
 
-PROMO CODE: {promo_code}{min_text}
+{description}{items_text}{restaurants_text}
 
-⏰ Expires: {expiry_date}
+⏰ Offer expires: {expiry_date}{min_text}
 
-Use code at fudgo.com!
+Order now at {cta_link}
 
-© {cls._get_year()} Fudgo"""
+────────────────────
+📍 {address_display}
+🕐 {hours_display}
+📞 {phone_display}
 
-        return {"subject": f"🔥 {discount_amount} OFF – Limited Time!", "html": html, "plain": plain}
+© {cls._get_year()} Fudgo. All rights reserved.
+To unsubscribe, visit our website."""
+        
+        return {
+            "subject": f"🍔 {discount_amount} OFF - {hero_title} Fudgo Has You Covered!",
+            "html": html,
+            "plain": plain
+        }
 
     # ============================================================
     # WELCOME PROMO - Gift themed, first order discount

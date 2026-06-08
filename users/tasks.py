@@ -369,44 +369,101 @@ def send_order_delivered_email(order_id: int):
 @shared_task
 def send_promotion_email(promotion_id: int, user_ids: list):
     """
-    Send promotion email with featured product images to multiple users
+    Send promotion email with featured food items and restaurant info to multiple users.
+    Uses the new promotion_discount template with hero banner, food grid, and restaurant cards.
     """
     from django.conf import settings
 
     from restaurants.models import Promotion
     
     try:
-        promotion = Promotion.objects.select_related('restaurant').get(id=promotion_id)
+        promotion = Promotion.objects.select_related('restaurant').prefetch_related(
+            'menuitem_set__images',
+            'menuitem_set__category'
+        ).get(id=promotion_id)
         
-        # Get featured items from this promotion
-        featured_items = []
-        menu_items = promotion.menuitem_set.prefetch_related('images')[:3]
+        restaurant = promotion.restaurant
+        
+        # Get hero image from promotion banner or restaurant image
+        hero_image_url = ""
+        if promotion.banner:
+            hero_image_url = promotion.banner.url
+        elif restaurant.image:
+            hero_image_url = restaurant.image.url
+        
+        # Get featured food items from this promotion (max 4)
+        food_items = []
+        menu_items = promotion.menuitem_set.filter(is_available=True)[:4]
         for menu_item in menu_items:
             image_url = ""
             if menu_item.images.exists():
-                image_url = menu_item.images.first().image.url
+                first_image = menu_item.images.first()
+                if first_image and first_image.image:
+                    image_url = first_image.image.url
             
-            original_price = f"${menu_item.price}"
-            discounted_price = f"${menu_item.get_offer_price()}"
+            original_price = f"${menu_item.price:.2f}"
+            discounted_price = f"${menu_item.get_offer_price():.2f}"
             
-            featured_items.append({
+            food_items.append({
                 'name': menu_item.title,
                 'price': discounted_price,
                 'original_price': original_price if original_price != discounted_price else "",
                 'image_url': image_url
             })
         
+        # Build restaurant info (the restaurant running the promotion)
+        restaurants = []
+        restaurant_image_url = ""
+        if restaurant.image:
+            restaurant_image_url = restaurant.image.url
+        
+        # Get cuisine types from menu categories
+        categories = restaurant.categories.filter(is_active=True)[:3]
+        cuisines = ", ".join([cat.name for cat in categories]) if categories else "Various Cuisines"
+        
+        restaurants.append({
+            'name': restaurant.restaurant_name,
+            'image_url': restaurant_image_url,
+            'cuisines': cuisines,
+            'link': f"https://fudgo.com/restaurant/{restaurant.id}"
+        })
+        
+        # Get contact info from restaurant
+        contact_phone = restaurant.user.phone if restaurant.user.phone else None
+        contact_address = restaurant.address if restaurant.address else None
+        
+        # Parse opening hours if available
+        contact_hours = None
+        if restaurant.opening_hours:
+            # Try to format opening hours if it's a dict
+            try:
+                if isinstance(restaurant.opening_hours, dict):
+                    # Just show first available hours
+                    for day, hours in restaurant.opening_hours.items():
+                        if hours:
+                            contact_hours = f"{day}: {hours}"
+                            break
+            except:
+                pass
+        
         users = User.objects.filter(id__in=user_ids)
         
         for user in users:
             template_kwargs = {
                 'user_name': user.first_name or user.username,
-                'promo_code': promotion.name.upper().replace(' ', ''),
                 'discount_amount': f"{int(promotion.discount)}%",
                 'description': promotion.description,
                 'expiry_date': promotion.end_date.strftime('%B %d, %Y'),
-                'featured_items': featured_items,
-                'restaurant_name': promotion.restaurant.restaurant_name
+                'hero_image_url': hero_image_url,
+                'hero_title': "HUNGRY?",
+                'hero_subtitle': f"Get {int(promotion.discount)}% OFF at {restaurant.restaurant_name}!",
+                'food_items': food_items,
+                'restaurants': restaurants,
+                'cta_text': "Order Now",
+                'cta_link': f"https://fudgo.com/restaurant/{restaurant.id}",
+                'contact_phone': contact_phone,
+                'contact_address': contact_address,
+                'contact_hours': contact_hours,
             }
             
             send_templated_email_task.delay(user.email, 'promotion_discount', template_kwargs)

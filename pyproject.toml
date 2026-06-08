@@ -57,6 +57,7 @@ dependencies = [
     "msgpack==1.1.2 ; python_full_version >= '3.9'",
     "packaging==25.0 ; python_full_version >= '3.8'",
     "pillow==11.3.0 ; python_full_version >= '3.9'",
+    "prometheus-client>=0.23.1",
     "prometheus-client==0.23.1 ; python_full_version >= '3.9'",
     "prompt-toolkit==3.0.52 ; python_full_version >= '3.8'",
     "proto-plus==1.26.1 ; python_full_version >= '3.7'",
