@@ -54,6 +54,7 @@ services:
       - .:/app
     networks:
       - monitoring
+      - internal
       
   celery-beat:
     build: .
@@ -64,6 +65,7 @@ services:
       - .:/app
     networks:
       - monitoring
+      - internal
     depends_on:
       - redis
       - db
@@ -72,5 +74,7 @@ volumes:
   postgres_data:
 
 networks:
+  internal:
+    driver: bridge
   monitoring:
     external: true
