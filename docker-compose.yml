@@ -55,6 +55,9 @@ services:
     networks:
       - monitoring
       - internal
+    depends_on:
+      - redis
+      - db
       
   celery-beat:
     build: .

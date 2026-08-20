@@ -137,6 +137,6 @@ class OrderViewSet(ModelViewSet):
             dropoff_location=order.dropoff_location,
         )
 
-        auto_assign_courier.delay(delivery.id)
+        transaction.on_commit(lambda: auto_assign_courier.delay(delivery.id))
 
         return Response({"message": "Order accepted and delivery request created"})
