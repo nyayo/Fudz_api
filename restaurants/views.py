@@ -3,7 +3,7 @@ from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -26,7 +26,12 @@ from .serializers import (
 class PromotionViewSet(viewsets.ModelViewSet):
     queryset = Promotion.objects.select_related("restaurant").all()
     serializer_class = PromotionSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        """Public read access (customers browse promotions); writes require auth"""
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         """Filter promotions by restaurant if user is restaurant owner"""
