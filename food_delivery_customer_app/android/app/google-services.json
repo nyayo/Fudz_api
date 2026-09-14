@@ -12,7 +12,16 @@
           "package_name": "com.example.food_delivery_customer_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "788581837666-l94o525jt8bofh1f95f6v11e4pm077vv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.food_delivery_customer_app",
+            "certificate_hash": "27e9e954b16f4a6ec66c41a4f734b1e35aa7a671"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBaJNLz-zkj6WvWiaNGzxDjGtopRY-_T40"
