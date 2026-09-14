@@ -126,7 +126,7 @@ class _PhoneVerificationWaPageState extends State<PhoneVerificationWaPage> {
               child: Icon(Icons.arrow_back_ios),
             ),
             SizedBox(height: media.height * 0.04),
-            Icon(
+            FaIcon(
               FontAwesomeIcons.whatsapp,
               color: TColor.primary,
               size: media.width * 0.1,

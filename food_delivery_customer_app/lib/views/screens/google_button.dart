@@ -41,7 +41,7 @@ class GoogleSignInButton extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.google,
                         color: Colors.black,
                         size: 20,
