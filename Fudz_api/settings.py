@@ -160,7 +160,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 FIREBASE_CREDENTIALS_PATH = os.path.join(
-    BASE_DIR, "delivery-1d642-firebase-adminsdk-fbsvc-cb2bd40215.json"
+    BASE_DIR, "delivery-1d642-firebase-adminsdk-fbsvc-4ae1822c44.json"
 )
 if not firebase_admin._apps:
     cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
