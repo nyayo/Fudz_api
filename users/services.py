@@ -76,6 +76,14 @@ class PlunkEmailService:
                 "type": email_type,
             }
 
+            # Required: sender email address
+            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+            if not from_email:
+                logger.error("DEFAULT_FROM_EMAIL not configured in settings")
+                return False
+            payload["from"] = from_email
+
+
             # Optional: Add sender name if configured
             sender_name = getattr(settings, "EMAIL_SENDER_NAME", None)
             if sender_name:
@@ -128,6 +136,10 @@ class PlunkEmailService:
             bool: True if email sent successfully, False otherwise
         """
         try:
+            if not to_email:
+                logger.info("Skipping email send: recipient has no email address")
+                return False
+                
             if not template_data:
                 logger.error("No template data provided")
                 return False
@@ -145,6 +157,7 @@ class PlunkEmailService:
         except Exception as e:
             logger.error(f"Failed to send templated email to {to_email}: {str(e)}")
             return False
+            
 
     @staticmethod
     def send_bulk_email(recipients: list, email_data: dict) -> dict:
@@ -158,20 +171,22 @@ class PlunkEmailService:
         Returns:
             dict: Success/failure statistics
         """
-        results = {"sent": 0, "failed": 0, "failed_addresses": []}
+        results = {"sent": 0, "failed": 0, "skipped": 0, "failed_addresses": []}
 
         try:
             for recipient in recipients:
+                if not recipient:
+                    results["skipped"] += 1
+                    continue
+            
                 email_data_copy = email_data.copy()
                 email_data_copy["to_email"] = recipient
-
+            
                 if PlunkEmailService.send_email(email_data_copy):
                     results["sent"] += 1
-                    logger.info(f"Bulk email sent to {recipient}")
                 else:
                     results["failed"] += 1
                     results["failed_addresses"].append(recipient)
-                    logger.warning(f"Failed to send bulk email to {recipient}")
 
             logger.info(
                 f"Bulk email completed: {results['sent']} sent, "
@@ -206,6 +221,10 @@ class PlunkEmailService:
             }
 
             for recipient in recipients:
+                if not recipient:
+                    results["skipped"] += 1
+                    continue
+                    
                 email_data_copy = email_data.copy()
                 email_data_copy["to_email"] = recipient
 
