@@ -16,7 +16,9 @@ __pycache__/
 *.pot
 *.mo
 *.swp
-*.swo   
+*.swo  
+
+*firebase-adminsdk*.json
 
 /media/     
 staticfiles/

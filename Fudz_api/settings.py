@@ -1,4 +1,6 @@
 import os
+import json 
+import base64 
 from datetime import timedelta
 from pathlib import Path
 from decouple import config, Csv
@@ -159,11 +161,11 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-FIREBASE_CREDENTIALS_PATH = os.path.join(
-    BASE_DIR, "delivery-1d642-firebase-adminsdk-fbsvc-4ae1822c44.json"
-)
-if not firebase_admin._apps:
-    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+FIREBASE_CREDENTIALS_B64 = config("FIREBASE_CREDENTIALS_B64") 
+
+if not firebase_admin._apps: 
+    cred_dict = json.loads(base64.b64decode(FIREBASE_CREDENTIALS_B64)) 
+    cred = credentials.Certificate(cred_dict) 
     firebase_admin.initialize_app(cred)
 
 PUSH_NOTIFICATIONS_SETTINGS = {

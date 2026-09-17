@@ -20,6 +20,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     volumes:
@@ -34,6 +36,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env
     command: uv run daphne -b 0.0.0.0 -p 8001 Fudz_api.asgi:application
     ports:
       - "8001:8001"
@@ -47,6 +51,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env
     command: uv run celery -A Fudz_api worker --loglevel=info --pool=solo
     volumes:
       - .:/app
@@ -58,6 +64,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env
     command: uv run celery -A Fudz_api beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - .:/app
