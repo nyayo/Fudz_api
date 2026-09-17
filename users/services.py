@@ -55,7 +55,9 @@ class PlunkEmailService:
                 return False
 
             # Plunk API endpoint
-            url = "https://api.useplunk.com/v1/send"
+            plunk_base_url = getattr(settings, "PLUNK_BASE_URL", "https://next-api.useplunk.com")
+            url = f"{plunk_base_url}/v1/send"
+
 
             # Headers for Plunk API
             headers = {
