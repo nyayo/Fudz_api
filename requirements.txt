@@ -76,3 +76,10 @@ urllib3==2.5.0; python_version >= '3.9'
 vine==5.1.0; python_version >= '3.6'
 wcwidth==0.2.14; python_version >= '3.6'
 zope-interface==8.0.1; python_version >= '3.9'
+# --- Test & load-test stack ---
+pytest
+pytest-django
+pytest-cov
+factory-boy
+Faker
+locust

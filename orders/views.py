@@ -128,6 +128,25 @@ class OrderViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
         order = self.get_object()
+        user = request.user
+
+        # Only the restaurant that owns the order (or staff) may accept it.
+        is_owner = (
+            hasattr(user, "restaurant_profile")
+            and order.restaurant_id == user.restaurant_profile.pk
+        )
+        if not (is_owner or user.is_staff):
+            return Response(
+                {"error": "Only the restaurant that owns this order can accept it."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if order.status != OrderStatus.PLACED:
+            return Response(
+                {"error": f"Order in status '{order.status}' cannot be accepted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         order.status = OrderStatus.ACCEPTED
         order.save()
 

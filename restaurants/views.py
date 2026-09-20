@@ -204,6 +204,86 @@ class MenuItemRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         return super().destroy(request, *args, **kwargs)
 
 
+class MenuItemOnPromotionListView(generics.ListAPIView):
+    """GET /items/on-promotion/ — items with an active, in-window promotion."""
+    serializer_class = MenuItemSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = ["restaurant", "category", "is_available"]
+    search_fields = ["title", "description"]
+    ordering_fields = ["price", "title", "created_at"]
+    ordering = ["category__position", "title"]
+
+    def get_queryset(self):
+        now = timezone.now()
+        queryset = (
+            MenuItem.objects.select_related('restaurant', 'category')
+            .prefetch_related('images', 'promotions')
+            .filter(
+                promotions__is_active=True,
+                promotions__start_date__lte=now,
+                promotions__end_date__gte=now,
+            )
+            .distinct()
+        )
+        if (
+            hasattr(self.request.user, "restaurant_profile")
+            and not self.request.user.is_staff
+        ):
+            return queryset.filter(restaurant=self.request.user.restaurant_profile)
+        # public access: only approved restaurants
+        return queryset.filter(
+            restaurant__is_approved=True, restaurant__is_active=True
+        )
+
+
+class MenuItemAddPromotionView(generics.GenericAPIView):
+    """POST /items/{id}/add-promotion/ — attach an own-restaurant promotion."""
+    queryset = MenuItem.objects.select_related('restaurant', 'category').prefetch_related('images', 'promotions').all()
+    serializer_class = MenuItemSerializer
+    permission_classes = [IsOwnerOrReadOnly, IsManagerOrReadOnly]
+
+    def post(self, request, pk=None):
+        menu_item = self.get_object()
+        promotion_id = request.data.get("promotion_id")
+        try:
+            promotion = Promotion.objects.get(
+                id=promotion_id, restaurant=menu_item.restaurant
+            )
+        except (Promotion.DoesNotExist, ValueError, TypeError):
+            return Response(
+                {"error": "Promotion not found or does not belong to this restaurant"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        menu_item.promotions.add(promotion)
+        serializer = self.get_serializer(menu_item)
+        return Response(serializer.data)
+
+
+class MenuItemRemovePromotionView(generics.GenericAPIView):
+    """POST /items/{id}/remove-promotion/ — detach a promotion."""
+    queryset = MenuItem.objects.select_related('restaurant', 'category').prefetch_related('images', 'promotions').all()
+    serializer_class = MenuItemSerializer
+    permission_classes = [IsOwnerOrReadOnly, IsManagerOrReadOnly]
+
+    def post(self, request, pk=None):
+        menu_item = self.get_object()
+        promotion_id = request.data.get("promotion_id")
+        try:
+            promotion = Promotion.objects.get(id=promotion_id)
+        except (Promotion.DoesNotExist, ValueError, TypeError):
+            return Response(
+                {"error": "Promotion not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        menu_item.promotions.remove(promotion)
+        serializer = self.get_serializer(menu_item)
+        return Response(serializer.data)
+
+
 class MenuItemImageViewSet(ModelViewSet):
     serializer_class = MenuItemImageSerializer
 

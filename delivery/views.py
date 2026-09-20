@@ -14,6 +14,7 @@ from users.models import CourierProfile
 from orders.models import OrderStatus
 
 class DeliveryRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = DeliveryRequest.objects.select_related("order", "courier").all()
 
     def get_queryset(self):
@@ -166,15 +167,21 @@ class CourierEarningsListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        user = self.request.user
+        if not hasattr(user, "courier_profile"):
+            return CourierEarnings.objects.none()
         return CourierEarnings.objects.filter(
-            courier=self.request.user.courierprofile
+            courier=user.courier_profile
         ).order_by("-created_at")
 
 class CourierEarningsSummaryView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        courier = request.user.courierprofile
+        user = request.user
+        if not hasattr(user, "courier_profile"):
+            return Response({"detail": "Only couriers have earnings."}, status=403)
+        courier = user.courier_profile
         total_earnings = CourierEarnings.objects.filter(courier=courier).aggregate(
             total=Sum("amount")
         )["total"] or 0
@@ -186,5 +193,5 @@ class CourierEarningsSummaryView(generics.GenericAPIView):
         return Response({
             "total_earnings": total_earnings,
             "today_earnings": today_earnings,
-        })    
+        })
 
