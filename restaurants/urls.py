@@ -23,6 +23,9 @@ urlpatterns = [
     path('categories/<int:pk>/', views.MenuCategoryDetailView.as_view(), name='menu-category-detail'),
     
     path('items/', views.MenuItemListCreateView.as_view(), name='menu-items'),
+    path('items/on-promotion/', views.MenuItemOnPromotionListView.as_view(), name='menu-items-on-promotion'),
     path('items/<int:pk>/', views.MenuItemRetrieveUpdateDestroyView.as_view(), name='menu-item-detail'),
+    path('items/<int:pk>/add-promotion/', views.MenuItemAddPromotionView.as_view(), name='menu-item-add-promotion'),
+    path('items/<int:pk>/remove-promotion/', views.MenuItemRemovePromotionView.as_view(), name='menu-item-remove-promotion'),
     path('items/<int:pk>/images/', views.MenuItemImageViewSet.as_view({'get': 'list', 'post': 'create'}), name='menu-item-images'),
 ] + router.urls

@@ -53,7 +53,8 @@ class VerifyPhoneOTPSerializer(serializers.Serializer):
         if record.is_expired():
             raise serializers.ValidationError("OTP expired.")
 
-        if not record.verify_otp(data["otp"]):
+        otp_ok, _message = record.verify_otp(data["otp"])
+        if not otp_ok:
             raise serializers.ValidationError("Invalid OTP or phone number.")
 
         user_exists = User.objects.filter(phone=data["phone"]).exists()
@@ -93,7 +94,8 @@ class VerifyOTPSerializer(serializers.Serializer):
         if record.is_expired():
             raise serializers.ValidationError("OTP expired.")
 
-        if not record.verify_otp(data["otp"]):
+        otp_ok, _message = record.verify_otp(data["otp"])
+        if not otp_ok:
             raise serializers.ValidationError("Invalid OTP or email.")
 
         user_exists = User.objects.filter(email=data["email"]).exists()
@@ -138,18 +140,21 @@ class RegistrationSerializer(serializers.Serializer):
         if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError("Passwords do not match")
 
-        if User.objects.filter(email=attrs["email"]).exists():
+        email = attrs.get("email") or None
+        phone = attrs.get("phone") or None
+
+        if email and User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
                 "An account with this email already exists. Please login instead."
             )
 
-        if User.objects.filter(phone=attrs["phone"]).exists():
+        if phone and User.objects.filter(phone=phone).exists():
             raise serializers.ValidationError(
                 "An account with this phone number already exists. Please login instead."
             )
 
-        if not EmailVerification.objects.filter(
-            email=attrs["email"], is_verified=True
+        if email and not EmailVerification.objects.filter(
+            email=email, is_verified=True
         ).exists():
             raise serializers.ValidationError("Email not verified.")
 

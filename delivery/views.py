@@ -11,6 +11,7 @@ from users.models import CourierProfile
 
 
 class DeliveryRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = DeliveryRequest.objects.select_related("order", "courier").all()
     permission_classes = [permissions.IsAdminUser]
 

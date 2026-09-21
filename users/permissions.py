@@ -2,15 +2,21 @@ from rest_framework.permissions import BasePermission
 
 class IsManagerOrReadOnly(BasePermission):
     """
-    Allows only Managers (or Admins) to edit, others can only view.
+    Allows write access to staff, Managers group members, or restaurant
+    owners; read-only for everyone else.
     """
     def has_permission(self, request, view):
         if request.method in ('GET', 'HEAD', 'OPTIONS'):
             return True
-        return (
-            request.user.is_authenticated and
-            (request.user.is_staff or request.user.groups.filter(name='Manager').exists())
-        )
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_staff:
+            return True
+        if request.user.groups.filter(name='Manager').exists():
+            return True
+        # Restaurant owners manage their own menu/categories (object-level
+        # queryset scoping in the views keeps them to their own restaurant).
+        return getattr(request.user, 'user_type', None) == 'restaurant'
 
 
 class IsRestaurantOwner(BasePermission):
