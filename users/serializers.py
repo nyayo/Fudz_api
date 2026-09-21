@@ -159,7 +159,7 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError("Email not verified.")
 
         user_type = attrs["user_type"]
-        if user_type == "customer" and not phone:
+        if user_type == "customer" and not attrs.get("phone"):
             raise serializers.ValidationError("Phone number is required for customers")
         elif user_type == "restaurant" and not all(
             [

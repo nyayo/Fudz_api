@@ -4,7 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleSignInService extends GetxService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '788581837666-l94o525jt8bofh1f95f6v11e4pm077vv.apps.googleusercontent.com',
+    serverClientId: '788581837666-8m8ngs07bp7s2r9hbrj67ga6fc156oaa.apps.googleusercontent.com',
   );
   
   ErrorLoggerService? _errorLogger;

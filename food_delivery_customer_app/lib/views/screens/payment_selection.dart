@@ -34,6 +34,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       _cartController.restoreLocalCartIfNeeded(
         userId: _userController.user?.id,
       );
+      // Auto-fetch address if none is selected yet
+      if (_locationController.selectedLocation == null &&
+          !_locationController.isGettingLocationValue) {
+        _locationController.initializeLocation();
+      }
     });
   }
 

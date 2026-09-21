@@ -184,6 +184,16 @@ class _SplashScreenState extends State<SplashScreen>
                     letterSpacing: 4,
                   ),
                 ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Powered by Innoverse Technologies',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ],
             ),
           ),
