@@ -85,8 +85,12 @@ class OrderViewSet(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_permissions(self):
-        if self.request.method in ["PATCH", "DELETE"]:
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        if self.request.method in ["DELETE"]:
             return [IsAdminUser()]
+        if self.request.method in ["PATCH"]:
+            return [IsAuthenticated()]
         return [IsAuthenticated()]
 
     @transaction.atomic
@@ -98,6 +102,13 @@ class OrderViewSet(ModelViewSet):
         order = serializer.save()
         serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer):
+        """Only staff/admin can update orders via PATCH."""
+        if not self.request.user.is_staff:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only admin can update orders directly.")
+        serializer.save()
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -128,8 +139,16 @@ class OrderViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
         order = self.get_object()
+
+        # Validate status transition
+        if order.status != OrderStatus.PLACED:
+            return Response(
+                {"error": f"Cannot accept order in '{order.status}' status. Must be 'placed'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         order.status = OrderStatus.ACCEPTED
-        order.save()
+        order.save(update_fields=['status'])
 
         delivery = DeliveryRequest.objects.create(
             order=order,

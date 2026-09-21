@@ -200,17 +200,17 @@ class _CartPageState extends State<CartPage>
   }
 
   Widget _buildCartItems(Size media) {
-    return Expanded(
-      child: Obx(() {
-        if (_cartController.cart == null) {
-          return _buildEmptyCart();
-        }
+    return Obx(() {
+      if (_cartController.cart == null || !_cartController.hasItems) {
+        return _buildEmptyCart();
+      }
 
-        // Sort items by menu item ID to maintain consistent order
-        final sortedItems = List<CartItem>.from(_cartController.cart!.items)
-          ..sort((a, b) => a.menuItem.id.compareTo(b.menuItem.id));
+      // Sort items by menu item ID to maintain consistent order
+      final sortedItems = List<CartItem>.from(_cartController.cart!.items)
+        ..sort((a, b) => a.menuItem.id.compareTo(b.menuItem.id));
 
-        return ListView.separated(
+      return Expanded(
+        child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           itemCount: sortedItems.length,
           separatorBuilder: (context, index) => const SizedBox(height: 16),
@@ -221,9 +221,9 @@ class _CartPageState extends State<CartPage>
               child: _buildCartItemCard(item, media),
             );
           },
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 
   Widget _buildCartItemCard(CartItem item, Size media) {

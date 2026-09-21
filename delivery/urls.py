@@ -8,4 +8,7 @@ router = routers.DefaultRouter()
 router.register('deliveries', views.DeliveryRequestViewSet, basename='delivery')
 
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+    path('earnings/', views.CourierEarningsListView.as_view(), name='courier-earnings-list'),
+    path('earnings/summary/', views.CourierEarningsSummaryView.as_view(), name='courier-earnings-summary'),
+]

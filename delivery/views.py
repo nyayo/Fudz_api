@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import viewsets, status, generics, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,6 +16,7 @@ from orders.models import OrderStatus
 
 class DeliveryRequestViewSet(viewsets.ModelViewSet):
     queryset = DeliveryRequest.objects.select_related("order", "courier").all()
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -33,18 +35,28 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="assign")
     def assign(self, request, pk=None):
-        """Assign courier manually (done after restaurant accepts order)"""
+        """Assign courier manually (admin only)"""
+        if not request.user.is_staff:
+            return Response({"error": "Only admin can assign couriers"}, status=403)
+
         delivery = self.get_object()
         courier_id = request.data.get("courier_id")
 
         if not courier_id:
             return Response({"error": "courier_id required"}, status=400)
         try:
-            courier = CourierProfile.objects.get(id=courier_id)
+            courier = CourierProfile.objects.get(id=courier_id, is_approved=True, is_available=True)
         except CourierProfile.DoesNotExist:
-            return Response({"error": "Courier not found"}, status=404)
+            return Response({"error": "Courier not found or not available"}, status=404)
 
-        delivery.assign_to(courier)
+        with transaction.atomic():
+            delivery.assign_to(courier)
+            courier.is_available = False
+            courier.save(update_fields=['is_available'])
+            # Also update the order
+            delivery.order.courier = courier
+            delivery.order.save(update_fields=['courier'])
+
         return Response({"message": "Courier assigned successfully"}, status=200)
 
     @action(detail=False, methods=["get"], url_path="nearby")
@@ -119,6 +131,18 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
                     delivery.courier.is_available = True
                     if new_status == DeliveryStatus.DELIVERED:
                         delivery.courier.total_deliveries += 1
+                        # Create earnings record for completed delivery
+                        order_total = delivery.order.total_price
+                        commission_rate = Decimal('10.00')
+                        commission = (commission_rate / 100) * order_total
+                        courier_earning = order_total - commission
+                        CourierEarnings.objects.create(
+                            courier=delivery.courier,
+                            order=delivery.order,
+                            amount=courier_earning,
+                            commission_rate=commission_rate,
+                        )
+                        delivery.courier.earnings_balance += courier_earning
                     delivery.courier.save()
 
             return Response({"message": f"Status updated to {new_status}"})
@@ -167,14 +191,14 @@ class CourierEarningsListView(generics.ListAPIView):
 
     def get_queryset(self):
         return CourierEarnings.objects.filter(
-            courier=self.request.user.courierprofile
+            courier=self.request.user.courier_profile
         ).order_by("-created_at")
 
 class CourierEarningsSummaryView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        courier = request.user.courierprofile
+        courier = request.user.courier_profile
         total_earnings = CourierEarnings.objects.filter(courier=courier).aggregate(
             total=Sum("amount")
         )["total"] or 0

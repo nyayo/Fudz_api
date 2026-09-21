@@ -105,20 +105,19 @@ class AddCartItemSerializer(serializers.ModelSerializer):
         cart_id = self.context["cart_id"]
         menu_item_id = attrs["menu_item_id"]
 
-        try:
-            MenuItem.objects.select_related("restaurant").get(pk=menu_item_id)
-        except MenuItem.DoesNotExist:
-            raise serializers.ValidationError("Menu item not found.")
+        new_item = MenuItem.objects.select_related("restaurant").get(pk=menu_item_id)
+        if not new_item.is_available:
+            raise serializers.ValidationError("This menu item is currently unavailable.")
 
-        # existing_items = CartItem.objects.filter(cart_id=cart_id).select_related('menu_item__restaurant')
-        # if existing_items.exists():
-        #     first_item = existing_items.first()
-        #     if first_item.menu_item.restaurant_id != new_menu_item.restaurant_id:
-        #         raise serializers.ValidationError(
-        #             f"Cannot add items from different restaurants. "
-        #             f"This cart contains items from {first_item.menu_item.restaurant.restaurant_name}. "
-        #             f"Please create a new cart or clear the existing one."
-        #         )
+        existing_items = CartItem.objects.filter(cart_id=cart_id).select_related('menu_item__restaurant')
+        if existing_items.exists():
+            first_item = existing_items.first()
+            if first_item.menu_item.restaurant_id != new_item.restaurant_id:
+                raise serializers.ValidationError(
+                    f"Cannot add items from different restaurants. "
+                    f"This cart contains items from {first_item.menu_item.restaurant.restaurant_name}. "
+                    f"Please clear the existing cart first."
+                )
 
         return attrs
 
@@ -236,6 +235,31 @@ class UpdateOrderSerializer(serializers.ModelSerializer):
             },
         }
 
+    def validate_status(self, value):
+        """Validate order status transitions."""
+        instance = self.instance
+        if not instance:
+            return value
+
+        valid_transitions = {
+            'placed': ['accepted', 'cancelled'],
+            'accepted': ['ready', 'cancelled'],
+            'ready': ['picked_up', 'cancelled'],
+            'picked_up': ['delivered', 'cancelled'],
+            'delivered': [],
+            'cancelled': [],
+        }
+
+        current_status = instance.status
+        allowed = valid_transitions.get(current_status, [])
+
+        if value not in allowed:
+            raise serializers.ValidationError(
+                f"Cannot transition from '{current_status}' to '{value}'. "
+                f"Allowed transitions: {allowed or 'none (terminal state)'}"
+            )
+        return value
+
 
 class CreateOrderSerializer(serializers.Serializer):
     cart_id = serializers.UUIDField(help_text="UUID of the cart to convert to order")
@@ -272,63 +296,106 @@ class CreateOrderSerializer(serializers.Serializer):
             if not cart_items:
                 raise serializers.ValidationError("Cart is empty.")
 
+            # Validate all items are from the same restaurant
             restaurant = cart_items[0].menu_item.restaurant
+            for item in cart_items:
+                if item.menu_item.restaurant_id != restaurant.id:
+                    raise serializers.ValidationError(
+                        "All items in the cart must be from the same restaurant."
+                    )
+                # Validate item is still available at checkout time
+                if not item.menu_item.is_available:
+                    raise serializers.ValidationError(
+                        f"'{item.menu_item.title}' is no longer available."
+                    )
 
+            point = None
+            address_text = None
             if dropoff_location:
                 lat = float(dropoff_location["latitude"])
                 lng = float(dropoff_location["longitude"])
-                address = dropoff_location["address"]
-
+                address_text = dropoff_location.get("address", "")
                 point = Point(lng, lat)
-
-            # for item in cart_items:
-            #     if item.menu_item.restaurant_id != restaurant.id:
-            #         raise serializers.ValidationError(
-            #             "All items in the cart must be from the same restaurant."
-            #         )
 
             order = Order.objects.create(
                 customer=customer,
-                dropoff_location=(
-                    point if dropoff_location else customer.current_location
-                ),
+                dropoff_location=point or customer.current_location,
                 restaurant=restaurant,
-                pickup_location=(
-                    restaurant.location if hasattr(restaurant, "location") else None
-                ),
+                pickup_location=restaurant.location if restaurant.location else None,
             )
 
             now = timezone.now()
             order_items = []
             for item in cart_items:
+                # Recalculate price at checkout time to ensure correctness
+                original_price = item.menu_item.price
                 active_promos = item.menu_item.promotions.filter(
                     is_active=True, start_date__lte=now, end_date__gte=now
                 )
                 if active_promos.exists():
-                    highest_discount = max(p.discount for p in active_promos)
-                    unit_price = item.menu_item.price * Decimal(
-                        str(1 - highest_discount / 100)
+                    best_promo = active_promos.order_by('-discount').first()
+                    unit_price = original_price * Decimal(
+                        str(1 - best_promo.discount / 100)
                     )
+                    discount_amount = original_price - unit_price
                 else:
-                    unit_price = item.menu_item.price
+                    unit_price = original_price
+                    best_promo = None
+                    discount_amount = Decimal('0')
+
                 order_items.append(
                     OrderItem(
                         order=order,
                         menu_item=item.menu_item,
                         qty=item.qty,
-                        unit_price=unit_price,
+                        unit_price=round(unit_price, 2),
+                        original_price=original_price,
+                        applied_promotion=best_promo,
+                        discount_amount=round(discount_amount, 2),
                     )
                 )
 
             OrderItem.objects.bulk_create(order_items)
 
-            total_price = float(sum(oi.unit_price * oi.qty for oi in order.items.all()))
+            # Calculate totals from the actual order items (backend-authoritative)
+            subtotal = sum(oi.unit_price * oi.qty for oi in order.items.all())
+            delivery_fee = self._calculate_delivery_fee(point, restaurant)
+            tax = Decimal('0.00')  # No tax configured currently
 
-            # Update order total price
-            order.total_price = total_price
-            order.save(update_fields=["total_price"])
+            order.total_price = round(subtotal, 2)
+            order.delivery_fee = round(delivery_fee, 2)
+            order.tax = round(tax, 2)
+            order.save(update_fields=["total_price", "delivery_fee", "tax"])
 
+            # Clear the cart after successful order creation
             Cart.objects.filter(id=cart_id).delete()
 
             return order
+
+    def _calculate_delivery_fee(self, dropoff_point, restaurant):
+        """Calculate delivery fee based on distance from restaurant."""
+        if not dropoff_point or not restaurant.location:
+            return Decimal('5.00')  # Default fee when locations unknown
+
+        from django.contrib.gis.measure import D
+        from django.contrib.gis.db.models.functions import Distance
+
+        # Calculate distance in meters
+        dist_qs = RestaurantProfile.objects.filter(id=restaurant.id).annotate(
+            distance=Distance('location', dropoff_point)
+        )
+        if dist_qs.exists():
+            distance_m = dist_qs.first().distance.m
+            distance_km = distance_m / 1000
+
+            if distance_km <= 2:
+                return Decimal('3.00')
+            elif distance_km <= 5:
+                return Decimal('5.00')
+            elif distance_km <= 10:
+                return Decimal('8.00')
+            else:
+                return Decimal('12.00')
+
+        return Decimal('5.00')
 
