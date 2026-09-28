@@ -80,3 +80,28 @@ class RemoveFromWishlistView(APIView):
             return Response({"detail": "Removed from wishlist."}, status=status.HTTP_204_NO_CONTENT)
         except WishlistItem.DoesNotExist:
             return Response({"detail": "Item not found in wishlist."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ClearWishlistView(APIView):
+    """Delete all items from the current user's wishlist in one call."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        try:
+            wishlist = Wishlist.objects.get(
+                customer=request.user.customer_profile
+            )
+        except (Wishlist.DoesNotExist, AttributeError):
+            # No wishlist yet — nothing to clear, treat as success
+            return Response(
+                {"detail": "Wishlist cleared."},
+                status=status.HTTP_200_OK,
+            )
+        deleted_count, _ = WishlistItem.objects.filter(
+            wishlist=wishlist
+        ).delete()
+        return Response(
+            {"detail": "Wishlist cleared.", "deleted": deleted_count},
+            status=status.HTTP_200_OK,
+        )

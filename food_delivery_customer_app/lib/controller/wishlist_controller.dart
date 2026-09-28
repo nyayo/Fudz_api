@@ -516,6 +516,49 @@ class WishlistController extends GetxController {
     print('❤️ Wishlist cleared locally');
   }
 
+  /// Clear ALL wishlist items at once — 1 backend call + instant local clear.
+  Future<void> clearAllWishlist({required String? accessToken}) async {
+    final previousLocal = _localWishlist.value;
+    final previousRemote = _wishlist.value;
+    try {
+      isLoading.value = true;
+      error.value = '';
+
+      // 1. Instant local clear for immediate UI feedback
+      _wishlist.value = null;
+      _localWishlist.value = null;
+      _clearLocalWishlist(userId: _currentUserId);
+
+      // 2. Sync with backend (bulk endpoint, fallback to loop for old backends)
+      if (accessToken != null && accessToken.isNotEmpty) {
+        try {
+          await _apiService.delete('wishlists/clear/');
+        } catch (_) {
+          // Fallback: remove one-by-one if bulk endpoint unavailable
+          final items = previousLocal?.items ?? previousRemote?.items ?? [];
+          for (final item in items) {
+            try {
+              await _apiService.delete(
+                'wishlists/remove/${item.menuItem.id}/',
+              );
+            } catch (_) {}
+          }
+        }
+        await loadWishlist(accessToken);
+      }
+      SnackbarService.showSuccess('Wishlist cleared');
+    } catch (e) {
+      error.value = e.toString();
+      // Restore on failure so user doesn't lose data silently
+      _localWishlist.value = previousLocal;
+      _wishlist.value = previousRemote;
+      SnackbarService.showError('Failed to clear wishlist');
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // Initialize wishlist services
   Future<void> initializeWishlist({required String? accessToken}) async {
     try {

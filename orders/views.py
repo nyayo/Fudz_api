@@ -57,6 +57,16 @@ class CartViewSet(
         else:
             serializer.save()
 
+    @action(detail=True, methods=["delete"], url_path="clear")
+    def clear(self, request, pk=None):
+        """Delete all items from this cart in one call."""
+        cart = self.get_object()
+        deleted_count, _ = cart.items.all().delete()
+        return Response(
+            {"detail": "Cart cleared.", "deleted": deleted_count},
+            status=status.HTTP_200_OK,
+        )
+
 
 class CartItemViewSet(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete"]
