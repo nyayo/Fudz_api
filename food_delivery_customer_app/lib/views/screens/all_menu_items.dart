@@ -20,8 +20,6 @@ class _AllMenuItemsPageState extends State<AllMenuItemsPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final restaurantController = Get.find<RestaurantController>();
-  final cartController = Get.find<CartController>();
-  final userController = Get.find<UserController>();
   final ScrollController _scrollController = ScrollController();
   late final Worker _menuItemsWorker;
 

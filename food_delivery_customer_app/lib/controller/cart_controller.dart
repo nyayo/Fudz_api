@@ -743,20 +743,28 @@ class CartController extends GetxController {
 
   Future<void> clearCart({int? userId, String? accessToken}) async {
     try {
-      _clearLocalCart(userId: userId);
+      final effectiveUserId = userId ?? _currentUserId;
+      _clearLocalCart(userId: effectiveUserId);
 
-      final cartId = userId != null
-          ? _getStoredCartId(userId)
-          : GetStorage().read('current_cart_id');
+      final cartId = _resolveCartId(userId: effectiveUserId);
 
       if (accessToken != null && accessToken.isNotEmpty && cartId != null) {
-        await _apiService.delete('orders/carts/$cartId/');
+        // Prefer bulk clear (keeps cart), fallback to delete cart
+        try {
+          if (!cartId.startsWith('local_cart_')) {
+            await _apiService.delete('orders/carts/$cartId/clear/');
+          }
+        } catch (_) {
+          try {
+            await _apiService.delete('orders/carts/$cartId/');
+          } catch (_) {}
+        }
       }
 
       _cart.value = null;
 
-      if (userId != null) {
-        await _clearCartId(userId);
+      if (effectiveUserId != null) {
+        await _clearCartId(effectiveUserId);
       } else {
         await GetStorage().remove('current_cart_id');
       }

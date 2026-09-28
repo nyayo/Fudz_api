@@ -35,9 +35,43 @@ class WishlistPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Obx(() {
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with Clear All
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 12, 4),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  Text(
+                    'My Wishlist',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: TColor.primaryText,
+                    ),
+                  ),
+                  const Spacer(),
+                  Obx(() {
+                    if (!_wishlistController.hasItems) {
+                      return const SizedBox(width: 68);
+                    }
+                    return TextButton(
+                      onPressed: () => _showClearWishlistDialog(),
+                      child: const Text(
+                        'Clear All',
+                        style: TextStyle(color: Colors.red, fontSize: 14),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Obx(() {
           print(
             '≡ƒöä WishlistPage Obx rebuilding - Loading: ${_wishlistController.isLoading}',
           );
@@ -74,7 +108,11 @@ class WishlistPage extends StatelessWidget {
             'Γ£à Displaying ${_wishlistController.wishlistItemCount} wishlist items',
           );
           return _buildWishlistItems();
-        }),
+                }),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -505,13 +543,9 @@ class WishlistPage extends StatelessWidget {
   }
 
   void _clearAllWishlistItems() async {
-    final items = _wishlistController.wishlist!.items.toList();
-    for (final item in items) {
-      await _wishlistController.removeFromWishlist(
-        menuItemId: item.menuItem.id,
-        accessToken: _userController.accessToken,
-      );
-    }
+    await _wishlistController.clearAllWishlist(
+      accessToken: _userController.accessToken,
+    );
   }
 }
 

@@ -774,6 +774,7 @@ class _CartPageState extends State<CartPage>
             onPressed: () {
               Get.back();
               _cartController.clearCart(
+                userId: _userController.user?.id,
                 accessToken: _userController.accessToken,
               );
             },

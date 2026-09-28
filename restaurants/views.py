@@ -446,14 +446,19 @@ class RestaurantListView(generics.ListAPIView):
             RestaurantProfile.objects.filter(is_approved=True, is_active=True)
             .annotate(
                 menu_items_count=Count(
-                    "menu_items", filter=Q(menu_items__is_available=True)
+                    "menu_items",
+                    filter=Q(menu_items__is_available=True),
+                    distinct=True,
                 ),
                 categories_count=Count(
-                    "categories", filter=Q(categories__is_active=True)
+                    "categories",
+                    filter=Q(categories__is_active=True),
+                    distinct=True,
                 ),
-                avg_rating=Avg("reviews__rating"),
+                avg_rating=Avg("reviews__rating", distinct=True),
             )
             .select_related("user")
+            .distinct()
         )
 
 
@@ -470,13 +475,18 @@ class RestaurantDetailView(generics.RetrieveAPIView):
             RestaurantProfile.objects.filter(is_approved=True, is_active=True)
             .annotate(
                 menu_items_count=Count(
-                    "menu_items", filter=Q(menu_items__is_available=True)
+                    "menu_items",
+                    filter=Q(menu_items__is_available=True),
+                    distinct=True,
                 ),
                 categories_count=Count(
-                    "categories", filter=Q(categories__is_active=True)
+                    "categories",
+                    filter=Q(categories__is_active=True),
+                    distinct=True,
                 ),
-                avg_rating=Avg("reviews__rating"),
+                avg_rating=Avg("reviews__rating", distinct=True),
             )
             .prefetch_related("categories__items__promotions", "promotions")
             .select_related("user")
+            .distinct()
         )
