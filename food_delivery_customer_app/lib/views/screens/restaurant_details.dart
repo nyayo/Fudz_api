@@ -4,6 +4,7 @@ import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/restaurant_controller.dart';
 import 'package:food_delivery_customer_app/controller/review_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
+import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/restaurant.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
@@ -425,6 +426,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
   Widget _buildMenuItemCard(MenuItem menuItem) {
     final cartController = Get.find<CartController>();
     final userController = Get.find<UserController>();
+    final wishlistController = Get.find<WishlistController>();
     final cardWidth = MediaQuery.of(context).size.width - 40;
     final hasPromotion = menuItem.hasActivePromotions;
     final priceText = hasPromotion
@@ -520,11 +522,19 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Builder(
-                    builder: (context) => Text(
-                      menuItem.title,
-                      style: ResponsiveText.heading4(context),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Builder(
+                          builder: (context) => Text(
+                            menuItem.title,
+                            style: ResponsiveText.heading4(context),
+                          ),
+                        ),
+                      ),
+                      _buildWishlistButton(menuItem, wishlistController, userController),
+                    ],
                   ),
 
                   const SizedBox(height: 4),
@@ -611,6 +621,44 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildWishlistButton(
+    MenuItem menuItem,
+    WishlistController wishlistController,
+    UserController userController,
+  ) {
+    return Obx(() {
+      final isInWishlist = wishlistController.isItemInWishlist(menuItem.id);
+      return GestureDetector(
+        onTap: () {
+          if (userController.isLoggedIn) {
+            wishlistController.toggleWishlist(
+              menuItem: menuItem,
+              accessToken: userController.accessToken,
+            );
+          } else {
+            Get.snackbar(
+              'Login Required',
+              'Please login to add items to wishlist',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.orange,
+              colorText: Colors.white,
+            );
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Icon(
+            isInWishlist
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            color: isInWishlist ? const Color(0xFFFF5252) : Colors.grey[400],
+            size: 20,
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildNoMenuItems() {

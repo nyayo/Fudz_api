@@ -24,11 +24,20 @@ class WishlistController extends GetxController {
   // Track current user ID for data isolation
   int? _currentUserId;
 
-  Wishlist? get wishlist =>
-      _localWishlist.value ?? _wishlist.value; // Prefer local for display
+  Wishlist? get wishlist {
+    // Access both so Obx stays subscribed to either source and the
+    // badge updates immediately (including empty) without visiting screen.
+    final local = _localWishlist.value;
+    final remote = _wishlist.value;
+    return local ?? remote;
+  }
   List<WishlistItem> get wishlistItems => wishlist?.items ?? [];
-  int get wishlistItemCount => wishlistItems.length;
-  bool get hasItems => wishlistItems.isNotEmpty;
+  int get wishlistItemCount {
+    final local = _localWishlist.value;
+    final remote = _wishlist.value;
+    return (local ?? remote)?.items.length ?? 0;
+  }
+  bool get hasItems => wishlistItemCount > 0;
 
   String _getWishlistStorageKey(int userId) => 'local_wishlist_user_$userId';
 
@@ -197,8 +206,9 @@ class WishlistController extends GetxController {
       // Save to local storage
       _saveLocalWishlist();
 
-      // Force UI update
+      // Force UI update (badge + list immediately, no screen visit needed)
       _localWishlist.refresh();
+      update();
 
       print(
         '❤️ Local wishlist updated: ${_localWishlist.value!.items.length} items',
@@ -217,8 +227,9 @@ class WishlistController extends GetxController {
     // Save to local storage
     _saveLocalWishlist();
 
-    // Force UI update
+    // Force UI update (badge + list immediately, empty reflects instantly)
     _localWishlist.refresh();
+    update();
 
     print(
       '❤️ Local wishlist updated: ${_localWishlist.value!.items.length} items',
@@ -316,6 +327,8 @@ class WishlistController extends GetxController {
     // You can implement more sophisticated merging logic here
     _localWishlist.value = _wishlist.value;
     _saveLocalWishlist(userId: _currentUserId);
+    _localWishlist.refresh();
+    update();
   }
 
   // Revert local changes in case of error
@@ -356,7 +369,16 @@ class WishlistController extends GetxController {
       _currentUserId = userId;
       await _ensureWishlistOwner(_resolveOwnerId(userController), userId: userId);
 
-      isLoading.value = true;
+      // Only show full loading shimmer on initial load (no local data).
+      // Background refreshes use isSyncing so the list/empty state
+      // reflects immediately without needing to visit the screen.
+      final bool isInitialLoad =
+          _localWishlist.value == null && _wishlist.value == null;
+      if (isInitialLoad) {
+        isLoading.value = true;
+      } else {
+        isSyncing.value = true;
+      }
       error.value = '';
 
       print('🛍️ Loading wishlist for user: ${userController.user?.email}');
@@ -437,12 +459,14 @@ class WishlistController extends GetxController {
       print(
         '🛍️ Wishlist loaded successfully. Item count: $wishlistItemCount',
       );
+      update(); // Ensure badges rebuild immediately
     } catch (e) {
       error.value = 'Error loading wishlist: $e';
       print('🛍️ Error loading wishlist: $e');
       _wishlist.value = null;
     } finally {
       isLoading.value = false;
+      isSyncing.value = false;
     }
   }
 
@@ -521,13 +545,16 @@ class WishlistController extends GetxController {
     final previousLocal = _localWishlist.value;
     final previousRemote = _wishlist.value;
     try {
-      isLoading.value = true;
+      // Use isSyncing (not isLoading) so empty state + badge reflect
+      // immediately without a shimmer blocking the UI.
+      isSyncing.value = true;
       error.value = '';
 
       // 1. Instant local clear for immediate UI feedback
       _wishlist.value = null;
       _localWishlist.value = null;
       _clearLocalWishlist(userId: _currentUserId);
+      update();
 
       // 2. Sync with backend (bulk endpoint, fallback to loop for old backends)
       if (accessToken != null && accessToken.isNotEmpty) {
@@ -555,7 +582,9 @@ class WishlistController extends GetxController {
       SnackbarService.showError('Failed to clear wishlist');
       rethrow;
     } finally {
+      isSyncing.value = false;
       isLoading.value = false;
+      update();
     }
   }
 
