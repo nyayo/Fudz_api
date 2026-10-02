@@ -116,20 +116,14 @@ class CartController extends GetxController {
   Cart? get cart => _localCart.value ?? _cart.value;
   List<CartItem> get cartItems => cart?.items ?? [];
   int get cartItemCount {
-    if (_localCart.value != null && _localCart.value!.items.isNotEmpty) {
-      final count = _localCart.value!.items.fold(
-        0,
-        (sum, item) => sum + item.quantity,
-      );
-      return count;
-    } else if (_cart.value != null && _cart.value!.items.isNotEmpty) {
-      final count = _cart.value!.items.fold(
-        0,
-        (sum, item) => sum + item.quantity,
-      );
-      return count;
-    }
-    return 0;
+    // Prefer local cart when present (even when empty) so the badge
+    // reflects removals immediately without visiting the cart screen.
+    // Access both Rx values so Obx stays subscribed to either source.
+    final local = _localCart.value;
+    final remote = _cart.value;
+    final active = local ?? remote;
+    if (active == null || active.items.isEmpty) return 0;
+    return active.items.fold(0, (sum, item) => sum + item.quantity);
   }
 
   double get cartTotal => cart?.totalPrice ?? 0.0;
@@ -422,6 +416,8 @@ class CartController extends GetxController {
       // If local cart is missing but we have remote cart, just save remote as local
       _localCart.value = _cart.value;
       _saveLocalCart();
+      _localCart.refresh();
+      update();
       return;
     }
 
@@ -434,6 +430,8 @@ class CartController extends GetxController {
     if (_cart.value!.items.isEmpty && _localCart.value!.items.isNotEmpty) {
       _localCart.value = _localCart.value!.copyWith(id: _cart.value!.id);
       _saveLocalCart(userId: _currentUserId);
+      _localCart.refresh();
+      update();
       print('⚠️ Preserved local cart items while backend cart is empty');
       return;
     }
@@ -501,6 +499,8 @@ class CartController extends GetxController {
       createdAt: _cart.value!.createdAt,
     );
     _saveLocalCart(userId: _currentUserId);
+    _localCart.refresh();
+    update(); // Notify Obx/GetBuilder badges immediately
   }
 
   // Revert local changes in case of error
@@ -734,6 +734,7 @@ class CartController extends GetxController {
       if (cartId != null) {
         final response = await _apiService.get('orders/carts/$cartId/');
         _cart.value = Cart.fromJson(response);
+        update(); // Ensure badges refresh even when local is empty
       }
     } catch (e) {
       print('Error getting cart: $e');

@@ -380,7 +380,21 @@ class UserProfileView(GenericAPIView):
 
     def put(self, request):
         user = request.user
-        serializer = UserProfileSerializer(user, data=request.data, partial=True)
+        data = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
+
+        # Email may be ADDED once (accounts that registered with only a phone
+        # number) but never swapped afterwards: it is the login identity and
+        # password-reset channel, so changing it would need re-verification.
+        new_email = (data.get("email") or "").strip() if isinstance(data.get("email"), str) else data.get("email")
+        if new_email:
+            if user.email and new_email.lower() != user.email.lower():
+                return Response(
+                    {"email": "Email cannot be changed once set. Contact support if this is a mistake."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            data["email"] = new_email
+
+        serializer = UserProfileSerializer(user, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
 

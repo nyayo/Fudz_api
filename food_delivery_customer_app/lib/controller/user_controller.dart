@@ -569,9 +569,10 @@ class UserController extends GetxController {
       print('📝 Google Registration data: ${userData.keys}');
 
       // CRITICAL FIX: Send data to google auth endpoint WITH phone number
-      // Backend expects: access_token, user_type, and phone for customers
+      // Backend expects: access_token, id_token, user_type, and phone for customers
       final registrationData = {
         'access_token': userData['access_token']!,
+        'id_token': userData['id_token'],
         'user_type': 'customer',
         'phone': userData['phone']!, // REQUIRED for customers
       };
@@ -1306,76 +1307,6 @@ class UserController extends GetxController {
           } catch (e) {
             debugPrint('Snackbar error: $e - $title: $message');
           }
-        }
-      });
-    });
-  }
-
-  /// Show email link prompt dialog after phone-based registration
-  /// Called when user registered via phone without a verified email
-  void showEmailLinkPrompt() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (Get.context != null) {
-          Get.dialog(
-            AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2196F3).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.email_outlined,
-                      color: Color(0xFF2196F3),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Add Your Email?',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
-                ],
-              ),
-              content: const Text(
-                'Add an email address to your account for easier password recovery and to receive order updates.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Get.back(),
-                  child: Text(
-                    'Not Now',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                    Get.toNamed('/edit_profile');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2196F3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Add Email',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            barrierDismissible: true,
-          );
         }
       });
     });

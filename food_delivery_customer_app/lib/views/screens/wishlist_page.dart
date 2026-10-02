@@ -88,9 +88,11 @@ class WishlistPage extends StatelessWidget {
           }
 
           if (_wishlistController.isLoading.value) {
+            // Same padding as loaded list so shimmer aligns with cards.
             return ListView.builder(
+              padding: const EdgeInsets.only(top: 4, bottom: 24),
               itemCount: 5,
-              itemBuilder: (context, index) => MenuItemCardShimmer(),
+              itemBuilder: (context, index) => const MenuItemCardShimmer(),
             );
           }
 
@@ -272,15 +274,11 @@ class WishlistPage extends StatelessWidget {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+    // Horizontal cards in a vertical list — same geometry as
+    // MenuItemCardShimmer so loading and loaded states match.
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 4, bottom: 24),
       itemCount: wishlist.items.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 14,
-        childAspectRatio: 0.82,
-      ),
       itemBuilder: (context, index) {
         final items = wishlist.items;
         if (index >= items.length) return const SizedBox.shrink();
@@ -308,22 +306,23 @@ class WishlistPage extends StatelessWidget {
 
     return _PressScale(
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12, top: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
               Navigator.of(context).push(
                 SmoothPageRoute(
@@ -331,138 +330,175 @@ class WishlistPage extends StatelessWidget {
                 ),
               );
             },
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.topCenter,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                // Left: 80x80 image (matches shimmer)
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          SizedBox(
-                            width: 64,
-                            height: 64,
-                            child: ClipOval(
-                              child: menuItem.imageUrl != null &&
-                                      menuItem.imageUrl!.isNotEmpty
-                                  ? CachedImage(
-                                      imageUrl: menuItem.imageUrl,
-                                      fit: BoxFit.cover,
-                                      placeholderIcon: Icons.fastfood,
-                                    )
-                                  : Icon(
-                                      Icons.fastfood,
-                                      color: Colors.grey[400],
-                                    ),
-                            ),
-                          ),
-                          if (hasPromotion)
-                            Positioned(
-                              top: -6,
-                              right: -6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  menuItem.activePromotions.first.formattedDiscount,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child:
+                            menuItem.imageUrl != null &&
+                                menuItem.imageUrl!.isNotEmpty
+                            ? CachedImage(
+                                imageUrl: menuItem.imageUrl,
+                                fit: BoxFit.cover,
+                                width: 80,
+                                height: 80,
+                                placeholderIcon: Icons.fastfood,
+                              )
+                            : Container(
+                                width: 80,
+                                height: 80,
+                                color: Colors.grey[200],
+                                child: Icon(
+                                  Icons.fastfood,
+                                  color: Colors.grey[400],
                                 ),
                               ),
-                            ),
-                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        menuItem.title,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: TColor.primaryText,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Column(
-                        children: [
-                          Text(
-                            priceText,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color:
-                                  hasPromotion ? Colors.red : TColor.primary,
+                      if (hasPromotion)
+                        Positioned(
+                          top: -6,
+                          left: -6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
                             ),
-                          ),
-                          if (originalPriceText != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              originalPriceText,
-                              style: TextStyle(
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              menuItem
+                                  .activePromotions
+                                  .first
+                                  .formattedDiscount,
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontSize: 10,
-                                color: Colors.grey[500],
-                                decoration: TextDecoration.lineThrough,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 6),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                Positioned(
-                  top: -8,
-                  left: -8,
-                  child: IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(
-                      Icons.favorite_rounded,
-                      color: Colors.red,
-                      size: 18,
-                    ),
-                    onPressed: () {
-                      _wishlistController.removeFromWishlist(
-                        menuItemId: menuItem.id,
-                        accessToken: _userController.accessToken,
-                      );
-                    },
+                const SizedBox(width: 15),
+                // Middle: details (matches shimmer text blocks)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              menuItem.title,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: TColor.primaryText,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              _wishlistController.removeFromWishlist(
+                                menuItemId: menuItem.id,
+                                accessToken: _userController.accessToken,
+                              );
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.only(left: 8),
+                              child: Icon(
+                                Icons.favorite_rounded,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        menuItem.safeRestaurantName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[500],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (!menuItem.isAvailable)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Not Available',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.red[400],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                priceText,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: hasPromotion
+                                      ? Colors.red
+                                      : TColor.primary,
+                                ),
+                              ),
+                              if (originalPriceText != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  originalPriceText,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[500],
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          _buildAddButton(menuItem),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                Positioned(
-                  bottom: -20,
-                  left: 0,
-                  right: 0,
-                  child: Center(child: _buildAddButton(menuItem)),
-                ),
-                ],
-              ),
+              ],
             ),
           ),
         ),
@@ -492,8 +528,8 @@ class WishlistPage extends StatelessWidget {
       }
 
       return SizedBox(
-        width: 40,
-        height: 40,
+        width: 32,
+        height: 32,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: isEnabled ? TColor.primary : Colors.grey[300],
@@ -513,7 +549,7 @@ class WishlistPage extends StatelessWidget {
               : null,
           child: Icon(
             Icons.add,
-            size: 20,
+            size: 18,
             color: isEnabled ? Colors.white : Colors.grey[500],
           ),
         ),
