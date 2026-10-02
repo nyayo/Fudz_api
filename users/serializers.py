@@ -310,7 +310,7 @@ class GoogleSignInSerializer(serializers.Serializer):
 
         profile_data = {}
         profile_fields = {
-            # "customer": ["phone"],
+            "customer": ["phone"],
             "restaurant": ["restaurant_name", "business_license", "address"],
             "courier": ["username", "license_number", "vehicle_type"],
         }
@@ -434,6 +434,10 @@ class LogoutUserSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     profile = serializers.SerializerMethodField()
+    # Contact-completion flags: the apps use these to prompt users who
+    # registered with only one contact channel to add the other.
+    needs_phone = serializers.SerializerMethodField()
+    needs_email = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -446,10 +450,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "user_type",
             "is_verified",
             "profile",
+            "needs_phone",
+            "needs_email",
         ]
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip()
+
+    def get_needs_phone(self, obj):
+        return not obj.phone
+
+    def get_needs_email(self, obj):
+        return not obj.email
 
     def get_profile(self, obj):
         if obj.user_type == "customer":

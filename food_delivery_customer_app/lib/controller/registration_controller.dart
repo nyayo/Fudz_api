@@ -229,18 +229,9 @@ class RegistrationController extends GetxController {
           colorText: Colors.white,
         );
 
-        // Prompt to link email after phone-based registration
-        if (fromPhone) {
-          userController.showEmailLinkPrompt();
-        }
-
         // Prompt to link Google after registration
         if (canLinkGoogle) {
-          // Delay Google prompt to show after email prompt if both are applicable
-          Future.delayed(
-            const Duration(seconds: 4),
-            () => userController.showGoogleLinkPrompt(),
-          );
+          userController.showGoogleLinkPrompt();
         }
       } else {
         throw Exception('Registration failed - no tokens received');

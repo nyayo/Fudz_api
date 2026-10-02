@@ -87,6 +87,23 @@ def register_social_user(
                 detail=f"please continue your login with {old_user[0].auth_provider}"
             )
     else:
+        phone = profile_data.pop("phone", None)
+
+        # Customers must provide a phone number so we can reach them about
+        # orders. Tell the client to collect it before creating the account.
+        if user_type == "customer" and not phone:
+            return Response(
+                {
+                    "message": "Phone number is required to complete registration.",
+                    "requires_registration": True,
+                    "required_fields": ["phone"],
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                },
+                status=status.HTTP_200_OK,
+            )
+
         new_user = {
             "email": email,
             "first_name": first_name,
@@ -95,8 +112,8 @@ def register_social_user(
             "user_type": user_type,
         }
 
-        if "phone" in profile_data:
-            new_user["phone"] = profile_data.pop("phone")
+        if phone:
+            new_user["phone"] = phone
 
         user = User.objects.create_user(**new_user)
         user.auth_provider = provider
