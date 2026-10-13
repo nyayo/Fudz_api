@@ -469,6 +469,8 @@ class AdminUserViewSet(viewsets.ModelViewSet):
             "registration_id": drf_serializers.CharField(),
             "type": drf_serializers.ChoiceField(choices=["android", "ios", "web"]),
             "name": drf_serializers.CharField(required=False),
+            "p256dh": drf_serializers.CharField(required=False),
+            "auth": drf_serializers.CharField(required=False),
         },
     ),
     responses={
@@ -498,9 +500,13 @@ def register_device(request):
     device_type = request.data.get("type")
     registration_id = request.data.get("registration_id")
     name = request.data.get("name", "")
+    p256dh = request.data.get("p256dh")
+    auth = request.data.get("auth")
 
     if not registration_id or not device_type:
         return Response({"error": "registration_id and type are required"}, status=400)
+    if device_type == "web" and (not p256dh or not auth):
+        return Response({"error": "p256dh and auth are required for web subscriptions"}, status=400)
 
     try:
         if device_type == "android":
@@ -516,7 +522,7 @@ def register_device(request):
         elif device_type == "web":
             device, created = WebPushDevice.objects.get_or_create(
                 registration_id=registration_id,
-                defaults={"user": request.user, "name": name},
+                defaults={"user": request.user, "name": name, "p256dh": p256dh, "auth": auth},
             )
         else:
             return Response({"error": "Invalid device type"}, status=400)
@@ -524,7 +530,15 @@ def register_device(request):
         if not created:
             device.user = request.user
             device.active = True
-            device.save()
+            update_fields = ["user", "active"]
+            if name:
+                device.name = name
+                update_fields.append("name")
+            if device_type == "web":
+                device.p256dh = p256dh
+                device.auth = auth
+                update_fields.extend(["p256dh", "auth"])
+            device.save(update_fields=update_fields)
 
         return Response(
             {"success": True, "created": created, "device_id": device.device_id}

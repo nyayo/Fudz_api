@@ -23,10 +23,11 @@ class MenuItemImageSimpleSerializer(serializers.ModelSerializer):
 class SimpleMenuSerializer(serializers.ModelSerializer):
     images = MenuItemImageSimpleSerializer(many=True, read_only=True)
     promotions = PromotionSerializer(many=True, read_only=True)
+    name = serializers.CharField(source="title", read_only=True)
 
     class Meta:
         model = MenuItem
-        fields = ["id", "title", "price", "images", "promotions"]
+        fields = ["id", "title", "name", "price", "images", "promotions"]
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -191,15 +192,23 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     total_discount = serializers.SerializerMethodField()
     total_amount = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+    restaurant_name = serializers.CharField(source="restaurant.restaurant_name", read_only=True)
+    dropoff_latitude = serializers.SerializerMethodField()
+    dropoff_longitude = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
             "id",
             "customer",
+            "customer_name",
             "restaurant",
+            "restaurant_name",
             "pickup_location",
             "dropoff_location",
+            "dropoff_latitude",
+            "dropoff_longitude",
             "placed_at",
             "status",
             "payment_status",
@@ -220,6 +229,18 @@ class OrderSerializer(serializers.ModelSerializer):
     def get_total_amount(self, obj):
         """Calculate final amount to pay (after discounts)"""
         return float(sum(item.unit_price * item.qty for item in obj.items.all()))
+
+    def get_customer_name(self, obj):
+        user = obj.customer.user
+        return user.get_full_name().strip() or user.get_username() or user.email
+
+    def get_dropoff_latitude(self, obj):
+        point = obj.dropoff_location
+        return float(point.y) if point else None
+
+    def get_dropoff_longitude(self, obj):
+        point = obj.dropoff_location
+        return float(point.x) if point else None
 
 
 class UpdateOrderSerializer(serializers.ModelSerializer):
@@ -398,4 +419,3 @@ class CreateOrderSerializer(serializers.Serializer):
                 return Decimal('12.00')
 
         return Decimal('5.00')
-

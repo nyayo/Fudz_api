@@ -396,6 +396,41 @@ class TestDeviceEndpoints:
         assert resp.status_code == 200
         assert resp.data["created"] is True
 
+    def test_register_web_device_subscription(self):
+        from push_notifications.models import WebPushDevice
+
+        user = UserFactory()
+        client = APIClient()
+        client.force_authenticate(user)
+        endpoint = "https://push.example.test/subscription/web-device-1"
+        resp = client.post(
+            f"{USERS}/auth/device/register/",
+            {
+                "registration_id": endpoint,
+                "type": "web",
+                "name": "Fudz Hub browser",
+                "p256dh": "browser-public-key",
+                "auth": "browser-auth-secret",
+            },
+            format="json",
+        )
+        assert resp.status_code == 200
+        device = WebPushDevice.objects.get(registration_id=endpoint)
+        assert device.user == user
+        assert device.p256dh == "browser-public-key"
+        assert device.auth == "browser-auth-secret"
+
+    def test_register_web_device_requires_subscription_keys(self):
+        user = UserFactory()
+        client = APIClient()
+        client.force_authenticate(user)
+        resp = client.post(
+            f"{USERS}/auth/device/register/",
+            {"registration_id": "https://push.example.test/no-keys", "type": "web"},
+            format="json",
+        )
+        assert resp.status_code == 400
+
     def test_register_device_missing_fields_400(self):
         user = UserFactory()
         client = APIClient()
