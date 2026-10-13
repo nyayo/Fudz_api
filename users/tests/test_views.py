@@ -189,7 +189,7 @@ def _mock_google_validate(monkeypatch, id_info=VALID_ID_INFO):
 
 
 class TestGoogleSignIn:
-    def test_valid_token_new_user_created(self, monkeypatch):
+    def test_new_customer_without_phone_requires_registration(self, monkeypatch):
         _mock_google_validate(monkeypatch)
         client = APIClient()
         resp = client.post(
@@ -201,10 +201,31 @@ class TestGoogleSignIn:
             },
             format="json",
         )
+        assert resp.status_code == status.HTTP_200_OK, resp.data
+        assert resp.data["requires_registration"] is True
+        assert resp.data["required_fields"] == ["phone"]
+        assert "tokens" not in resp.data
+        assert User.objects.filter(email="guser@gmail.com").count() == 0
+
+    def test_new_customer_with_phone_created(self, monkeypatch):
+        _mock_google_validate(monkeypatch)
+        client = APIClient()
+        resp = client.post(
+            f"{USERS}/auth/google/",
+            {
+                "access_token": "ya29.something",
+                "id_token": "fake.id.token",
+                "user_type": "customer",
+                "phone": "+256712345678",
+            },
+            format="json",
+        )
         assert resp.status_code == status.HTTP_201_CREATED, resp.data
         user = User.objects.get(email="guser@gmail.com")
         assert user.google_id == "google-sub-123"
         assert user.auth_provider == "google"
+        assert user.phone == "+256712345678"
+        assert resp.data["user"]["needs_phone"] is False
         assert "tokens" in resp.data
 
     def test_valid_token_existing_google_user_logs_in(self, monkeypatch):

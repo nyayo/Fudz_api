@@ -171,11 +171,14 @@ class RestaurantController extends GetxController {
     try {
       final response = await _apiService.get('restaurants/restaurants/');
       List<dynamic> restaurantsList = [];
+      bool hasMore = false;
 
       if (response is List) {
         restaurantsList = response;
+        hasMore = false; // Non-paged response
       } else if (response is Map) {
         restaurantsList = response['results'] ?? response['data'] ?? [];
+        hasMore = response['next'] != null;
       }
 
       // Debug: Print raw JSON of first restaurant
@@ -214,6 +217,10 @@ class RestaurantController extends GetxController {
       // Update reactive lists (Obx widgets rebuild automatically)
       restaurants.value = newRestaurants;
       popularRestaurants.value = newRestaurants.take(5).toList();
+
+      // Page 1 is now loaded — next loadMore must fetch page 2, not page 1 again.
+      currentRestaurantPage.value = 2;
+      hasMoreRestaurants.value = hasMore;
 
       // Persist to cache
       final jsonList = newRestaurants.map((r) => r.toJson()).toList();
@@ -373,7 +380,13 @@ class RestaurantController extends GetxController {
           .toList();
 
       if (loadMore) {
-        restaurants.addAll(newRestaurants);
+        // Deduplicate by ID — backend may return overlapping pages
+        // and scroll can fire loadMore twice for the same page.
+        final existingIds = restaurants.map((r) => r.id).toSet();
+        final uniqueNew = newRestaurants
+            .where((r) => !existingIds.contains(r.id))
+            .toList();
+        restaurants.addAll(uniqueNew);
         currentRestaurantPage.value++;
       } else {
         restaurants.value = newRestaurants;

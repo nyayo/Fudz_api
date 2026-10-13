@@ -569,9 +569,10 @@ class UserController extends GetxController {
       print('📝 Google Registration data: ${userData.keys}');
 
       // CRITICAL FIX: Send data to google auth endpoint WITH phone number
-      // Backend expects: access_token, user_type, and phone for customers
+      // Backend expects: access_token, id_token, user_type, and phone for customers
       final registrationData = {
         'access_token': userData['access_token']!,
+        'id_token': userData['id_token'],
         'user_type': 'customer',
         'phone': userData['phone']!, // REQUIRED for customers
       };
