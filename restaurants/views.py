@@ -1,7 +1,16 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions
 
-from .models import RestaurantReview
+from reviews.models import RestaurantReview
+from restaurants.models import MenuCategory, MenuCategoryImage, MenuItem, MenuItemImage, Promotion
+from restaurants.serializers import (
+    MenuCategoryImageSerializer,
+    MenuCategoryListSerializer,
+    MenuCategorySerializer,
+    MenuItemImageSerializer,
+    MenuItemSerializer,
+    RestaurantProfileSerializer,
+)
 from .permissions import IsReviewOwnerOrReadOnly
 from .serializers import RestaurantReviewSerializer
 
