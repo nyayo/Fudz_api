@@ -18,7 +18,7 @@ class RestaurantReviewListCreateView(generics.ListCreateAPIView):
         ).all()
         owner_profile = getattr(self.request.user, "restaurant_profile", None)
         staff_profile = getattr(self.request.user, "restaurant_staff_profile", None)
-        if owner_profile:
+        if owner_profile and not self.request.user.is_staff:
             queryset = queryset.filter(restaurant=owner_profile)
         elif staff_profile and staff_profile.is_active:
             queryset = queryset.filter(restaurant=staff_profile.restaurant)
@@ -38,7 +38,7 @@ class RestaurantReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         queryset = super().get_queryset().select_related("customer__user", "restaurant")
         owner_profile = getattr(self.request.user, "restaurant_profile", None)
-        if owner_profile:
+        if owner_profile and not self.request.user.is_staff:
             return queryset.filter(restaurant=owner_profile)
         staff_profile = getattr(self.request.user, "restaurant_staff_profile", None)
         if staff_profile and staff_profile.is_active:
