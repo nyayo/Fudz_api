@@ -1,17 +1,48 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework import permissions
+from rest_framework.permissions import BasePermission
 
-class IsReviewOwnerOrReadOnly(BasePermission):
-    """Customers may edit their review; restaurant owners may reply to reviews."""
+
+class IsOwnerOrReadOnly(BasePermission):
+    """
+    Custom permission to only allow owners of an object to edit it.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        if hasattr(obj, 'restaurant'):
+            return obj.restaurant.user == request.user
+        
+        return False
+
+
+class IsAdminOrRestaurantOwner(BasePermission):
+    """
+    Permission to allow only admin users or restaurant owners to create/modify.
+    """
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        if not request.user.is_authenticated:
+            return False
+            
+        return (
+            request.user.is_staff or 
+            getattr(request.user, 'user_type', None) == 'restaurant'
+        )
     
     def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
+        if request.method in permissions.SAFE_METHODS:
             return True
+            
+        if not request.user.is_authenticated:
+            return False
+
         if request.user.is_staff:
             return True
-        owner_profile = getattr(request.user, "restaurant_profile", None)
-        if request.method in ("PATCH", "PUT") and owner_profile:
-            return obj.restaurant_id == owner_profile.id
-        staff_profile = getattr(request.user, "restaurant_staff_profile", None)
-        if request.method in ("PATCH", "PUT") and staff_profile and staff_profile.is_active:
-            return obj.restaurant_id == staff_profile.restaurant_id
-        return obj.customer.user == request.user
+            
+        if hasattr(obj, 'restaurant'):
+            return obj.restaurant.user == request.user
+            
+        return False
