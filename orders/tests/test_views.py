@@ -45,6 +45,17 @@ class TestCartEndpoints:
         resp = customer_api.get(f"{ORDERS}/carts/{other.id}/")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_cannot_add_item_to_foreign_cart(self, customer_api):
+        other_user = CustomerProfileFactory().user
+        other = CartFactory(user=other_user)
+        menu_item = MenuItemFactory()
+        resp = customer_api.post(
+            f"{ORDERS}/carts/{other.id}/items/",
+            {"menu_item_id": menu_item.id, "qty": 1},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_404_NOT_FOUND
+
     def test_anon_cart_retrieve_not_leaky(self, anon_api):
         # IsAuthenticatedOrReadOnly allows anon GET, but get_queryset is
         # empty for anonymous users — no data leak. NOTE: anon cart CREATE

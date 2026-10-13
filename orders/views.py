@@ -1,6 +1,6 @@
 from django.db import transaction
 from django.db.models import Prefetch
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework import status
@@ -84,7 +84,7 @@ def notification_inbox(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def mark_all_notifications_read(request):
-    updated, _ = _visible_notifications(request.user).filter(is_read=False).update(is_read=True)
+    updated = _visible_notifications(request.user).filter(is_read=False).update(is_read=True)
     return Response({"success": True, "updated": updated})
 
 
@@ -150,11 +150,19 @@ class CartItemViewSet(ModelViewSet):
         return CartItemSerializer
 
     def get_serializer_context(self):
-        return {"cart_id": self.kwargs["cart_pk"]}
+        cart = get_object_or_404(
+            Cart, pk=self.kwargs["cart_pk"], user=self.request.user
+        )
+        context = super().get_serializer_context()
+        context["cart_id"] = cart.id
+        return context
 
     def get_queryset(self):
+        cart = get_object_or_404(
+            Cart, pk=self.kwargs["cart_pk"], user=self.request.user
+        )
         return (
-            CartItem.objects.filter(cart_id=self.kwargs["cart_pk"])
+            CartItem.objects.filter(cart=cart)
             .select_related("menu_item")
             .prefetch_related("menu_item__images", "menu_item__promotions")
             .all()

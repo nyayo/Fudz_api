@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import pytest
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from factories import (
     CartFactory,
@@ -59,6 +60,22 @@ class TestCartPricing:
         data = CartSerializer(cart).data
         assert data["total_price"] == 0.0
         assert data["restaurant_id"] is None
+        assert data["restaurant_ids"] == []
+
+    def test_mixed_cart_exposes_all_restaurant_ids(self):
+        cart = CartFactory()
+        first = MenuItemFactory()
+        second = MenuItemFactory()
+        assert first.restaurant_id != second.restaurant_id
+        CartItemFactory(cart=cart, menu_item=first)
+        CartItemFactory(cart=cart, menu_item=second)
+
+        data = CartSerializer(cart).data
+
+        assert set(data["restaurant_ids"]) == {
+            first.restaurant_id,
+            second.restaurant_id,
+        }
 
 
 class TestAddCartItemSerializer:
@@ -96,6 +113,22 @@ class TestAddCartItemSerializer:
         instance = s2.save()
         assert instance.qty == 3
 
+    def test_cart_accepts_items_from_multiple_restaurants(self):
+        cart = CartFactory()
+        first = MenuItemFactory()
+        second = MenuItemFactory()
+        assert first.restaurant_id != second.restaurant_id
+
+        for menu_item in (first, second):
+            serializer = AddCartItemSerializer(
+                data={"menu_item_id": menu_item.id, "qty": 1},
+                context=self._ctx(cart),
+            )
+            assert serializer.is_valid(), serializer.errors
+            serializer.save()
+
+        assert cart.items.count() == 2
+
 
 class TestCreateOrderSerializer:
     def _payload(self, cart):
@@ -128,6 +161,33 @@ class TestCreateOrderSerializer:
         )
         assert not s.is_valid()
         assert "No active cart" in str(s.errors)
+
+    def test_cannot_checkout_another_users_cart(self):
+        owner = CartFactory().user
+        other_user = CartFactory().user
+        cart = CartFactory(user=owner)
+        CartItemFactory(cart=cart)
+        s = CreateOrderSerializer(
+            data=self._payload(cart), context=self._ctx(other_user)
+        )
+        assert not s.is_valid()
+        assert "No active cart" in str(s.errors)
+
+    def test_mixed_cart_is_not_submitted_as_one_restaurant_order(self):
+        user = CartFactory().user
+        cart = CartFactory(user=user)
+        first = MenuItemFactory()
+        second = MenuItemFactory()
+        assert first.restaurant_id != second.restaurant_id
+        CartItemFactory(cart=cart, menu_item=first)
+        CartItemFactory(cart=cart, menu_item=second)
+
+        serializer = CreateOrderSerializer(
+            data=self._payload(cart), context=self._ctx(user)
+        )
+        assert serializer.is_valid(), serializer.errors
+        with pytest.raises(ValidationError, match="same restaurant"):
+            serializer.save()
 
     def test_save_creates_order_and_deletes_cart(self):
         from orders.models import Order, OrderItem

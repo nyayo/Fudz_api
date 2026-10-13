@@ -9,7 +9,7 @@ from rest_framework import serializers
 
 from restaurants.models import MenuItem, MenuItemImage, Promotion
 from restaurants.serializers import PromotionSerializer
-from users.models import CustomerProfile
+from users.models import CustomerProfile, RestaurantProfile
 
 from .models import Cart, CartItem, Order, OrderItem
 
@@ -62,6 +62,7 @@ class CartSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     items = CartItemSerializer(many=True, read_only=True)
     total_price = serializers.SerializerMethodField()
+    restaurant_ids = serializers.SerializerMethodField()
     restaurant_id = serializers.SerializerMethodField()
 
     @extend_schema_field(OpenApiTypes.DECIMAL)
@@ -82,14 +83,26 @@ class CartSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_restaurant_id(self, cart: Cart):
+        # Backward-compatible single-value field. For mixed carts, clients
+        # should use restaurant_ids instead of treating this as the only one.
         first_item = cart.items.first()
         if first_item and first_item.menu_item:
             return first_item.menu_item.restaurant_id
         return None
 
+    @extend_schema_field(
+        serializers.ListField(child=serializers.IntegerField())
+    )
+    def get_restaurant_ids(self, cart: Cart):
+        return sorted(
+            cart.items.order_by()
+            .values_list("menu_item__restaurant_id", flat=True)
+            .distinct()
+        )
+
     class Meta:
         model = Cart
-        fields = ["id", "items", "total_price", "restaurant_id"]
+        fields = ["id", "items", "total_price", "restaurant_id", "restaurant_ids"]
 
 
 class AddCartItemSerializer(serializers.ModelSerializer):
@@ -103,22 +116,27 @@ class AddCartItemSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        cart_id = self.context["cart_id"]
         menu_item_id = attrs["menu_item_id"]
 
         new_item = MenuItem.objects.select_related("restaurant").get(pk=menu_item_id)
         if not new_item.is_available:
             raise serializers.ValidationError("This menu item is currently unavailable.")
 
-        existing_items = CartItem.objects.filter(cart_id=cart_id).select_related('menu_item__restaurant')
-        if existing_items.exists():
-            first_item = existing_items.first()
-            if first_item.menu_item.restaurant_id != new_item.restaurant_id:
-                raise serializers.ValidationError(
-                    f"Cannot add items from different restaurants. "
-                    f"This cart contains items from {first_item.menu_item.restaurant.restaurant_name}. "
-                    f"Please clear the existing cart first."
-                )
+        # Future policy option: uncomment this block to restrict each cart to
+        # one restaurant. Mixed-restaurant cart additions are currently allowed.
+        # cart_id = self.context["cart_id"]
+        # existing_items = CartItem.objects.filter(cart_id=cart_id).select_related(
+        #     "menu_item__restaurant"
+        # )
+        # if existing_items.exists():
+        #     first_item = existing_items.first()
+        #     if first_item.menu_item.restaurant_id != new_item.restaurant_id:
+        #         raise serializers.ValidationError(
+        #             "Cannot add items from different restaurants. "
+        #             f"This cart contains items from "
+        #             f"{first_item.menu_item.restaurant.restaurant_name}. "
+        #             "Please clear the existing cart first."
+        #         )
 
         return attrs
 
@@ -290,9 +308,10 @@ class CreateOrderSerializer(serializers.Serializer):
     )
 
     def validate_cart_id(self, cart_id):
-        if not Cart.objects.filter(pk=cart_id).exists():
+        user_id = self.context.get("user_id")
+        if not Cart.objects.filter(pk=cart_id, user_id=user_id).exists():
             raise serializers.ValidationError(
-                "No active cart with the given ID was found."
+                "No active cart with the given ID was found for this account."
             )
         if CartItem.objects.filter(cart_id=cart_id).count() == 0:
             raise serializers.ValidationError("The cart is empty.")
@@ -317,7 +336,10 @@ class CreateOrderSerializer(serializers.Serializer):
             if not cart_items:
                 raise serializers.ValidationError("Cart is empty.")
 
-            # Validate all items are from the same restaurant
+            # Order.restaurant is a required single-restaurant foreign key.
+            # Keep this checkout guard until the API creates one order per
+            # restaurant from a mixed cart; cart additions themselves are
+            # allowed to span restaurants.
             restaurant = cart_items[0].menu_item.restaurant
             for item in cart_items:
                 if item.menu_item.restaurant_id != restaurant.id:
