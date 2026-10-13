@@ -1,197 +1,131 @@
-from rest_framework import viewsets, status, generics, permissions
+from decimal import Decimal
+from rest_framework import viewsets, status, permissions, generics, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models.functions import Distance
 from django.db import transaction
-from django.db.models import Sum
-from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
-from .models import DeliveryRequest, DeliveryTracking, DeliveryStatus, CourierEarnings
-from .serializers import DeliveryRequestSerializer, DeliveryStatusUpdateSerializer, DeliveryTrackingSerializer, CourierEarningsSerializer, NearbyQuerySerializer
+from .models import DeliveryRequest, DeliveryStatus, CourierEarnings
+from .serializers import DeliveryRequestSerializer
 from users.models import CourierProfile
-from orders.models import OrderStatus
 
-class DeliveryRequestViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-    queryset = DeliveryRequest.objects.select_related("order", "courier").all()
+
+class CanManageRestaurantDeliveries(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (
+            user.is_staff
+            or getattr(user, "restaurant_profile", None)
+            or (getattr(user, "restaurant_staff_profile", None) and user.restaurant_staff_profile.is_active)
+        ))
+
+
+class AvailableCourierSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    phone = serializers.CharField(source="user.phone", read_only=True)
+
+    class Meta:
+        model = CourierProfile
+        fields = ["id", "name", "phone", "vehicle_type", "rating", "total_deliveries"]
+
+    def get_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
+
+class AvailableCouriersView(generics.ListAPIView):
+    permission_classes = [CanManageRestaurantDeliveries]
+    serializer_class = AvailableCourierSerializer
 
     def get_queryset(self):
+        return CourierProfile.objects.filter(is_approved=True, is_available=True).select_related("user").order_by("-rating")
+
+
+class DeliveryRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [CanManageRestaurantDeliveries]
+    queryset = DeliveryRequest.objects.select_related("order", "courier").all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["status"]
+    search_fields = ["order__id", "courier__user__username", "courier__user__first_name", "courier__user__last_name"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
         user = self.request.user
-        if hasattr(user, "customer_profile"):
-            return self.queryset.filter(order__customer=user.customer_profile)
-        elif hasattr(user, "courier_profile"):
-            return self.queryset.filter(courier=user.courier_profile)
-        elif user.is_staff:
-            return self.queryset
-        return DeliveryRequest.objects.none()
+        if user.is_staff:
+            return qs
+        restaurant = getattr(user, "restaurant_profile", None)
+        staff = getattr(user, "restaurant_staff_profile", None)
+        if restaurant:
+            return qs.filter(order__restaurant=restaurant)
+        if staff and staff.is_active:
+            return qs.filter(order__restaurant=staff.restaurant)
+        return qs.none()
 
     def get_serializer_class(self):
-        if self.action in ["update_status", "partial_update"]:
-            return DeliveryStatusUpdateSerializer
         return DeliveryRequestSerializer
 
     @action(detail=True, methods=["post"], url_path="assign")
     def assign(self, request, pk=None):
-        """Assign courier manually (done after restaurant accepts order)"""
+        """Admin assigns a courier to a delivery."""
         delivery = self.get_object()
         courier_id = request.data.get("courier_id")
 
         if not courier_id:
             return Response({"error": "courier_id required"}, status=400)
         try:
-            courier = CourierProfile.objects.get(id=courier_id)
+            courier = CourierProfile.objects.get(
+                id=courier_id, is_approved=True, is_available=True
+            )
         except CourierProfile.DoesNotExist:
-            return Response({"error": "Courier not found"}, status=404)
+            return Response(
+                {"error": "Courier not found or not available"}, status=404
+            )
 
-        delivery.assign_to(courier)
-        return Response({"message": "Courier assigned successfully"}, status=200)
+        with transaction.atomic():
+            delivery.assign_to(courier)
+            courier.is_available = False
+            courier.save(update_fields=["is_available"])
+            delivery.order.courier = courier
+            delivery.order.save(update_fields=["courier"])
 
-    @action(detail=False, methods=["get"], url_path="nearby")
-    def nearby(self, request):
-        """Get nearby pending deliveries for courier"""
-        serializer = NearbyQuerySerializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-        lat = serializer.validated_data["lat"]
-        lng = serializer.validated_data["lng"]
+        return Response(DeliveryRequestSerializer(delivery).data, status=200)
 
-        point = Point(lng, lat, srid=4326)
-        deliveries = (
-            DeliveryRequest.objects.filter(status=DeliveryStatus.PENDING)
-            .annotate(distance=Distance("pickup_location", point))
-            .order_by("distance")[:10]
-        )
-
-        serializer = self.get_serializer(deliveries, many=True)
-        return Response(serializer.data)
-
-    @transaction.atomic
-    @action(detail=True, methods=["post"], url_path="accept")
-    def accept(self, request, pk=None):
-        """Courier accepts delivery"""
+    @action(detail=True, methods=["post"], url_path="complete")
+    def complete(self, request, pk=None):
+        """Admin marks delivery as completed, creates courier earnings."""
         delivery = self.get_object()
-        courier = request.user.courier_profile
 
-        if delivery.status != DeliveryStatus.ASSIGNED or delivery.courier != courier:
-            return Response({"error": "You are not assigned to this delivery"}, status=403)
+        if delivery.status not in [DeliveryStatus.ASSIGNED, DeliveryStatus.ACCEPTED, DeliveryStatus.PICKED_UP]:
+            return Response(
+                {"error": f"Cannot complete delivery in '{delivery.status}' status"},
+                status=400,
+            )
 
-        delivery.mark_status(DeliveryStatus.ACCEPTED)
-        return Response({"message": "Delivery accepted"}, status=200)
+        with transaction.atomic():
+            delivery.status = DeliveryStatus.DELIVERED
+            delivery.save()
 
-    @transaction.atomic
-    @action(detail=True, methods=["post"], url_path="decline")
-    def decline(self, request, pk=None):
-        """Courier declines assigned delivery"""
-        delivery = self.get_object()
-        courier = request.user.courier_profile
+            # Update order status
+            delivery.order.status = "delivered"
+            delivery.order.save(update_fields=["status"])
 
-        if delivery.status != DeliveryStatus.ASSIGNED or delivery.courier != courier:
-            return Response({"error": "You are not assigned to this delivery"}, status=403)
+            # Create earnings record
+            if delivery.courier:
+                order_total = delivery.order.total_price
+                commission_rate = Decimal("10.00")
+                commission = (commission_rate / 100) * order_total
+                courier_earning = order_total - commission
 
-        delivery.mark_status(DeliveryStatus.DECLINED)
-        delivery.courier = None
-        delivery.save()
+                CourierEarnings.objects.create(
+                    courier=delivery.courier,
+                    order=delivery.order,
+                    amount=courier_earning,
+                    commission_rate=commission_rate,
+                )
+                delivery.courier.is_available = True
+                delivery.courier.total_deliveries += 1
+                delivery.courier.earnings_balance += courier_earning
+                delivery.courier.save()
 
-        return Response({"message": "Delivery declined"}, status=200)
-
-    @action(detail=True, methods=["patch"], url_path="update-status")
-    def update_status(self, request, pk=None):
-        """Courier updates delivery progress"""
-        delivery = self.get_object()
-        serializer = DeliveryStatusUpdateSerializer(delivery, data=request.data, partial=True)
-        if serializer.is_valid():
-            new_status = serializer.validated_data["status"]
-            
-            with transaction.atomic():
-                serializer.save()
-                
-                if new_status == DeliveryStatus.PICKED_UP:
-                    delivery.order.status = OrderStatus.PICKED_UP
-                    delivery.order.save()
-                elif new_status == DeliveryStatus.DELIVERED:
-                    delivery.order.status = OrderStatus.DELIVERED
-                    delivery.order.save()
-                elif new_status == DeliveryStatus.CANCELLED:
-                    delivery.order.status = OrderStatus.CANCELLED
-                    delivery.order.save()
-
-                if new_status in DeliveryStatus.COMPLETED_STATUSES and delivery.courier:
-                    delivery.courier.is_available = True
-                    if new_status == DeliveryStatus.DELIVERED:
-                        delivery.courier.total_deliveries += 1
-                    delivery.courier.save()
-
-            return Response({"message": f"Status updated to {new_status}"})
-        return Response(serializer.errors, status=400)
-    
-    @action(detail=True, methods=["post", "patch"], url_path="track")
-    def track(self, request, pk=None):
-        """Update courier's current location for this delivery"""
-        delivery = self.get_object()
-        courier = request.user.courier_profile
-
-        if delivery.courier != courier:
-            return Response({"error": "You are not assigned to this delivery"}, status=403)
-
-        if delivery.status not in DeliveryStatus.IN_PROGRESS_STATUSES:
-            return Response({"error": "Delivery is not in progress"}, status=400)
-
-        tracking, created = DeliveryTracking.objects.get_or_create(
-            delivery=delivery,
-            courier=courier,
-            defaults={"current_location": Point(0, 0, srid=4326)}
-        )
-
-        serializer = DeliveryTrackingSerializer(tracking, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-    
-    @action(detail=True, methods=["get"], url_path="tracking")
-    def get_tracking(self, request, pk=None):
-        """Get current tracking location for a delivery"""
-        delivery = self.get_object()
-        tracking = DeliveryTracking.objects.filter(delivery=delivery).first()
-        
-        if not tracking:
-            return Response({"error": "No tracking data available"}, status=404)
-        
-        serializer = DeliveryTrackingSerializer(tracking)
-        return Response(serializer.data)
-    
-    
-class CourierEarningsListView(generics.ListAPIView):
-    serializer_class = CourierEarningsSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        if not hasattr(user, "courier_profile"):
-            return CourierEarnings.objects.none()
-        return CourierEarnings.objects.filter(
-            courier=user.courier_profile
-        ).order_by("-created_at")
-
-class CourierEarningsSummaryView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        if not hasattr(user, "courier_profile"):
-            return Response({"detail": "Only couriers have earnings."}, status=403)
-        courier = user.courier_profile
-        total_earnings = CourierEarnings.objects.filter(courier=courier).aggregate(
-            total=Sum("amount")
-        )["total"] or 0
-
-        today_earnings = CourierEarnings.objects.filter(
-            courier=courier, created_at__date__exact=timezone.now().date()
-        ).aggregate(total=Sum("amount"))["total"] or 0
-
-        return Response({
-            "total_earnings": total_earnings,
-            "today_earnings": today_earnings,
-        })
-
+        return Response(DeliveryRequestSerializer(delivery).data)

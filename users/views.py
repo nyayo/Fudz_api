@@ -9,6 +9,9 @@ from push_notifications.models import APNSDevice, GCMDevice, WebPushDevice
 from rest_framework import generics
 from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -40,6 +43,7 @@ from .serializers import (
     UserProfileSerializer,
     VerifyOTPSerializer,
     VerifyPhoneOTPSerializer,
+    AdminUserSerializer,
 )
 from .services import OTPService
 from .tasks import send_push_notification_to_user, send_sms_otp_task, send_templated_email_task
@@ -380,7 +384,21 @@ class UserProfileView(GenericAPIView):
 
     def put(self, request):
         user = request.user
-        serializer = UserProfileSerializer(user, data=request.data, partial=True)
+        data = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
+
+        # Email may be ADDED once (accounts that registered with only a phone
+        # number) but never swapped afterwards: it is the login identity and
+        # password-reset channel, so changing it would need re-verification.
+        new_email = (data.get("email") or "").strip() if isinstance(data.get("email"), str) else data.get("email")
+        if new_email:
+            if user.email and new_email.lower() != user.email.lower():
+                return Response(
+                    {"email": "Email cannot be changed once set. Contact support if this is a mistake."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            data["email"] = new_email
+
+        serializer = UserProfileSerializer(user, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
 
@@ -401,12 +419,47 @@ class RestaurantStaffViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsRestaurantOwner]
 
     def get_queryset(self):
-        restaurant = self.request.user.restaurant_profile
-        return RestaurantStaffProfile.objects.filter(restaurant=restaurant)
+        if self.request.user.is_staff:
+            restaurant_id = self.request.query_params.get("restaurant_id")
+            queryset = RestaurantStaffProfile.objects.select_related("user", "restaurant")
+            return queryset.filter(restaurant_id=restaurant_id) if restaurant_id else queryset
+        return RestaurantStaffProfile.objects.filter(restaurant=self.request.user.restaurant_profile)
 
     def perform_create(self, serializer):
-        restaurant = self.request.user.restaurant_profile
-        serializer.save(restaurant=restaurant)
+        if self.request.user.is_staff:
+            restaurant = serializer.validated_data.get("restaurant")
+            if not restaurant:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({"restaurant": "Select a restaurant for this staff member."})
+        else:
+            restaurant = self.request.user.restaurant_profile
+        staff_profile = serializer.save(restaurant=restaurant)
+        staff_profile.user.is_active = staff_profile.is_active
+        staff_profile.user.save(update_fields=["is_active"])
+
+    def perform_update(self, serializer):
+        staff_profile = serializer.save()
+        staff_profile.user.is_active = staff_profile.is_active
+        staff_profile.user.save(update_fields=["is_active"])
+
+    def perform_destroy(self, instance):
+        instance.user.is_active = False
+        instance.user.save(update_fields=["is_active"])
+        instance.delete()
+
+
+class AdminUserViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "patch", "head", "options"]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["user_type", "is_active", "is_verified"]
+    search_fields = ["email", "phone", "username", "first_name", "last_name"]
+    ordering_fields = ["created_at", "email", "user_type", "is_active"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        return User.objects.all().order_by("-created_at")
 
 
 @extend_schema(

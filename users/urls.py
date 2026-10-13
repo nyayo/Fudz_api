@@ -17,6 +17,7 @@ from .views import (
     UserProfileView,
     VerifyOTPView,
     VerifyPhoneOTPView,
+    AdminUserViewSet,
     register_device,
     send_test_notification,
     unregister_device,
@@ -24,6 +25,7 @@ from .views import (
 
 routers = routers.DefaultRouter()
 routers.register("auth/staff", RestaurantStaffViewSet, basename="restaurant-staff")
+routers.register("auth/admin/users", AdminUserViewSet, basename="admin-users")
 
 app_name = "users"
 

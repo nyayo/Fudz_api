@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.db.models import Prefetch
 from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import (
@@ -57,6 +59,16 @@ class CartViewSet(
         else:
             serializer.save()
 
+    @action(detail=True, methods=["delete"], url_path="clear")
+    def clear(self, request, pk=None):
+        """Delete all items from this cart in one call."""
+        cart = self.get_object()
+        deleted_count, _ = cart.items.all().delete()
+        return Response(
+            {"detail": "Cart cleared.", "deleted": deleted_count},
+            status=status.HTTP_200_OK,
+        )
+
 
 class CartItemViewSet(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete"]
@@ -83,10 +95,19 @@ class CartItemViewSet(ModelViewSet):
 
 class OrderViewSet(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["status", "payment_status"]
+    search_fields = ["id", "customer__user__first_name", "customer__user__last_name", "customer__user__email"]
+    ordering_fields = ["placed_at", "total_amount", "status"]
+    ordering = ["-placed_at"]
 
     def get_permissions(self):
-        if self.request.method in ["PATCH", "DELETE"]:
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        if self.request.method in ["DELETE"]:
             return [IsAdminUser()]
+        if self.request.method in ["PATCH"]:
+            return [IsAuthenticated()]
         return [IsAuthenticated()]
 
     @transaction.atomic
@@ -98,6 +119,23 @@ class OrderViewSet(ModelViewSet):
         order = serializer.save()
         serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer):
+        """Allow platform admins and a restaurant's own operational accounts."""
+        user = self.request.user
+        order = serializer.instance
+        owner = getattr(user, "restaurant_profile", None)
+        staff_profile = getattr(user, "restaurant_staff_profile", None)
+        owns_order = bool(owner and order.restaurant_id == owner.id)
+        works_here = bool(
+            staff_profile
+            and staff_profile.is_active
+            and order.restaurant_id == staff_profile.restaurant_id
+        )
+        if not (user.is_staff or owns_order or works_here):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You can only update orders for your restaurant.")
+        serializer.save()
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -119,6 +157,10 @@ class OrderViewSet(ModelViewSet):
             return base_qs.filter(customer=user.customer_profile)
         if hasattr(user, "restaurant_profile"):
             return base_qs.filter(restaurant=user.restaurant_profile)
+        if hasattr(user, "restaurant_staff_profile"):
+            staff_profile = user.restaurant_staff_profile
+            if staff_profile.is_active:
+                return base_qs.filter(restaurant=staff_profile.restaurant)
         if hasattr(user, "courier_profile"):
             return base_qs.filter(courier=user.courier_profile)
 
@@ -128,27 +170,16 @@ class OrderViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
         order = self.get_object()
-        user = request.user
 
-        # Only the restaurant that owns the order (or staff) may accept it.
-        is_owner = (
-            hasattr(user, "restaurant_profile")
-            and order.restaurant_id == user.restaurant_profile.pk
-        )
-        if not (is_owner or user.is_staff):
-            return Response(
-                {"error": "Only the restaurant that owns this order can accept it."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
+        # Validate status transition
         if order.status != OrderStatus.PLACED:
             return Response(
-                {"error": f"Order in status '{order.status}' cannot be accepted."},
+                {"error": f"Cannot accept order in '{order.status}' status. Must be 'placed'."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         order.status = OrderStatus.ACCEPTED
-        order.save()
+        order.save(update_fields=['status'])
 
         delivery = DeliveryRequest.objects.create(
             order=order,
@@ -158,4 +189,7 @@ class OrderViewSet(ModelViewSet):
 
         transaction.on_commit(lambda: auto_assign_courier.delay(delivery.id))
 
-        return Response({"message": "Order accepted and delivery request created"})
+        return Response(
+            OrderSerializer(order).data,
+            status=status.HTTP_200_OK,
+        )

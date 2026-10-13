@@ -65,7 +65,7 @@ class MenuItemSerializer(serializers.ModelSerializer):
     restaurant_name = serializers.CharField(source="restaurant.restaurant_name", read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
     promotions = PromotionSerializer(many=True, read_only=True)
-    restaurant = serializers.PrimaryKeyRelatedField(queryset=None, required=False, allow_null=True, read_only=True)
+    restaurant = serializers.PrimaryKeyRelatedField(queryset=RestaurantProfile.objects.all(), required=False, allow_null=True)
     promotion_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         write_only=True,
@@ -144,6 +144,9 @@ class MenuItemSerializer(serializers.ModelSerializer):
         if request and hasattr(request.user, "restaurant_profile") and not request.user.is_staff and not data.get("restaurant"):
             data["restaurant"] = request.user.restaurant_profile
 
+        if not data.get("restaurant") and self.instance:
+            data["restaurant"] = self.instance.restaurant
+
         restaurant = data.get("restaurant")
         category = data.get("category")
 
@@ -171,7 +174,7 @@ class MenuCategorySerializer(serializers.ModelSerializer):
     restaurant_name = serializers.CharField(source="restaurant.restaurant_name", read_only=True)
     menu_items = MenuItemSerializer(source="items", many=True, read_only=True)
 
-    restaurant = serializers.PrimaryKeyRelatedField(queryset=None, required=False, allow_null=True, read_only=True)
+    restaurant = serializers.PrimaryKeyRelatedField(queryset=RestaurantProfile.objects.all(), required=False, allow_null=True)
     category_image = MenuCategoryImageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -210,6 +213,9 @@ class MenuCategorySerializer(serializers.ModelSerializer):
 
         if request and hasattr(request.user, "restaurant_profile") and not request.user.is_staff and not data.get("restaurant"):
             data["restaurant"] = request.user.restaurant_profile
+
+        if not data.get("restaurant") and self.instance:
+            data["restaurant"] = self.instance.restaurant
 
         if not data.get("restaurant"):
             raise serializers.ValidationError("Restaurant is required.")
@@ -295,6 +301,21 @@ class RestaurantProfileSerializer(serializers.ModelSerializer):
             "categories",
             "promotions",
         ]
+        read_only_fields = ["id", "rating", "avg_rating", "is_approved", "menu_items_count", "categories_count", "owner_name", "phone", "categories", "promotions"]
+
+
+class AdminRestaurantSerializer(serializers.ModelSerializer):
+    menu_items_count = serializers.IntegerField(read_only=True)
+    categories_count = serializers.IntegerField(read_only=True)
+    avg_rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+    owner_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    owner_email = serializers.EmailField(source="user.email", read_only=True, allow_null=True)
+    phone = serializers.CharField(source="user.phone", read_only=True, allow_null=True)
+
+    class Meta:
+        model = RestaurantProfile
+        fields = ["id", "restaurant_name", "business_license", "address", "image", "logo", "opening_hours", "rating", "avg_rating", "is_approved", "is_active", "menu_items_count", "categories_count", "owner_name", "owner_email", "phone"]
+        read_only_fields = ["id", "rating", "avg_rating", "menu_items_count", "categories_count", "owner_name", "owner_email", "phone"]
 
 
 class RestaurantListSerializer(serializers.ModelSerializer):

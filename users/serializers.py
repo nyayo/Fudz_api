@@ -159,7 +159,7 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError("Email not verified.")
 
         user_type = attrs["user_type"]
-        if user_type == "customer" and not phone:
+        if user_type == "customer" and not attrs.get("phone"):
             raise serializers.ValidationError("Phone number is required for customers")
         elif user_type == "restaurant" and not all(
             [
@@ -310,7 +310,7 @@ class GoogleSignInSerializer(serializers.Serializer):
 
         profile_data = {}
         profile_fields = {
-            # "customer": ["phone"],
+            "customer": ["phone"],
             "restaurant": ["restaurant_name", "business_license", "address"],
             "courier": ["username", "license_number", "vehicle_type"],
         }
@@ -434,6 +434,10 @@ class LogoutUserSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     profile = serializers.SerializerMethodField()
+    # Contact-completion flags: the apps use these to prompt users who
+    # registered with only one contact channel to add the other.
+    needs_phone = serializers.SerializerMethodField()
+    needs_email = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -441,15 +445,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "full_name",
+            "first_name",
+            "last_name",
             "phone",
             "email",
             "user_type",
             "is_verified",
             "profile",
+            "needs_phone",
+            "needs_email",
+            "is_staff",
+            "is_superuser",
         ]
+        read_only_fields = ["id", "username", "email", "phone", "user_type", "is_verified", "profile", "needs_phone", "needs_email", "is_staff", "is_superuser"]
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip()
+
+    def get_needs_phone(self, obj):
+        return not obj.phone
+
+    def get_needs_email(self, obj):
+        return not obj.email
 
     def get_profile(self, obj):
         if obj.user_type == "customer":
@@ -484,11 +501,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
             profile = getattr(obj, "restaurant_staff_profile", None)
             if profile:
                 return {
+                    "id": profile.id,
+                    "restaurant_id": profile.restaurant_id,
                     "restaurant": profile.restaurant.restaurant_name,
                     "role": profile.role,
-                    "is_verified": profile.is_verified,
+                    "is_active": profile.is_active,
                 }
         return None
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "phone", "first_name", "last_name", "user_type", "is_active", "is_verified", "is_staff", "is_superuser", "created_at"]
+        read_only_fields = ["id", "username", "email", "phone", "first_name", "last_name", "user_type", "is_verified", "is_staff", "is_superuser", "created_at"]
+
+    def validate_is_active(self, value):
+        request = self.context.get("request")
+        if not value and self.instance:
+            if self.instance.is_superuser:
+                raise serializers.ValidationError("Superuser accounts cannot be disabled here.")
+            if request and self.instance.pk == request.user.pk:
+                raise serializers.ValidationError("You cannot disable your own admin account.")
+        return value
 
 
 class RestaurantStaffSerializer(serializers.ModelSerializer):
@@ -496,6 +531,9 @@ class RestaurantStaffSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     first_name = serializers.CharField(write_only=True, required=False)
     last_name = serializers.CharField(write_only=True, required=False)
+    email_display = serializers.EmailField(source="user.email", read_only=True)
+    first_name_display = serializers.CharField(source="user.first_name", read_only=True)
+    last_name_display = serializers.CharField(source="user.last_name", read_only=True)
 
     class Meta:
         model = RestaurantStaffProfile
@@ -508,7 +546,11 @@ class RestaurantStaffSerializer(serializers.ModelSerializer):
             "role",
             "restaurant",
             "is_active",
+            "email_display",
+            "first_name_display",
+            "last_name_display",
         ]
+        extra_kwargs = {"restaurant": {"required": False}}
 
     # def validate(self, attrs):
     #     if User.objects.filter(email=attrs['email']).exists():

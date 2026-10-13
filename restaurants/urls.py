@@ -2,8 +2,9 @@ from django.urls import path
 from rest_framework_nested import routers
 from . import views
 
-
 router = routers.DefaultRouter()
+router.register('admin/restaurants', views.AdminRestaurantViewSet, basename='admin-restaurants')
+
 router.register('images', views.MenuItemImageViewSet, basename='menuitem-image')
 router.register('promotions', views.PromotionViewSet, basename='promotion')
 
