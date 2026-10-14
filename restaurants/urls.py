@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework_nested import routers
 from . import views
+from .bulk_upload import MenuItemBulkUpsertView
 
 router = routers.DefaultRouter()
 router.register('admin/restaurants', views.AdminRestaurantViewSet, basename='admin-restaurants')
@@ -24,6 +25,7 @@ urlpatterns = [
     path('categories/<int:pk>/', views.MenuCategoryDetailView.as_view(), name='menu-category-detail'),
     
     path('items/', views.MenuItemListCreateView.as_view(), name='menu-items'),
+    path('items/bulk/', MenuItemBulkUpsertView.as_view(), name='menu-items-bulk'),
     path('items/on-promotion/', views.MenuItemOnPromotionListView.as_view(), name='menu-items-on-promotion'),
     path('items/<int:pk>/', views.MenuItemRetrieveUpdateDestroyView.as_view(), name='menu-item-detail'),
     path('items/<int:pk>/add-promotion/', views.MenuItemAddPromotionView.as_view(), name='menu-item-add-promotion'),
