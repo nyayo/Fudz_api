@@ -451,7 +451,7 @@ class RestaurantStaffViewSet(viewsets.ModelViewSet):
 class AdminUserViewSet(viewsets.ModelViewSet):
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
-    http_method_names = ["get", "patch", "head", "options"]
+    http_method_names = ["get", "patch", "delete", "head", "options"]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["user_type", "is_active", "is_verified"]
     search_fields = ["email", "phone", "username", "first_name", "last_name"]
@@ -460,6 +460,15 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return User.objects.all().order_by("-created_at")
+
+    def perform_destroy(self, instance):
+        if instance.pk == self.request.user.pk:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You cannot delete your own admin account.")
+        if instance.is_staff or instance.is_superuser:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Platform admin accounts cannot be deleted from user management.")
+        instance.delete()
 
 
 @extend_schema(
