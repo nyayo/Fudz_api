@@ -4,10 +4,12 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.gis.geos import Point
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from django.utils.encoding import force_str, smart_bytes, smart_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -16,6 +18,8 @@ from .models import (CourierProfile, CustomerProfile, EmailVerification,
                      NotificationPreference, PhoneVerification,
                      RestaurantProfile, RestaurantStaffProfile, User)
 from .services import send_normal_email
+
+REGISTRATION_PROOF_TTL = timezone.timedelta(minutes=30)
 
 
 class RequestOTPSerializer(serializers.Serializer):
@@ -70,6 +74,9 @@ class VerifyPhoneOTPSerializer(serializers.Serializer):
         record.save()
 
         user_exists = User.objects.filter(phone=validated_data["phone"]).exists()
+        if not user_exists:
+            record.expires_at = timezone.now() + REGISTRATION_PROOF_TTL
+            record.save(update_fields=["expires_at"])
 
         return {
             "phone": validated_data["phone"],
@@ -111,6 +118,9 @@ class VerifyOTPSerializer(serializers.Serializer):
         record.save()
 
         user_exists = User.objects.filter(email=validated_data["email"]).exists()
+        if not user_exists:
+            record.expires_at = timezone.now() + REGISTRATION_PROOF_TTL
+            record.save(update_fields=["expires_at"])
 
         return {
             "email": validated_data["email"],
@@ -135,6 +145,8 @@ class RegistrationSerializer(serializers.Serializer):
     license_number = serializers.CharField(max_length=50, required=False)
     vehicle_type = serializers.CharField(max_length=50, required=False)
     address = serializers.CharField(required=False)
+    latitude = serializers.FloatField(required=False)
+    longitude = serializers.FloatField(required=False)
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
@@ -153,10 +165,29 @@ class RegistrationSerializer(serializers.Serializer):
                 "An account with this phone number already exists. Please login instead."
             )
 
-        if email and not EmailVerification.objects.filter(
-            email=email, is_verified=True
-        ).exists():
+        verification_time = timezone.now()
+        email_verified = bool(
+            email
+            and EmailVerification.objects.filter(
+                email=email,
+                is_verified=True,
+                expires_at__gt=verification_time,
+            ).exists()
+        )
+        phone_verified = bool(
+            phone
+            and PhoneVerification.objects.filter(
+                phone=phone,
+                is_verified=True,
+                expires_at__gt=verification_time,
+            ).exists()
+        )
+        if email and not email_verified:
             raise serializers.ValidationError("Email not verified.")
+        if not email_verified and not phone_verified:
+            raise serializers.ValidationError(
+                "A verified email or phone number is required to register."
+            )
 
         user_type = attrs["user_type"]
         if user_type == "customer" and not attrs.get("phone"):
@@ -178,6 +209,22 @@ class RegistrationSerializer(serializers.Serializer):
                 "Full name, license number, and vehicle type are required for couriers"
             )
 
+        if user_type == "restaurant":
+            latitude = attrs.get("latitude")
+            longitude = attrs.get("longitude")
+            if latitude is None or longitude is None:
+                raise serializers.ValidationError(
+                    "Restaurant map location is required; choose the pickup point on the map."
+                )
+            if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
+                raise serializers.ValidationError(
+                    "Restaurant map location is outside valid WGS84 bounds."
+                )
+            if latitude == 0 and longitude == 0:
+                raise serializers.ValidationError(
+                    "Select a real restaurant location; (0, 0) is not valid."
+                )
+
         return attrs
 
     def create(self, validated_data):
@@ -186,7 +233,13 @@ class RegistrationSerializer(serializers.Serializer):
         profile_data = {}
         profile_fields = {
             "customer": [],
-            "restaurant": ["restaurant_name", "business_license", "address"],
+            "restaurant": [
+                "restaurant_name",
+                "business_license",
+                "address",
+                "latitude",
+                "longitude",
+            ],
             "courier": ["username", "license_number", "vehicle_type"],
         }
 
@@ -194,8 +247,6 @@ class RegistrationSerializer(serializers.Serializer):
         for field in profile_fields.get(user_type, []):
             if field in validated_data:
                 profile_data[field] = validated_data.pop(field)
-
-        print(f"Validated data: {validated_data}, Profile data: {profile_data}")
 
         user = User.objects.create_user(
             phone=validated_data.get("phone"),
@@ -210,11 +261,18 @@ class RegistrationSerializer(serializers.Serializer):
         if user_type == "customer":
             CustomerProfile.objects.create(user=user, **profile_data)
         elif user_type == "restaurant":
+            latitude = profile_data.pop("latitude")
+            longitude = profile_data.pop("longitude")
+            profile_data["location"] = Point(longitude, latitude, srid=4326)
             RestaurantProfile.objects.create(user=user, **profile_data)
         elif user_type == "courier":
             CourierProfile.objects.create(user=user, **profile_data)
 
-        # Send welcome email asynchronously (only if email is provided)
+        if user.email:
+            EmailVerification.objects.filter(email=user.email, is_verified=True).update(is_verified=False)
+        if user.phone:
+            PhoneVerification.objects.filter(phone=user.phone, is_verified=True).update(is_verified=False)
+
         if user.email:
             send_templated_email_task.delay(
                 user.email,

@@ -61,6 +61,7 @@ class RequestOTPView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data.get("email")
+        EmailVerification.objects.filter(email=email, is_verified=True).update(is_verified=False)
 
         try:
             otp_obj, created = EmailVerification.objects.get_or_create(
@@ -109,6 +110,7 @@ class RequestPhoneOTPView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         phone = serializer.validated_data.get("phone")
+        PhoneVerification.objects.filter(phone=phone, is_verified=True).update(is_verified=False)
 
         try:
             otp_obj, created = PhoneVerification.objects.get_or_create(

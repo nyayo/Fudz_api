@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers as drf_errors
 
 from factories import UserFactory
-from users.models import EmailVerification, PhoneVerification
+from users.models import EmailVerification, PhoneVerification, RestaurantProfile
 from users.serializers import (
     LoginSerializer,
     RegistrationSerializer,
@@ -79,6 +79,62 @@ class TestRegistrationSerializer:
         assert not s.is_valid()
         assert "Email not verified." in str(s.errors)
 
+    def test_expired_verified_email_rejected(self):
+        email = "expired@test.ug"
+        _verified_email(email)
+        record = EmailVerification.objects.get(email=email)
+        record.expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        record.save(update_fields=["expires_at"])
+        s = RegistrationSerializer(data=self.base_payload(email=email))
+        assert not s.is_valid()
+        assert "Email not verified." in str(s.errors)
+
+    def test_registration_requires_a_verified_contact(self):
+        payload = self.base_payload(email="")
+        s = RegistrationSerializer(data=payload)
+        assert not s.is_valid()
+        assert "verified email or phone" in str(s.errors).lower()
+
+    def test_registration_accepts_active_phone_verification(self):
+        phone = "+256772999888"
+        PhoneVerification.objects.create(
+            phone=phone,
+            otp="x",
+            expires_at=timezone.now() + timezone.timedelta(minutes=20),
+            is_verified=True,
+        )
+        payload = self.base_payload(email="")
+        s = RegistrationSerializer(data=payload)
+        assert s.is_valid(), s.errors
+
+    def test_email_otp_opens_a_limited_registration_window(self):
+        email = "otp-window@test.ug"
+        record = EmailVerification.objects.create(
+            email=email,
+            otp="",
+            expires_at=timezone.now() + timezone.timedelta(minutes=10),
+        )
+        otp = record.generate_otp()
+        serializer = VerifyOTPSerializer(data={"email": email, "otp": otp})
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        record.refresh_from_db()
+        assert record.expires_at > timezone.now() + timezone.timedelta(minutes=29)
+
+    def test_phone_otp_opens_a_limited_registration_window(self):
+        phone = "+256772888777"
+        record = PhoneVerification.objects.create(
+            phone=phone,
+            otp="",
+            expires_at=timezone.now() + timezone.timedelta(minutes=10),
+        )
+        otp = record.generate_otp()
+        serializer = VerifyPhoneOTPSerializer(data={"phone": phone, "otp": otp})
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        record.refresh_from_db()
+        assert record.expires_at > timezone.now() + timezone.timedelta(minutes=29)
+
     def test_duplicate_email_rejected(self):
         _verified_email("taken@test.ug")
         UserFactory(email="taken@test.ug")
@@ -93,16 +149,13 @@ class TestRegistrationSerializer:
         assert not s.is_valid()
         assert "already exists" in str(s.errors)
 
-    def test_customer_requires_phone_note(self):
-        # The serializer has a NameError bug: `not phone` references a bare
-        # name instead of attrs["phone"]. This test documents current
-        # behavior so the fix is visible when made.
+    def test_customer_requires_phone(self):
         _verified_email("cust@test.ug")
         payload = self.base_payload(email="cust@test.ug")
         payload.pop("phone")
         s = RegistrationSerializer(data=payload)
-        with pytest.raises(Exception):
-            s.is_valid(raise_exception=True)
+        assert not s.is_valid()
+        assert "Phone number is required" in str(s.errors)
 
     def test_restaurant_requires_profile_fields(self):
         _verified_email("resto@test.ug")
@@ -121,6 +174,54 @@ class TestRegistrationSerializer:
         s = RegistrationSerializer(data=payload)
         assert not s.is_valid()
         assert "Restaurant name" in str(s.errors)
+
+    def test_restaurant_requires_map_location(self):
+        _verified_email("resto-location@test.ug")
+        payload = self.base_payload(email="resto-location@test.ug")
+        payload.update({"user_type": "restaurant", "restaurant_name": "Map Cafe", "business_license": "LIC-MAP-1", "address": "Kampala"})
+        payload.pop("phone")
+        s = RegistrationSerializer(data=payload)
+        assert not s.is_valid()
+        assert "map location is required" in str(s.errors).lower()
+
+    def test_restaurant_registration_saves_selected_point(self, monkeypatch):
+        _verified_email("resto-point@test.ug")
+        from users import tasks as users_tasks
+
+        monkeypatch.setattr(users_tasks.send_templated_email_task, "delay", lambda *a, **k: None)
+        payload = self.base_payload(email="resto-point@test.ug")
+        payload.update({
+            "user_type": "restaurant",
+            "restaurant_name": "Map Cafe",
+            "business_license": "LIC-MAP-2",
+            "address": "Kampala",
+            "latitude": 0.3476,
+            "longitude": 32.5825,
+        })
+        payload.pop("phone")
+        s = RegistrationSerializer(data=payload)
+        assert s.is_valid(), s.errors
+        user = s.save()
+        point = RestaurantProfile.objects.get(user=user).location
+        assert round(point.y, 4) == 0.3476
+        assert round(point.x, 4) == 32.5825
+        assert not EmailVerification.objects.get(email="resto-point@test.ug").is_verified
+
+    def test_restaurant_rejects_origin_zero_coordinates(self):
+        _verified_email("resto-zero@test.ug")
+        payload = self.base_payload(email="resto-zero@test.ug")
+        payload.update({
+            "user_type": "restaurant",
+            "restaurant_name": "No Zero Cafe",
+            "business_license": "LIC-MAP-3",
+            "address": "Kampala",
+            "latitude": 0,
+            "longitude": 0,
+        })
+        payload.pop("phone")
+        s = RegistrationSerializer(data=payload)
+        assert not s.is_valid()
+        assert "(0, 0) is not valid" in str(s.errors)
 
     def test_courier_requires_license_fields(self):
         _verified_email("courier@test.ug")
