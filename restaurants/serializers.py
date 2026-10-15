@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
+from django.contrib.gis.geos import Point
+from django.db import transaction
 
-from users.models import RestaurantProfile
+from users.models import RestaurantProfile, User
 
 from .models import (
     MenuCategory,
@@ -311,11 +313,88 @@ class AdminRestaurantSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source="user.get_full_name", read_only=True)
     owner_email = serializers.EmailField(source="user.email", read_only=True, allow_null=True)
     phone = serializers.CharField(source="user.phone", read_only=True, allow_null=True)
+    latitude = serializers.FloatField(write_only=True, required=False, allow_null=True)
+    longitude = serializers.FloatField(write_only=True, required=False, allow_null=True)
+    location_latitude = serializers.SerializerMethodField()
+    location_longitude = serializers.SerializerMethodField()
 
     class Meta:
         model = RestaurantProfile
-        fields = ["id", "restaurant_name", "business_license", "address", "image", "logo", "opening_hours", "rating", "avg_rating", "is_approved", "is_active", "menu_items_count", "categories_count", "owner_name", "owner_email", "phone"]
+        fields = ["id", "restaurant_name", "business_license", "address", "image", "logo", "opening_hours", "latitude", "longitude", "location_latitude", "location_longitude", "rating", "avg_rating", "is_approved", "is_active", "menu_items_count", "categories_count", "owner_name", "owner_email", "phone"]
         read_only_fields = ["id", "rating", "avg_rating", "menu_items_count", "categories_count", "owner_name", "owner_email", "phone"]
+
+    def get_location_latitude(self, obj):
+        point = obj.location
+        return float(point.y) if point and not (point.x == 0 and point.y == 0) else None
+
+    def get_location_longitude(self, obj):
+        point = obj.location
+        return float(point.x) if point and not (point.x == 0 and point.y == 0) else None
+
+    def update(self, instance, validated_data):
+        has_latitude = "latitude" in validated_data
+        has_longitude = "longitude" in validated_data
+        latitude = validated_data.pop("latitude", None)
+        longitude = validated_data.pop("longitude", None)
+        if has_latitude != has_longitude:
+            raise serializers.ValidationError({"location": "Provide both latitude and longitude."})
+        if has_latitude and latitude is None and longitude is None:
+            instance.location = None
+        elif has_latitude:
+            lat, lon = float(latitude), float(longitude)
+            if not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
+                raise serializers.ValidationError({"location": "Enter valid latitude/longitude coordinates."})
+            instance.location = Point(lon, lat, srid=4326)
+        return super().update(instance, validated_data)
+
+
+class AdminRestaurantOnboardSerializer(serializers.Serializer):
+    restaurant_name = serializers.CharField(max_length=100)
+    business_license = serializers.CharField(max_length=100)
+    address = serializers.CharField()
+    owner_email = serializers.EmailField()
+    owner_first_name = serializers.CharField(max_length=150)
+    owner_last_name = serializers.CharField(max_length=150)
+    latitude = serializers.FloatField(required=False, allow_null=True)
+    longitude = serializers.FloatField(required=False, allow_null=True)
+
+    def validate_business_license(self, value):
+        if RestaurantProfile.objects.filter(business_license=value).exists():
+            raise serializers.ValidationError("A restaurant with this business license already exists.")
+        return value
+
+    def validate_owner_email(self, value):
+        normalized = User.objects.normalize_email(value).lower()
+        if User.objects.filter(email__iexact=normalized).exists():
+            raise serializers.ValidationError("An account with this email already exists.")
+        return normalized
+
+    def validate(self, attrs):
+        latitude, longitude = attrs.get("latitude"), attrs.get("longitude")
+        if (latitude is None) != (longitude is None):
+            raise serializers.ValidationError({"location": "Provide both latitude and longitude, or leave both blank."})
+        if latitude is not None:
+            if not (-90 <= latitude <= 90 and -180 <= longitude <= 180) or (latitude == 0 and longitude == 0):
+                raise serializers.ValidationError({"location": "Enter valid latitude/longitude coordinates."})
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        latitude = validated_data.pop("latitude", None)
+        longitude = validated_data.pop("longitude", None)
+        owner_email = validated_data.pop("owner_email")
+        first_name = validated_data.pop("owner_first_name")
+        last_name = validated_data.pop("owner_last_name")
+        owner = User.objects.create_user(
+            email=owner_email,
+            first_name=first_name,
+            last_name=last_name,
+            password=None,
+            user_type="restaurant",
+            is_verified=False,
+        )
+        location = Point(longitude, latitude, srid=4326) if latitude is not None else None
+        return RestaurantProfile.objects.create(user=owner, location=location, **validated_data)
 
 
 class RestaurantListSerializer(serializers.ModelSerializer):

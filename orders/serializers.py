@@ -212,6 +212,8 @@ class OrderSerializer(serializers.ModelSerializer):
     total_amount = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
     restaurant_name = serializers.CharField(source="restaurant.restaurant_name", read_only=True)
+    pickup_latitude = serializers.SerializerMethodField()
+    pickup_longitude = serializers.SerializerMethodField()
     dropoff_latitude = serializers.SerializerMethodField()
     dropoff_longitude = serializers.SerializerMethodField()
 
@@ -224,6 +226,8 @@ class OrderSerializer(serializers.ModelSerializer):
             "restaurant",
             "restaurant_name",
             "pickup_location",
+            "pickup_latitude",
+            "pickup_longitude",
             "dropoff_location",
             "dropoff_latitude",
             "dropoff_longitude",
@@ -251,6 +255,20 @@ class OrderSerializer(serializers.ModelSerializer):
     def get_customer_name(self, obj):
         user = obj.customer.user
         return user.get_full_name().strip() or user.get_username() or user.email
+
+    def _pickup_point(self, obj):
+        for point in (obj.pickup_location, getattr(obj.restaurant, "location", None)):
+            if point and not (point.x == 0 and point.y == 0):
+                return point
+        return None
+
+    def get_pickup_latitude(self, obj):
+        point = self._pickup_point(obj)
+        return float(point.y) if point else None
+
+    def get_pickup_longitude(self, obj):
+        point = self._pickup_point(obj)
+        return float(point.x) if point else None
 
     def get_dropoff_latitude(self, obj):
         point = obj.dropoff_location

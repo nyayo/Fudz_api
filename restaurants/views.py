@@ -21,6 +21,7 @@ from .serializers import (
     PromotionSerializer,
     RestaurantProfileSerializer,
     AdminRestaurantSerializer,
+    AdminRestaurantOnboardSerializer,
 )
 
 
@@ -449,12 +450,24 @@ class MenuCategoryImageViewSet(ModelViewSet):
 class AdminRestaurantViewSet(ModelViewSet):
     serializer_class = AdminRestaurantSerializer
     permission_classes = [IsAdminUser]
-    http_method_names = ["get", "patch", "head", "options"]
+    http_method_names = ["get", "post", "patch", "head", "options"]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["is_approved", "is_active"]
     search_fields = ["restaurant_name", "address", "user__email", "user__first_name", "user__last_name"]
     ordering_fields = ["restaurant_name", "rating", "is_approved", "is_active"]
     ordering = ["restaurant_name"]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return AdminRestaurantOnboardSerializer
+        return AdminRestaurantSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        restaurant = serializer.save()
+        response_data = AdminRestaurantSerializer(restaurant, context=self.get_serializer_context()).data
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
         return RestaurantProfile.objects.annotate(

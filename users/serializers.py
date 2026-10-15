@@ -514,7 +514,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "phone", "first_name", "last_name", "user_type", "is_active", "is_verified", "is_staff", "is_superuser", "created_at"]
-        read_only_fields = ["id", "username", "email", "phone", "first_name", "last_name", "user_type", "is_verified", "is_staff", "is_superuser", "created_at"]
+        read_only_fields = ["id", "username", "email", "phone", "first_name", "last_name", "user_type", "is_staff", "is_superuser", "created_at"]
 
     def validate_is_active(self, value):
         request = self.context.get("request")
