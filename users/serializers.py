@@ -48,10 +48,12 @@ class VerifyPhoneOTPSerializer(serializers.Serializer):
 
     def validate(self, data):
         try:
-            record = PhoneVerification.objects.get(
+            record = PhoneVerification.objects.filter(
                 phone=data["phone"], is_verified=False
-            )
+            ).order_by("-created_at", "-pk").first()
         except PhoneVerification.DoesNotExist:
+            raise serializers.ValidationError("Invalid OTP or phone number.")
+        if record is None:
             raise serializers.ValidationError("Invalid OTP or phone number.")
 
         if record.is_expired():
@@ -94,8 +96,12 @@ class VerifyOTPSerializer(serializers.Serializer):
 
     def validate(self, data):
         try:
-            record = EmailVerification.objects.get(email=data["email"], is_verified=False)
+            record = EmailVerification.objects.filter(
+                email=data["email"], is_verified=False
+            ).order_by("-created_at", "-pk").first()
         except EmailVerification.DoesNotExist:
+            raise serializers.ValidationError("Invalid OTP or email.")
+        if record is None:
             raise serializers.ValidationError("Invalid OTP or email.")
 
         if record.is_expired():

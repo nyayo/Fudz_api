@@ -64,20 +64,16 @@ class RequestOTPView(GenericAPIView):
         EmailVerification.objects.filter(email=email, is_verified=True).update(is_verified=False)
 
         try:
-            otp_obj, created = EmailVerification.objects.get_or_create(
-                email=email,
-                is_verified=False,
-                defaults={
-                    "expires_at": timezone.now() + timezone.timedelta(minutes=10)
-                },
-            )
-
-            if not created:
-                otp_obj.is_verified = False
-                otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
-
+            otp_obj = EmailVerification.objects.filter(email=email).order_by("-created_at", "-pk").first()
+            if otp_obj is None:
+                otp_obj = EmailVerification(
+                    email=email,
+                    otp="",
+                    expires_at=timezone.now() + timezone.timedelta(minutes=10),
+                )
+            otp_obj.is_verified = False
+            otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
             plain_otp = otp_obj.generate_otp()
-            otp_obj.save()
 
             send_templated_email_task.delay(
                 email,
@@ -113,20 +109,16 @@ class RequestPhoneOTPView(GenericAPIView):
         PhoneVerification.objects.filter(phone=phone, is_verified=True).update(is_verified=False)
 
         try:
-            otp_obj, created = PhoneVerification.objects.get_or_create(
-                phone=phone,
-                is_verified=False,
-                defaults={
-                    "expires_at": timezone.now() + timezone.timedelta(minutes=10)
-                },
-            )
-
-            if not created:
-                otp_obj.is_verified = False
-                otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
-
+            otp_obj = PhoneVerification.objects.filter(phone=phone).order_by("-created_at", "-pk").first()
+            if otp_obj is None:
+                otp_obj = PhoneVerification(
+                    phone=phone,
+                    otp="",
+                    expires_at=timezone.now() + timezone.timedelta(minutes=10),
+                )
+            otp_obj.is_verified = False
+            otp_obj.expires_at = timezone.now() + timezone.timedelta(minutes=10)
             plain_otp = otp_obj.generate_otp()
-            otp_obj.save()
 
             send_sms_otp_task.delay(phone, plain_otp)
 

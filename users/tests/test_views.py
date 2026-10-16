@@ -140,6 +140,46 @@ class TestOTPEndpoints:
         assert calls, "email task should be dispatched"
         assert EmailVerification.objects.filter(email="otp@test.ug").exists()
 
+    def test_request_otp_reuses_newest_row_when_legacy_duplicates_exist(self, monkeypatch):
+        from users.views import send_templated_email_task
+
+        email = "duplicate-otp@test.ug"
+        for is_verified in (True, False, False):
+            EmailVerification.objects.create(
+                email=email,
+                otp="legacy-hash",
+                expires_at=timezone.now() + timezone.timedelta(minutes=10),
+                is_verified=is_verified,
+            )
+        monkeypatch.setattr(send_templated_email_task, "delay", lambda *a, **k: None)
+
+        response = APIClient().post(f"{USERS}/auth/request-otp/", {"email": email})
+
+        assert response.status_code == status.HTTP_200_OK, response.data
+        assert EmailVerification.objects.filter(email=email).count() == 3
+        assert not EmailVerification.objects.filter(email=email, is_verified=True).exists()
+        latest = EmailVerification.objects.filter(email=email).order_by("-created_at", "-pk").first()
+        assert latest is not None
+        assert latest.attempts == 0
+        assert latest.expires_at > timezone.now()
+
+    def test_verify_otp_selects_newest_pending_duplicate(self):
+        email = "duplicate-verify@test.ug"
+        older = EmailVerification(email=email, otp="", expires_at=timezone.now())
+        older.generate_otp()
+        latest = EmailVerification(email=email, otp="", expires_at=timezone.now())
+        latest_code = latest.generate_otp()
+
+        response = APIClient().post(
+            f"{USERS}/auth/verify-otp/", {"email": email, "otp": latest_code}, format="json"
+        )
+
+        assert response.status_code == status.HTTP_200_OK, response.data
+        older.refresh_from_db()
+        latest.refresh_from_db()
+        assert older.is_verified is False
+        assert latest.is_verified is True
+
     def test_request_otp_invalid_email_400(self):
         client = APIClient()
         resp = client.post(f"{USERS}/auth/request-otp/", {"email": "bad"})
@@ -536,3 +576,4 @@ class TestLinkGoogleAccount:
         assert resp.status_code == 200
         user.refresh_from_db()
         assert user.google_id is None
+
