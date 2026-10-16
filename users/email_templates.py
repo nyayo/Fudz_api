@@ -1907,6 +1907,36 @@ Thank you for being part of Fudgo!
         return {"subject": "👋 Account Deactivated – Fudgo", "html": html, "plain": plain}
 
 
+    @classmethod
+    def restaurant_invitation(cls, user_name: str, restaurant_name: str, activation_url: str, role: str = "restaurant owner") -> Dict[str, str]:
+        """Invitation for a restaurant owner or staff member to activate access."""
+        header = cls._header(
+            "Your restaurant workspace is ready",
+            f"{restaurant_name} invited you to join its Fudz Hub workspace as a {role}.",
+            "🍽️",
+        )
+        body = f"""
+  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 32px; text-align: center;">
+      <p style="color: #4b5563; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">Hi <strong>{user_name}</strong>, you have been invited to join <strong>{restaurant_name}</strong> as a <strong>{role}</strong>.</p>
+      <a href="{activation_url}" class="btn-primary">Activate your account</a>
+      <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 24px 0 0;">Choose a password from the secure activation page. This invitation link expires after 30 minutes.</p>
+      <p style="color: #9ca3af; font-size: 11px; margin-top: 18px;">If you were not expecting this invitation, you can safely ignore it.</p>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="height: 24px;"></td></tr></table>"""
+        html = cls._base_template(header + body + cls._footer("Welcome to your restaurant workspace."), "Activate your Fudz Hub restaurant workspace")
+        plain = f"""Hi {user_name},
+
+You have been invited to join {restaurant_name} as a {role}. Activate your account and choose a password here:
+{activation_url}
+
+This invitation link expires after 30 minutes.
+
+If you were not expecting this invitation, you can safely ignore it.
+"""
+        return {"subject": "🍽️ Activate your Fudz Hub restaurant workspace", "html": html, "plain": plain}
+
 # ============================================================
 # CONVENIENCE FUNCTION
 # ============================================================
@@ -1919,6 +1949,7 @@ def get_email_template(template_type: str, **kwargs) -> Dict[str, Any]:
         "password_reset": EmailTemplates.password_reset,
         "password_reset_success": EmailTemplates.password_reset_success,
         "welcome_verified": EmailTemplates.welcome_verified,
+        "restaurant_invitation": EmailTemplates.restaurant_invitation,
         # Orders
         "order_confirmation": EmailTemplates.order_confirmation,
         "order_status_update": EmailTemplates.order_status_update,

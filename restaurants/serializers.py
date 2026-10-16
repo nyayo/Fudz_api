@@ -2,7 +2,11 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
 from django.contrib.gis.geos import Point
+from django.conf import settings
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.db import transaction
+from django.utils.encoding import smart_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from users.models import RestaurantProfile, User
 
@@ -394,7 +398,25 @@ class AdminRestaurantOnboardSerializer(serializers.Serializer):
             is_verified=False,
         )
         location = Point(longitude, latitude, srid=4326) if latitude is not None else None
-        return RestaurantProfile.objects.create(user=owner, location=location, **validated_data)
+        restaurant = RestaurantProfile.objects.create(user=owner, location=location, **validated_data)
+
+        uidb64 = urlsafe_base64_encode(smart_bytes(owner.pk))
+        token = PasswordResetTokenGenerator().make_token(owner)
+        activation_url = (
+            f"{settings.FRONTEND_URL.rstrip('/')}/activate-invitation"
+            f"?uid={uidb64}&token={token}"
+        )
+        from users.tasks import send_templated_email_task
+        transaction.on_commit(lambda: send_templated_email_task.delay(
+            owner.email,
+            "restaurant_invitation",
+            {
+                "user_name": owner.first_name or owner.email,
+                "restaurant_name": restaurant.restaurant_name,
+                "activation_url": activation_url,
+            },
+        ))
+        return restaurant
 
 
 class RestaurantListSerializer(serializers.ModelSerializer):

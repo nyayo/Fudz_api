@@ -18,6 +18,8 @@ from .views import (
     VerifyOTPView,
     VerifyPhoneOTPView,
     AdminUserViewSet,
+    AdminLoginView,
+    InvitationActivationView,
     register_device,
     send_test_notification,
     unregister_device,
@@ -41,6 +43,8 @@ urlpatterns = [
         "auth/phone/verify-otp/", VerifyPhoneOTPView.as_view(), name="verify-phone-otp"
     ),
     path("auth/register/", RegisterView.as_view(), name="register"),
+    path("auth/admin/login/", AdminLoginView.as_view(), name="admin-login"),
+    path("auth/invitations/activate/", InvitationActivationView.as_view(), name="invitation-activate"),
     path("auth/google/", GoogleOauthSignInview.as_view(), name="google"),
     path("auth/profile/", UserProfileView.as_view(), name="profile"),
     path("auth/logout/", LogoutApiView.as_view(), name="logout"),

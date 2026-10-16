@@ -44,6 +44,8 @@ from .serializers import (
     VerifyOTPSerializer,
     VerifyPhoneOTPSerializer,
     AdminUserSerializer,
+    AdminLoginSerializer,
+    InvitationActivationSerializer,
 )
 from .services import OTPService
 from .tasks import send_push_notification_to_user, send_sms_otp_task, send_templated_email_task
@@ -253,6 +255,42 @@ class RegisterView(generics.CreateAPIView):
                 "can_link_google": True,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminLoginView(generics.GenericAPIView):
+    serializer_class = AdminLoginSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        return Response(
+            {
+                "message": "Admin login successful",
+                "user": UserProfileSerializer(user).data,
+                "tokens": get_tokens_for_user(user),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class InvitationActivationView(generics.GenericAPIView):
+    serializer_class = InvitationActivationSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            {
+                "message": "Restaurant account activated successfully",
+                "user": UserProfileSerializer(user).data,
+                "tokens": get_tokens_for_user(user),
+            },
+            status=status.HTTP_200_OK,
         )
 
 

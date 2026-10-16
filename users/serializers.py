@@ -5,9 +5,10 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.gis.geos import Point
+from django.db import transaction
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
-from django.utils.encoding import force_str, smart_bytes, smart_str
+from django.utils.encoding import DjangoUnicodeDecodeError, force_str, smart_bytes, smart_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils import timezone
 from rest_framework import serializers
@@ -316,6 +317,54 @@ class LoginSerializer(serializers.Serializer):
         return attrs
 
 
+class AdminLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs):
+        user = authenticate(email=attrs["email"], password=attrs["password"])
+        if not user or not user.is_active:
+            raise serializers.ValidationError("Invalid admin credentials")
+        if not (user.is_staff or user.is_superuser):
+            raise serializers.ValidationError("This account does not have admin access")
+        attrs["user"] = user
+        return attrs
+
+
+class InvitationActivationSerializer(serializers.Serializer):
+    uidb64 = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(min_length=8, write_only=True)
+    confirm_password = serializers.CharField(min_length=8, write_only=True)
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        try:
+            user_id = force_str(urlsafe_base64_decode(attrs["uidb64"]))
+            user = User.objects.get(pk=user_id, user_type__in=["restaurant", "restaurant_staff"])
+        except (TypeError, ValueError, User.DoesNotExist, DjangoUnicodeDecodeError):
+            raise serializers.ValidationError("This invitation link is invalid or has expired.")
+        if timezone.now() - user.created_at > timezone.timedelta(minutes=30):
+            raise serializers.ValidationError("This invitation link is invalid or has expired.")
+        if not PasswordResetTokenGenerator().check_token(user, attrs["token"]):
+            raise serializers.ValidationError("This invitation link is invalid or has expired.")
+        attrs["user"] = user
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["user"]
+        user.set_password(self.validated_data["password"])
+        user.is_verified = True
+        user.is_active = True
+        user.save(update_fields=["password", "is_verified", "is_active", "updated_at"])
+        staff_profile = getattr(user, "restaurant_staff_profile", None)
+        if staff_profile:
+            staff_profile.is_active = True
+            staff_profile.save(update_fields=["is_active"])
+        return user
+
+
 class GoogleSignInSerializer(serializers.Serializer):
     access_token = serializers.CharField(min_length=6)
     id_token = serializers.CharField()
@@ -592,7 +641,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 class RestaurantStaffSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(write_only=True, required=False)
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=False)
     first_name = serializers.CharField(write_only=True, required=False)
     last_name = serializers.CharField(write_only=True, required=False)
     email_display = serializers.EmailField(source="user.email", read_only=True)
@@ -623,18 +672,21 @@ class RestaurantStaffSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         email = validated_data.pop("email", "")
-        password = validated_data.pop("password")
+        password = validated_data.pop("password", None)
         first_name = validated_data.pop("first_name", "")
         last_name = validated_data.pop("last_name", "")
+        validated_data.pop("is_active", None)
         role = validated_data["role"]
         user_type = "restaurant_staff"
 
         user = User.objects.create_user(
             email=email,
-            password=password,
+            password=None,
             first_name=first_name,
             last_name=last_name,
             user_type=user_type,
+            is_active=False,
+            is_verified=False,
         )
 
         auth_group = Group.objects.all()
@@ -643,8 +695,25 @@ class RestaurantStaffSerializer(serializers.ModelSerializer):
         user.groups.add(group)
 
         staff_profile = RestaurantStaffProfile.objects.create(
-            user=user, **validated_data
+            user=user, is_active=False, **validated_data
         )
+        uidb64 = urlsafe_base64_encode(smart_bytes(user.pk))
+        token = PasswordResetTokenGenerator().make_token(user)
+        activation_url = (
+            f"{settings.FRONTEND_URL.rstrip('/')}/activate-invitation"
+            f"?uid={uidb64}&token={token}"
+        )
+        from .tasks import send_templated_email_task
+        transaction.on_commit(lambda: send_templated_email_task.delay(
+            user.email,
+            "restaurant_invitation",
+            {
+                "user_name": user.first_name or user.email,
+                "restaurant_name": staff_profile.restaurant.restaurant_name,
+                "activation_url": activation_url,
+                "role": staff_profile.get_role_display(),
+            },
+        ))
         return staff_profile
 
 
