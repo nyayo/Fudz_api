@@ -4,8 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from django.db import transaction
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
 
 from .models import DeliveryRequest, DeliveryStatus, CourierEarnings
 from .serializers import DeliveryRequestSerializer
@@ -45,22 +45,37 @@ class AvailableCouriersView(generics.ListAPIView):
 class DeliveryRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [CanManageRestaurantDeliveries]
     queryset = DeliveryRequest.objects.select_related("order", "courier").all()
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend]
     filterset_fields = ["status"]
-    search_fields = ["order__id", "courier__user__username", "courier__user__first_name", "courier__user__last_name"]
 
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
         if user.is_staff:
-            return qs
-        restaurant = getattr(user, "restaurant_profile", None)
-        staff = getattr(user, "restaurant_staff_profile", None)
-        if restaurant:
-            return qs.filter(order__restaurant=restaurant)
-        if staff and staff.is_active:
-            return qs.filter(order__restaurant=staff.restaurant)
-        return qs.none()
+            pass
+        else:
+            restaurant = getattr(user, "restaurant_profile", None)
+            staff = getattr(user, "restaurant_staff_profile", None)
+            if restaurant:
+                qs = qs.filter(order__restaurant=restaurant)
+            elif staff and staff.is_active:
+                qs = qs.filter(order__restaurant=staff.restaurant)
+            else:
+                return qs.none()
+
+        search = (self.request.query_params.get("search") or "").strip()
+        for term in search.split():
+            term_filter = (
+                Q(courier__user__username__icontains=term)
+                | Q(courier__user__first_name__icontains=term)
+                | Q(courier__user__last_name__icontains=term)
+                | Q(courier__user__phone__icontains=term)
+            )
+            order_number = term.lstrip("#")
+            if order_number.isdecimal():
+                term_filter |= Q(order__id=int(order_number))
+            qs = qs.filter(term_filter)
+        return qs
 
     def get_serializer_class(self):
         return DeliveryRequestSerializer
@@ -129,3 +144,4 @@ class DeliveryRequestViewSet(viewsets.ModelViewSet):
                 delivery.courier.save()
 
         return Response(DeliveryRequestSerializer(delivery).data)
+

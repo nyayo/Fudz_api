@@ -66,6 +66,42 @@ class TestDeliveryRequestPermissions:
         assert resp.data["count"] == 2
 
 
+class TestDeliveryListFilters:
+    def test_search_by_order_number_uses_exact_numeric_match(self, admin_user, db):
+        target = DeliveryRequestFactory(courier=None)
+        DeliveryRequestFactory(courier=None)
+        response = _client_for(admin_user).get(
+            f"{DELIVERY}/deliveries/", {"search": f"#{target.order_id}"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert [row["id"] for row in response.data["results"]] == [target.id]
+
+    def test_search_by_courier_name_and_phone(self, admin_user, db):
+        courier = CourierProfileFactory()
+        courier.user.first_name = "Amina"
+        courier.user.last_name = "Kato"
+        courier.user.phone = "+256700123456"
+        courier.user.save(update_fields=["first_name", "last_name", "phone"])
+        target = DeliveryRequestFactory(courier=courier)
+        DeliveryRequestFactory(courier=None)
+        client = _client_for(admin_user)
+
+        for search in ("Amina Kato", "+256700123456"):
+            response = client.get(f"{DELIVERY}/deliveries/", {"search": search})
+            assert response.status_code == status.HTTP_200_OK
+            assert [row["id"] for row in response.data["results"]] == [target.id]
+
+    def test_status_filter_can_be_combined_with_search(self, admin_user, db):
+        pending = DeliveryRequestFactory(status=DeliveryStatus.PENDING, courier=None)
+        DeliveryRequestFactory(status=DeliveryStatus.DELIVERED, courier=None)
+        response = _client_for(admin_user).get(
+            f"{DELIVERY}/deliveries/",
+            {"status": DeliveryStatus.PENDING, "search": f"{pending.order_id}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert [row["id"] for row in response.data["results"]] == [pending.id]
+
+
 class TestAssignAction:
     def test_assign_courier(self, admin_user, db):
         delivery = DeliveryRequestFactory(status="pending")
@@ -331,3 +367,4 @@ class TestCourierEarnings:
 
         e = CourierEarningsFactory.build(courier=CourierProfileFactory(), commission_rate=10)
         assert e.calculate_amount(10000) == 9000
+
