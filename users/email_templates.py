@@ -1,180 +1,63 @@
 # users/email_templates.py
 """
 Modern Email Templates for Fudgo Food Delivery
-Glovo-style design with green color palette, dark mode support, and table-based layout
+Responsive light theme with orange-led food branding, accessible status colors, and email-safe tables
 """
 
+from html import escape
 from typing import Any, Dict
+from urllib.parse import quote, urljoin, urlparse
+
 from django.conf import settings
 
 
 class EmailTemplates:
-    """Professional email templates with dark mode support and green theme"""
+    """Professional transactional and promotional email templates for food delivery."""
 
     # ============================================================
-    # BASE STYLES - Shared CSS for all templates
+    # SHARED EMAIL DESIGN SYSTEM
     # ============================================================
-    
+
     BASE_STYLES = """
-    :root {
-      color-scheme: light dark;
-      supported-color-schemes: light dark;
-    }
-    .main {
-      padding: 0;
-      margin: 0;
-      font-family: Verdana, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-      font-size: 16px;
-      letter-spacing: 0;
-      line-height: 1.4;
-      background-color: #f9fafb;
-    }
-    table {
-      width: 100%;
-    }
-    td {
-      font-family: Verdana, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-    }
-    td a {
-      color: #22c55e;
-      text-decoration: none;
-    }
-    a.no-color {
-      color: inherit;
-    }
-    .header {
-      background-color: #f0fdf4;
-      border-radius: 0 0 80px 0;
-      max-width: 1200px;
-    }
-    .header__title {
-      font-size: 1.75em;
-      font-weight: bold;
-      padding: 24px 0;
-      letter-spacing: -0.5px;
-      color: #1f2937;
-    }
-    .header__subtitle {
-      color: #6b7280;
-      padding-bottom: 24px;
-    }
-    .header__inner-container {
-      padding: 40px 24px 60px;
-      margin: 0;
-    }
-    .body__details {
-      padding: 12px;
-    }
-    .body__background {
-      background-color: #f3f4f6;
-    }
-    .highlight {
-      color: #166534;
-      background-color: #dcfce7;
-      border: none;
-      padding: 3px 8px;
-      border-radius: 5px;
-      font-size: 0.75em;
-      font-weight: 500;
-    }
-    .table__padded td {
-      padding: 12px;
-    }
-    .table__padded td td {
-      padding: 0;
-    }
-    .indent {
-      background-color: white;
-    }
-    .label {
-      color: inherit !important;
-      text-decoration: none !important;
-    }
-    .label-details {
-      color: #6b7280 !important;
-      text-decoration: none !important;
-    }
-    .product__promotion {
-      background-color: #22c55e;
-      color: white;
-      font-size: 0.7em;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    .btn-primary {
-      color: white !important;
-      background-color: #22c55e;
-      padding: 12px 24px;
-      font-size: 0.875em;
-      border-radius: 8px;
-      font-weight: bold;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-primary:hover {
-      background-color: #16a34a;
-    }
-    .footer {
-      padding: 32px 24px;
-      text-align: center;
-      background-color: #1f2937;
-    }
-    .footer p {
-      color: #9ca3af;
-      font-size: 12px;
-      margin: 4px 0;
-    }
-    .footer a {
-      color: #22c55e;
-    }
-    /* Dark Mode Support */
-    @media (prefers-color-scheme: dark) {
-      .main {
-        color: #f9fafb !important;
-        background-color: #111827 !important;
-      }
-      .header {
-        background-color: #14532d !important;
-        color: white !important;
-      }
-      .header__title {
-        color: white !important;
-      }
-      .header__subtitle {
-        color: #d1d5db !important;
-      }
-      .body__background {
-        background-color: #1f2937 !important;
-        color: white !important;
-      }
-      .indent {
-        background-color: #111827 !important;
-      }
-      .highlight {
-        background-color: #064e3b !important;
-        color: #86efac !important;
-      }
-      .label {
-        color: inherit !important;
-      }
-      .label-details {
-        color: #9ca3af !important;
-      }
-      .footer {
-        background-color: #0f172a !important;
-      }
-    }
-    /* Mobile Responsive */
-    @media (max-width: 600px) {
-      .header__inner-container {
-        padding: 32px 16px 48px;
-      }
-      .header__title {
-        font-size: 1.5em;
-      }
-      .body__details {
-        padding: 8px;
-      }
+    * { box-sizing: border-box; }
+    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-collapse: collapse; border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; display: block; line-height: 100%; outline: none; text-decoration: none; }
+    .main { margin: 0; padding: 0; width: 100%; background-color: #FFF7F0; color: #29231F; font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.55; }
+    .email-shell { width: 100%; max-width: 600px; }
+    .header { max-width: 600px; background-color: #FFFFFF; border: 1px solid #F0E4DA; border-top: 5px solid #FF6B00; border-radius: 16px; }
+    .header__inner-container { padding: 26px 28px 22px; margin: 0; }
+    .header__title { padding: 18px 0 8px; color: #24170D; font-size: 27px; font-weight: 800; line-height: 1.2; letter-spacing: -0.45px; }
+    .header__subtitle { padding: 0 0 4px; color: #625A54; font-size: 14px; line-height: 1.65; }
+    .body__details { padding: 24px; }
+    .body__background { background-color: #FFFFFF; color: #29231F; border: 1px solid #F0E4DA; border-radius: 14px; }
+    .highlight { color: #3B1F6B; background-color: #F2EAF8; border: 1px solid #E8DCF2; padding: 4px 9px; border-radius: 7px; font-size: 12px; font-weight: 700; }
+    .table__padded td { padding: 10px; }
+    .table__padded td td { padding: 0; }
+    .indent { background-color: #FFFFFF; }
+    .label { color: inherit !important; text-decoration: none !important; }
+    .label-details { color: #736B65 !important; text-decoration: none !important; }
+    .product__promotion { background-color: #FF6B00; color: #24170D; font-size: 11px; padding: 3px 7px; border-radius: 5px; font-weight: 700; }
+    .btn-primary { color: #24170D !important; background-color: #FF6B00 !important; border: 1px solid #FF6B00; padding: 13px 25px; font-size: 14px; line-height: 1.2; border-radius: 10px; font-weight: 700; text-decoration: none !important; display: inline-block; box-shadow: 0 5px 14px rgba(112, 53, 14, 0.18); }
+    .footer { max-width: 600px; padding: 24px 20px; text-align: center; background-color: #302733; border-top: 4px solid #FF6B00; border-radius: 14px; }
+    .footer p { color: #E7DED8; font-size: 12px; line-height: 1.6; margin: 5px 0; }
+    .footer a { color: #FFD0A8 !important; }
+    .email-motion-icon { display: inline-block; animation: email-float 2.8s ease-in-out infinite; transform-origin: center; }
+    .email-step-active { animation: email-pulse 2s ease-in-out infinite; }
+    .motion-enter { animation: email-enter 480ms ease-out both; }
+    .food-item-cell { vertical-align: top; padding: 6px; }
+    @keyframes email-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes email-pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(255,107,0,.15); } 50% { box-shadow: 0 0 0 7px rgba(255,107,0,.06); } }
+    @keyframes email-enter { from { opacity: .55; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .email-motion-icon, .email-step-active, .motion-enter { animation: none !important; transform: none !important; } }
+    @media only screen and (max-width: 620px) {
+      .header__inner-container { padding: 22px 18px 18px !important; }
+      .header__title { font-size: 23px !important; }
+      .body__details { padding: 18px !important; }
+      .footer { padding: 20px 15px !important; }
+      .food-item-cell { display: block !important; width: 100% !important; }
+      .mobile-stack { display: block !important; width: 100% !important; }
     }
     """
 
@@ -186,93 +69,112 @@ class EmailTemplates:
     @staticmethod
     def _get_company_name() -> str:
         return getattr(settings, "COMPANY_NAME", "Fudgo")
-    
+
+    @classmethod
+    def _get_customer_app_url(cls, *parts: str) -> str:
+        base_url = str(getattr(settings, "CUSTOMER_APP_URL", "https://fudgo.com") or "https://fudgo.com").rstrip("/")
+        suffix = "/".join(quote(str(part).strip("/"), safe="") for part in parts if str(part).strip("/"))
+        return f"{base_url}/{suffix}" if suffix else base_url
+
+    @classmethod
+    def _get_support_url(cls) -> str:
+        reply_to = getattr(settings, "EMAIL_REPLY_TO", None) or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+        return f"mailto:{reply_to}" if reply_to else cls._get_customer_app_url()
+
     @classmethod
     def _base_template(cls, content: str, preheader: str = "") -> str:
-        """Wrap content in base email structure with dark mode support"""
+        """Wrap email content in a responsive, light, email-client-safe shell."""
+        safe_company = escape(str(cls._get_company_name()))
+        safe_preheader = escape(str(preheader or ""))
         return f"""<!doctype html>
 <html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark only">
-  <title>Fudgo</title>
-  <style type="text/css">
-    {cls.BASE_STYLES}
-  </style>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>{safe_company}</title>
+  <style type="text/css">{cls.BASE_STYLES}</style>
 </head>
-<body class="main">
-<div style="color:transparent;visibility:hidden;opacity:0;font-size:0px;border:0;max-height:1px;width:1px;margin:0px;padding:0px;display:none!important;line-height:0px!important;">{preheader}</div>
-{content}
-</body>
-</html>"""
-    
-    @classmethod
-    def _header(cls, title: str, subtitle: str = "", icon: str = "🍔") -> str:
-        """Generate styled header section"""
-        subtitle_html = f'<tr><td class="header__subtitle">{subtitle}</td></tr>' if subtitle else ""
-        return f"""
-  <table style="max-width:100%;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px">
-        <tr><td class="header">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr><td align="center">
-              <table style="max-width: 560px" class="header__inner-container" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="font-size: 32px;">{icon} <strong style="color: #22c55e; font-size: 24px;">Fudgo</strong></td>
-                </tr>
-                <tr><td class="header__title"><a class="no-color" rel="nofollow">{title}</a></td></tr>
-                {subtitle_html}
-              </table>
-            </td></tr>
-          </table>
-        </td></tr>
+<body class="main" style="margin:0;padding:0;background-color:#FFF7F0;color:#29231F;font-family:Arial,Helvetica,sans-serif;">
+  <div style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;max-height:0;max-width:0;overflow:hidden;mso-hide:all;">{safe_preheader}</div>
+  <table class="main" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF7F0" style="width:100%;background-color:#FFF7F0;">
+    <tr><td align="center" style="padding:24px 12px;">
+      <table class="email-shell" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+        <tr><td>{content}</td></tr>
       </table>
     </td></tr>
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
+  </table>
+</body>
+</html>"""
+
+    @classmethod
+    def _header(cls, title: str, subtitle: str = "", icon: str = "🍔") -> str:
+        """Generate the shared food-delivery brand header."""
+        safe_icon = escape(str(icon))
+        safe_company = escape(str(cls._get_company_name()))
+        subtitle_html = f'<tr><td class="header__subtitle">{subtitle}</td></tr>' if subtitle else ""
+        return f"""
+<table style="max-width:600px;margin:0 auto 16px;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td class="header" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:1px solid #F0E4DA;border-top:5px solid #FF6B00;border-radius:16px;">
+    <table class="header__inner-container" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:26px 28px 22px;">
+      <tr>
+        <td width="52" valign="middle" style="width:52px;">
+          <table role="presentation" width="40" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" width="40" height="40" bgcolor="#FF6B00" style="width:40px;height:40px;background-color:#FF6B00;border-radius:12px;font-size:21px;line-height:40px;">
+            <span class="email-motion-icon">{safe_icon}</span>
+          </td></tr></table>
+        </td>
+        <td valign="middle" style="padding-left:10px;">
+          <p style="margin:0;color:#3B1F6B;font-size:18px;line-height:1.2;font-weight:800;">{safe_company}</p>
+          <p style="margin:4px 0 0;color:#756B64;font-size:10px;line-height:1.2;letter-spacing:1.4px;text-transform:uppercase;">Food, made effortless</p>
+        </td>
+      </tr>
+      <tr><td colspan="2" class="header__title" style="padding:18px 0 8px;color:#24170D;font-size:27px;font-weight:800;line-height:1.2;letter-spacing:-0.45px;">{title}</td></tr>
+      {subtitle_html}
+    </table>
+  </td></tr>
+  <tr><td height="14" style="height:14px;font-size:0;line-height:0;">&nbsp;</td></tr>
+</table>"""
 
     @classmethod
     def _footer(cls, message: str = "") -> str:
-        """Generate styled footer section"""
-        msg_html = f'<p style="color: #d1d5db; margin-bottom: 12px;">{message}</p>' if message else ""
+        """Generate the quiet, consistent email footer."""
+        safe_message = escape(str(message or ""))
+        safe_company = escape(str(cls._get_company_name()))
+        msg_html = f'<p style="color:#F4E8DF;margin:0 0 10px;">{safe_message}</p>' if safe_message else ""
         return f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="footer">
-      {msg_html}
-      <p style="font-size: 20px; margin-bottom: 8px;">🍔 <span style="color: #22c55e; font-weight: bold;">Fudgo</span></p>
-      <p>© {cls._get_year()} Fudgo. All rights reserved.</p>
-      <p style="margin-top: 8px;"><a href="#">Unsubscribe</a> · <a href="#">Privacy Policy</a></p>
-    </td></tr>
-  </table>"""
-    
+<table style="max-width:600px;margin:16px auto 0;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td class="footer" bgcolor="#302733" style="padding:24px 20px;text-align:center;background-color:#302733;border-top:4px solid #FF6B00;border-radius:14px;">
+    {msg_html}
+    <p style="font-size:17px;line-height:1.3;font-weight:800;color:#FFFFFF;margin:0 0 8px;">{safe_company}</p>
+    <p style="color:#E7DED8;font-size:12px;margin:0;">© {cls._get_year()} {safe_company}. All rights reserved.</p>
+    <p style="color:#CFC4BD;font-size:11px;margin:8px 0 0;">Thanks for choosing us for your next meal.</p>
+  </td></tr>
+</table>"""
+
     @classmethod
     def _dashed_separator(cls) -> str:
-        """Generate dashed separator line"""
+        """Generate a light, unobtrusive receipt separator."""
         return """
-<table border="0" width="100%" cellpadding="0" cellspacing="0">
-  <tr><td style="padding-top: 12px;height:0;font-size:0"></td></tr>
-  <tr>
-    <td style="width:12px;"></td>
-    <td style="background:none; border-top: 2px dashed #d1d5db; font-size: 0">&nbsp;</td>
-    <td style="width:12px;"></td>
-  </tr>
-  <tr><td style="padding-top: 12px;height:0;font-size:0"></td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td style="height:14px;font-size:0;line-height:0;">&nbsp;</td></tr>
+  <tr><td style="border-top:1px dashed #E7D9CE;font-size:0;line-height:0;">&nbsp;</td></tr>
+  <tr><td style="height:14px;font-size:0;line-height:0;">&nbsp;</td></tr>
 </table>"""
 
     @classmethod
     def _code_box(cls, code: str, label: str = "Your Code") -> str:
-        """Generate styled verification code box"""
+        """Generate an accessible, high-contrast verification-code card."""
+        safe_code = escape(str(code))
+        safe_label = escape(str(label))
         return f"""
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
   <tr><td align="center">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border: 2px dashed #22c55e; border-radius: 12px; padding: 24px 40px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF3E8" style="background-color:#FFF3E8;border:2px solid #FF6B00;border-radius:14px;padding:20px 32px;">
       <tr><td align="center">
-        <p style="color: #16a34a; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 12px; font-weight: 600;">{label}</p>
-        <p style="font-size: 36px; font-weight: 800; color: #15803d; letter-spacing: 8px; font-family: 'Courier New', monospace; margin: 0;">{code}</p>
+        <p style="color:#3B1F6B;font-size:11px;text-transform:uppercase;letter-spacing:1.8px;margin:0 0 10px;font-weight:700;">{safe_label}</p>
+        <p style="font-size:34px;font-weight:800;color:#24170D;letter-spacing:7px;font-family:'Courier New',monospace;margin:0;">{safe_code}</p>
       </td></tr>
     </table>
   </td></tr>
@@ -283,7 +185,7 @@ class EmailTemplates:
     # ============================================================
     @classmethod
     def email_verification(cls, user_name: str, verification_code: str) -> Dict[str, str]:
-        """Email verification - minimal, code-focused design with dark mode"""
+        """Email verification - minimal, code-focused design with responsive light styling"""
         
         header = cls._header(
             f"Hey {user_name}! 👋 Verify your email",
@@ -337,7 +239,7 @@ Didn't create an account? Just ignore this email.
     # ============================================================
     @classmethod
     def resend_verification(cls, user_name: str, verification_code: str) -> Dict[str, str]:
-        """Resend verification - refresh/retry themed with dark mode"""
+        """Resend verification - refresh/retry themed with responsive light styling"""
         
         header = cls._header(
             f"New Verification Code 🔄",
@@ -384,7 +286,7 @@ Valid for 30 minutes.
     # ============================================================
     @classmethod
     def password_reset(cls, user_name: str, reset_code: str) -> Dict[str, str]:
-        """Password reset - security-themed with lock icon and dark mode"""
+        """Password reset - security-themed with lock icon"""
         
         header = cls._header(
             "Password Reset Request 🔐",
@@ -443,7 +345,7 @@ If you didn't request this, ignore this email.
     # ============================================================
     @classmethod
     def password_reset_success(cls, user_name: str) -> Dict[str, str]:
-        """Password reset success - confirmation with shield and dark mode"""
+        """Password reset success - confirmation with shield"""
         
         header = cls._header(
             "Password Updated! ✅",
@@ -456,9 +358,9 @@ If you didn't request this, ignore this email.
     <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
       <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr><td align="center">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 20px 40px; margin: 16px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border: 2px solid #FF6B00; border-radius: 12px; padding: 20px 40px; margin: 16px 0;">
             <tr><td align="center">
-              <p style="color: #166534; font-size: 16px; margin: 0;">🎉 You can now log in with your new password</p>
+              <p style="color: #3B1F6B; font-size: 16px; margin: 0;">🎉 You can now log in with your new password</p>
             </td></tr>
           </table>
           
@@ -471,7 +373,7 @@ If you didn't request this, ignore this email.
             </td></tr>
           </table>
           
-          <a href="#" class="btn-primary" style="margin-top: 16px;">Open Fudgo App</a>
+          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="margin-top: 16px;">Open Fudgo App</a>
         </td></tr>
       </table>
     </td></tr>
@@ -507,7 +409,7 @@ Security Tips:
     # ============================================================
     @classmethod
     def welcome_verified(cls, user_name: str, username: str) -> Dict[str, str]:
-        """Welcome email - party/celebration theme with dark mode"""
+        """Welcome email - party/celebration theme with responsive light styling"""
         
         header = cls._header(
             f"Welcome to Fudgo! 🎉",
@@ -521,10 +423,10 @@ Security Tips:
       <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr><td align="center">
           <!-- User Card -->
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px; border: 2px solid #22c55e; width: 100%;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFF7F0 100%); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px; border: 2px solid #FF6B00; width: 100%;">
             <tr><td align="center">
-              <div style="width: 64px; height: 64px; background: #22c55e; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px; color: #fff; font-weight: 700;">{user_name[0].upper()}</div>
-              <p style="color: #16a34a; font-size: 18px; font-weight: 700; margin: 12px 0 4px;">@{username}</p>
+              <div style="width: 64px; height: 64px; background: #FF6B00; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px; color: #24170D; font-weight: 700;">{(user_name[:1] or 'F').upper()}</div>
+              <p style="color: #C94F00; font-size: 18px; font-weight: 700; margin: 12px 0 4px;">@{username}</p>
               <p style="color: #6b7280; font-size: 13px; margin: 0;">✓ Verified Account</p>
             </td></tr>
           </table>
@@ -580,7 +482,7 @@ Security Tips:
             </td></tr>
           </table>
           
-          <a href="#" class="btn-primary" style="margin-top: 16px; padding: 16px 40px; font-size: 16px;">Start Ordering Now 🚀</a>
+          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="margin-top: 16px; padding: 16px 40px; font-size: 16px;">Start Ordering Now 🚀</a>
         </td></tr>
       </table>
     </td></tr>
@@ -606,7 +508,7 @@ What you can do now:
 🎁 Access exclusive deals
 📍 Track your orders in real-time
 
-Start ordering at fudgo.com
+Start ordering at {cls._get_customer_app_url()}
 
 © {cls._get_year()} Fudgo"""
 
@@ -622,7 +524,7 @@ Start ordering at fudgo.com
         delivery_address: str, estimated_time: str = "30-45 mins",
         restaurant_name: str = ""
     ) -> Dict[str, str]:
-        """Order confirmation - receipt/invoice style with product images and dark mode"""
+        """Order confirmation - responsive receipt with product images"""
         
         # Build items HTML
         items_html = ""
@@ -634,7 +536,7 @@ Start ordering at fudgo.com
             price = item.get('price', '')
             original_price = item.get('original_price', '')
             
-            image_cell = f'<img src="{image_url}" alt="{name}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">' if image_url else '<div style="width: 60px; height: 60px; border-radius: 8px; background: #f0fdf4; text-align: center; line-height: 60px; font-size: 24px;">🍽️</div>'
+            image_cell = f'<img src="{image_url}" alt="{name}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">' if image_url else '<div style="width: 60px; height: 60px; border-radius: 8px; background: #FFF3E8; text-align: center; line-height: 60px; font-size: 24px;">🍽️</div>'
             
             original_price_html = f'<tr><td align="right" style="text-decoration: line-through; color: #9ca3af; font-size: 0.875em; padding-top: 3px;">{original_price}</td></tr>' if original_price and original_price != price else ""
             
@@ -674,10 +576,10 @@ Start ordering at fudgo.com
   <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr><td class="body__details body__background" style="border-radius: 16px 16px 0 0; padding: 16px;">
       <!-- ETA Box -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFE2CC 100%); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
         <tr><td align="center">
-          <p style="color: #166534; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Estimated Delivery</p>
-          <p style="color: #15803d; font-size: 28px; font-weight: 800; margin: 8px 0 0;">🕐 {estimated_time}</p>
+          <p style="color: #3B1F6B; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Estimated Delivery</p>
+          <p style="color: #3B1F6B; font-size: 28px; font-weight: 800; margin: 8px 0 0;">🕐 {estimated_time}</p>
         </td></tr>
       </table>
       
@@ -715,10 +617,10 @@ Start ordering at fudgo.com
   <!-- Total Row -->
   <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr><td class="body__details body__background" style="border-radius: 0 0 16px 16px; padding: 0 16px 16px;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border-radius: 8px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border-radius: 8px;">
         <tr>
           <td style="padding: 16px; font-size: 18px; font-weight: 700; color: #1f2937;">Total</td>
-          <td align="right" style="padding: 16px; font-size: 18px; font-weight: 700; color: #22c55e;">{total}</td>
+          <td align="right" style="padding: 16px; font-size: 18px; font-weight: 700; color: #3B1F6B;">{total}</td>
         </tr>
       </table>
     </td></tr>
@@ -735,7 +637,7 @@ Start ordering at fudgo.com
       <p style="color: #6b7280; margin: 0; line-height: 1.5;">{delivery_address}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 16px;">
         <tr><td align="center">
-          <a href="#" class="btn-primary">Track Your Order 📍</a>
+          <a href="{cls._get_customer_app_url()}" class="btn-primary">Open Fudgo App</a>
         </td></tr>
       </table>
     </td></tr>
@@ -780,7 +682,7 @@ Thank you, {user_name}!
         cls, user_name: str, order_id: str, status: str,
         status_message: str, estimated_time: str = None
     ) -> Dict[str, str]:
-        """Order status - progress tracker design with dark mode"""
+        """Order status - progress tracker with semantic delivery-status colors"""
         
         statuses = {
             "confirmed": {"icon": "✓", "color": "#22c55e", "bg": "#dcfce7", "step": 1},
@@ -795,7 +697,7 @@ Thank you, {user_name}!
             if step_num < s["step"]:
                 return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: #22c55e; border-radius: 50%; color: white; line-height: 32px; font-weight: bold; margin: 0 auto;">✓</div><p style="font-size: 10px; color: #22c55e; margin: 4px 0 0;">{label}</p></td>'
             elif step_num == s["step"]:
-                return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: {s["color"]}; border-radius: 50%; color: white; line-height: 32px; font-weight: bold; margin: 0 auto; box-shadow: 0 0 0 4px {s["bg"]};">{step_num}</div><p style="font-size: 10px; color: {s["color"]}; margin: 4px 0 0; font-weight: bold;">{label}</p></td>'
+                return f'<td align="center" style="width: 60px;"><div class="email-step-active" style="width: 32px; height: 32px; background: {s["color"]}; border-radius: 50%; color: white; line-height: 32px; font-weight: bold; margin: 0 auto; box-shadow: 0 0 0 4px {s["bg"]};">{step_num}</div><p style="font-size: 10px; color: {s["color"]}; margin: 4px 0 0; font-weight: bold;">{label}</p></td>'
             else:
                 return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: #e5e7eb; border-radius: 50%; color: #9ca3af; line-height: 32px; font-weight: bold; margin: 0 auto;">{step_num}</div><p style="font-size: 10px; color: #9ca3af; margin: 4px 0 0;">{label}</p></td>'
         
@@ -840,7 +742,7 @@ Thank you, {user_name}!
           
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;">
             <tr><td align="center">
-              <a href="#" class="btn-primary">Track Order 📍</a>
+              <a href="{cls._get_customer_app_url()}" class="btn-primary">Open Fudgo App</a>
             </td></tr>
           </table>
         </td></tr>
@@ -874,7 +776,7 @@ Track your order in the Fudgo app.
     # ============================================================
     @classmethod
     def order_delivered(cls, user_name: str, order_id: str, restaurant_name: str, items: list = None) -> Dict[str, str]:
-        """Order delivered - celebration with rating request and product images, dark mode"""
+        """Order delivered - celebration with a rating action and product images"""
         
         # Build items gallery if items provided
         items_gallery = ""
@@ -886,7 +788,7 @@ Track your order in the Fudgo app.
                 if image_url:
                     items_html += f'<td style="padding: 4px;"><img src="{image_url}" alt="{name}" style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></td>'
                 else:
-                    items_html += f'<td style="padding: 4px;"><div style="width: 70px; height: 70px; border-radius: 8px; background: #f0fdf4; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; line-height: 70px; font-size: 28px;">🍽️</div></td>'
+                    items_html += f'<td style="padding: 4px;"><div style="width: 70px; height: 70px; border-radius: 8px; background: #FFF3E8; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; line-height: 70px; font-size: 28px;">🍽️</div></td>'
             
             items_gallery = f"""
           <p style="color: #6b7280; font-size: 13px; margin: 24px 0 12px;">Your order</p>
@@ -923,8 +825,8 @@ Track your order in the Fudgo app.
             </td></tr>
           </table>
           
-          <a href="#" class="btn-primary" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 16px 40px; font-size: 16px;">Rate Your Order</a>
-          <p style="margin-top: 20px;"><a href="#" style="color: #22c55e; font-weight: 600; font-size: 15px;">🔄 Order Again</a></p>
+          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="padding: 16px 40px; font-size: 16px;">Open Fudgo to rate your order</a>
+          <p style="margin-top: 20px;"><a href="{cls._get_customer_app_url()}" style="color: #3B1F6B; font-weight: 600; font-size: 15px;">🔄 Order Again</a></p>
         </td></tr>
       </table>
     </td></tr>
@@ -957,30 +859,8 @@ Thanks for choosing Fudgo, {user_name}!
         return {"subject": f"🍽️ Delivered! Rate Your Order – #{order_id}", "html": html, "plain": plain}
 
     # ============================================================
-    # PROMOTION DISCOUNT - Bold food delivery promo (index.html style)
+    # PROMOTION DISCOUNT - Food-forward, responsive offer card
     # ============================================================
-    
-    PROMO_STYLES = """
-    @media only screen and (min-width: 620px) {
-      .u-row { width: 600px !important; }
-      .u-row .u-col { vertical-align: top; }
-      .u-row .u-col-50 { width: 300px !important; }
-      .u-row .u-col-100 { width: 600px !important; }
-    }
-    @media only screen and (max-width: 620px) {
-      .u-row-container { max-width: 100% !important; padding: 0 !important; }
-      .u-row { width: 100% !important; }
-      .u-row .u-col { display: block !important; width: 100% !important; min-width: 320px !important; max-width: 100% !important; }
-      .u-row .u-col > div { margin: 0 auto; }
-      .food-item-cell { width: 50% !important; }
-    }
-    body { margin: 0; padding: 0; }
-    table, td, tr { border-collapse: collapse; vertical-align: top; }
-    .ie-container table, .mso-container table { table-layout: fixed; }
-    * { line-height: inherit; }
-    a[x-apple-data-detectors=true] { color: inherit !important; text-decoration: none !important; }
-    """
-    
     @classmethod
     def promotion_discount(
         cls, user_name: str, discount_amount: str,
@@ -992,654 +872,178 @@ Thanks for choosing Fudgo, {user_name}!
         restaurants: list = None,
         min_order: str = None,
         cta_text: str = "Order Now",
-        cta_link: str = "https://fudgo.com",
+        cta_link: str = None,
         contact_phone: str = None,
         contact_address: str = None,
         contact_hours: str = None
     ) -> Dict[str, str]:
-        """
-        Promotion email - vibrant food delivery style matching index.html design.
-        
-        Args:
-            user_name: Customer name
-            discount_amount: e.g., "20%", "$10"
-            description: Promotion description
-            expiry_date: When the promotion expires
-            hero_image_url: Background image for hero section
-            hero_title: Main headline (default: "HUNGRY?")
-            hero_subtitle: Subtitle text
-            food_items: List of dicts [{name, image_url, price, original_price}] - MAX 4 displayed
-            restaurants: List of dicts [{name, image_url, cuisines, link}] - restaurant cover images
-            min_order: Minimum order requirement
-            cta_text: Call-to-action button text
-            cta_link: CTA button link
-            contact_phone: Contact phone number
-            contact_address: Business address
-            contact_hours: Operating hours
-        """
-        
-        # Default hero image
-        default_hero = "https://cdn.templates.unlayer.com/assets/1638077528255-f.jpg"
-        hero_bg = hero_image_url or default_hero
-        
-        # Build header section (logo + phone)
-        phone_display = contact_phone or "+1 234-567-890"
-        header_section = f'''
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #22c55e;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;" bgcolor="transparent"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#22c55e"><tr style="background-color: #22c55e;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 15px 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 24px; color: #ffffff; line-height: 100%; text-align: left; word-wrap: break-word;">
-                      <span style="font-family: Rubik, sans-serif; font-weight: bold;">🍔 Fudgo</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 15px 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 16px; color: #ffffff; line-height: 100%; text-align: right; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif;">{phone_display}</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-        
-        # Build hero section with background image and overlay pattern
-        # SVG wave pattern encoded as data URI for email compatibility
-        wave_svg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 44' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' d='M0,22 Q150,44 300,22 T600,22 L600,44 L0,44 Z'/%3E%3C/svg%3E"
-        
-        hero_section = f'''
-<!--[if gte mso 9]>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600">
-  <tr>
-    <td background="{hero_bg}" valign="top">
-      <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;">
-        <v:fill type="frame" src="{hero_bg}" />
-        <v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0">
-<![endif]-->
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #22c55e;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-image: url('{hero_bg}'); background-repeat: no-repeat; background-position: center center; background-size: cover; background-color: #22c55e;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr style="background-image: url('{hero_bg}'); background-repeat: no-repeat; background-position: center center;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <!-- Spacer to push content down and show background image -->
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="padding: 120px 10px 0px; font-family: arial, helvetica, sans-serif;" align="left">
-                    &nbsp;
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <!-- Text overlay with semi-transparent background for readability -->
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 30px 20px; font-family: arial, helvetica, sans-serif; background: linear-gradient(180deg, rgba(34,197,94,0.85) 0%, rgba(34,197,94,0.95) 100%); background-color: rgba(34,197,94,0.9);" align="left">
-                    <div style="font-size: 48px; color: #ffffff; line-height: 100%; text-align: center; word-wrap: break-word; text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">
-                      <span style="font-family: Rubik, sans-serif;"><strong>{hero_title}</strong></span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px 20px 15px; font-family: arial, helvetica, sans-serif; background-color: rgba(34,197,94,0.9);" align="left">
-                    <div style="font-size: 28px; color: #ffffff; line-height: 130%; text-align: center; word-wrap: break-word; text-shadow: 1px 1px 4px rgba(0,0,0,0.3);">
-                      <span style="font-family: Raleway, sans-serif;"><strong>{hero_subtitle}</strong></span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 20px 10px 40px; font-family: arial, helvetica, sans-serif; background-color: rgba(34,197,94,0.9);" align="left">
-                    <div align="center">
-                      <!--[if mso]><table role="presentation" border="0" cellspacing="0" cellpadding="0"><tr><td align="center" bgcolor="#ffffff" style="padding:12px 30px;" valign="top"><![endif]-->
-                      <a href="{cta_link}" target="_blank" style="box-sizing: border-box; display: inline-block; text-decoration: none; text-align: center; color: #22c55e; background-color: #ffffff; border-radius: 4px; font-size: 16px; padding: 14px 35px; font-family: Raleway, sans-serif; font-weight: bold; border: 1px solid #ffffff; border-width: 1px 3px 3px 1px; box-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
-                        {cta_text.upper()}
-                      </a>
-                      <!--[if mso]></td></tr></table><![endif]-->
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>
-<!--[if gte mso 9]>
-        </v:textbox>
-      </v:rect>
-    </td>
-  </tr>
-</table>
-<![endif]-->
-<!-- Wave pattern divider -->
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #22c55e;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#22c55e"><tr style="background-color: #22c55e;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td style="padding-right: 0px; padding-left: 0px;" align="center">
-                          <img align="center" border="0" src="{wave_svg}" alt="" style="outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; clear: both; display: inline-block !important; border: none; height: auto; float: none; width: 100%; max-width: 600px;" width="600" height="44"/>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-        
-        # Build food items section (max 4 items in 2x2 grid)
-        food_section = ""
-        if food_items:
-            items = food_items[:4]  # Limit to 4 items
-            
-            # Section header
-            food_section = '''
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #ffffff;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff"><tr style="background-color: #ffffff;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 14px; color: #22c55e; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif; font-size: 16px;">GREAT DEALS</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px 10px 25px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 34px; color: #5f5f5f; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Rubik, sans-serif;"><strong>Featured Items</strong></span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-            
-            # Build 2x2 grid of food items
-            for i in range(0, len(items), 2):
-                row_items = items[i:i+2]
-                food_section += '''
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #ffffff;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff"><tr style="background-color: #ffffff;"><![endif]-->'''
-                
-                for item in row_items:
-                    name = item.get('name', 'Food Item')
-                    image_url = item.get('image_url', '')
-                    price = item.get('price', '')
-                    original_price = item.get('original_price', '')
-                    
-                    price_html = ""
-                    if original_price:
-                        price_html = f'''<span style="text-decoration: line-through; color: #9ca3af; font-size: 14px; margin-right: 8px;">{original_price}</span><span style="color: #22c55e; font-weight: bold; font-size: 18px;">{price}</span>'''
-                    elif price:
-                        price_html = f'''<span style="color: #22c55e; font-weight: bold; font-size: 18px;">{price}</span>'''
-                    
-                    food_section += f'''
-      <!--[if (mso)|(IE)]><td align="center" width="299" style="width: 299px; padding: 0px; border-right: 1px solid #22c55e; border-top: 0px; border-left: 0px; border-bottom: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-50 food-item-cell" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px; border-right: 1px solid #f0f0f0;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td style="padding-right: 0px; padding-left: 0px;" align="center">
-                          <img align="center" border="0" src="{image_url}" alt="{name}" title="{name}" style="outline: none; text-decoration: none; clear: both; display: inline-block !important; border: none; height: auto; float: none; width: 100%; max-width: 260px; border-radius: 8px;" width="260"/>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 5px 10px 20px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 22px; color: #5f5f5f; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Rubik, sans-serif;"><strong>{name}</strong></span>
-                    </div>
-                    <div style="font-size: 14px; color: #5f5f5f; line-height: 150%; text-align: center; word-wrap: break-word; margin-top: 8px;">
-                      {price_html}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td><![endif]-->'''
-                
-                food_section += '''
-      <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-        
-        # Build restaurants section
-        restaurant_section = ""
-        if restaurants:
-            restaurant_section = '''
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #f1f1f1;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f1f1f1"><tr style="background-color: #f1f1f1;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 14px; color: #22c55e; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif; font-size: 16px;">ENJOY IT</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px 10px 25px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 34px; color: #4e4e4e; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Rubik, sans-serif;"><strong>Top Restaurants</strong></span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-            
-            # Restaurant cards (2 per row)
-            for i in range(0, len(restaurants[:4]), 2):
-                row_restaurants = restaurants[i:i+2]
-                restaurant_section += '''
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #f1f1f1;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f1f1f1"><tr style="background-color: #f1f1f1;"><![endif]-->'''
-                
-                for rest in row_restaurants:
-                    name = rest.get('name', 'Restaurant')
-                    image_url = rest.get('image_url', '')
-                    cuisines = rest.get('cuisines', '')
-                    link = rest.get('link', cta_link)
-                    
-                    restaurant_section += f'''
-      <!--[if (mso)|(IE)]><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 0px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td style="padding-right: 0px; padding-left: 0px;" align="center">
-                          <img align="center" border="0" src="{image_url}" alt="{name}" title="{name}" style="outline: none; text-decoration: none; clear: both; display: inline-block !important; border: none; height: auto; float: none; width: 100%; max-width: 300px;" width="300"/>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 16px 10px 9px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 24px; color: #474747; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Rubik, sans-serif;">{name}</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 5px 10px 15px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 14px; color: #22c55e; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{cuisines}</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px 10px 35px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div align="center">
-                      <a href="{link}" target="_blank" style="box-sizing: border-box; display: inline-block; text-decoration: none; text-align: center; color: #ffffff; background-color: #22c55e; border-radius: 4px; font-size: 14px; padding: 12px 25px; font-family: Raleway, sans-serif;">
-                        Order Now
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td><![endif]-->'''
-                
-                restaurant_section += '''
-      <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-        
-        # Build expiry notice
-        expiry_section = f'''
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #fef3c7;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#fef3c7"><tr style="background-color: #fef3c7;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 20px 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 16px; color: #92400e; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif;"><strong>⏰ {discount_amount} OFF - Expires: {expiry_date}</strong></span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-        
-        # Build footer section
-        address_display = contact_address or "Your City, Your Street"
-        hours_display = contact_hours or "Mon - Sun: 10AM - 11PM"
-        
-        footer_section = f'''
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #166534;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#166534"><tr style="background-color: #166534;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 6px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 26px; color: #ffffff; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Rubik, sans-serif;"><strong>Contact Us</strong></span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 8px 10px 0px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{address_display}</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 8px 10px 0px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{hours_display}</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 8px 10px 30px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">{phone_display}</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td><td align="center" width="300" style="width: 300px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-50" style="max-width: 320px; min-width: 300px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 40px 10px 6px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 26px; color: #ffffff; line-height: 100%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Rubik, sans-serif;"><strong>Quick Links</strong></span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="text-align: center;">
-                      <a href="{cta_link}" style="padding: 5px 15px; display: inline-block; color: #bbf7d0; font-family: arial, helvetica, sans-serif; font-size: 14px; text-decoration: none;">Order Now</a>
-                      <a href="#" style="padding: 5px 15px; display: inline-block; color: #bbf7d0; font-family: arial, helvetica, sans-serif; font-size: 14px; text-decoration: none;">Contact</a>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 10px 10px 30px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="text-align: center;">
-                      <a href="#" style="padding: 5px 15px; display: inline-block; color: #bbf7d0; font-family: arial, helvetica, sans-serif; font-size: 14px; text-decoration: none;">Unsubscribe</a>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>
-<div class="u-row-container" style="padding: 0px; background-color: transparent;">
-  <div class="u-row" style="margin: 0 auto; min-width: 320px; max-width: 600px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: #15803d;">
-    <div style="border-collapse: collapse; display: table; width: 100%; height: 100%; background-color: transparent;">
-      <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px; background-color: transparent;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#15803d"><tr style="background-color: #15803d;"><![endif]-->
-      <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px; padding: 0px; border: 0px;" valign="top"><![endif]-->
-      <div class="u-col u-col-100" style="max-width: 320px; min-width: 600px; display: table-cell; vertical-align: top;">
-        <div style="height: 100%; width: 100% !important;">
-          <div style="box-sizing: border-box; height: 100%; padding: 0px;">
-            <table style="font-family: arial, helvetica, sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-              <tbody>
-                <tr>
-                  <td style="overflow-wrap: break-word; word-break: break-word; padding: 20px 10px; font-family: arial, helvetica, sans-serif;" align="left">
-                    <div style="font-size: 14px; color: #bbf7d0; line-height: 150%; text-align: center; word-wrap: break-word;">
-                      <span style="font-family: Raleway, sans-serif; font-size: 14px;">©️ {cls._get_year()} Fudgo. All rights reserved.</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]-->
-    </div>
-  </div>
-</div>'''
-        
-        # Assemble full HTML email
-        html = f'''<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-<!--[if gte mso 9]>
-<xml>
-  <o:OfficeDocumentSettings>
-    <o:AllowPNG/>
-    <o:PixelsPerInch>96</o:PixelsPerInch>
-  </o:OfficeDocumentSettings>
-</xml>
-<![endif]-->
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="x-apple-disable-message-reformatting">
-  <!--[if !mso]><!--><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--<![endif]-->
-  <title>Fudgo - {discount_amount} OFF</title>
-  <style type="text/css">
-    {cls.PROMO_STYLES}
-  </style>
-  <!--[if !mso]><!--><link href="https://fonts.googleapis.com/css?family=Raleway:400,700&display=swap" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css?family=Rubik:400,700&display=swap" rel="stylesheet" type="text/css"><!--<![endif]-->
-</head>
-<body class="clean-body u_body" style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; background-color: #f0fdf4; color: #000000;">
-  <!--[if IE]><div class="ie-container"><![endif]-->
-  <!--[if mso]><div class="mso-container"><![endif]-->
-  <table role="presentation" id="u_body" style="border-collapse: collapse; table-layout: fixed; border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; vertical-align: top; min-width: 320px; Margin: 0 auto; background-color: #f0fdf4; width: 100%;" cellpadding="0" cellspacing="0">
-  <tbody>
-  <tr style="vertical-align: top">
-    <td style="word-break: break-word; border-collapse: collapse !important; vertical-align: top;">
-    <!--[if (mso)|(IE)]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="background-color: #f0fdf4;" bgcolor="#f0fdf4"><![endif]-->
-    
-{header_section}
-{hero_section}
-{food_section}
-{expiry_section}
-{restaurant_section}
-{footer_section}
+        '''Build a responsive restaurant offer email with optional food photography.'''
+        def text(value):
+            return escape(str(value or ""), quote=True)
 
-    <!--[if (mso)|(IE)]></td></tr></table><![endif]-->
-    </td>
-  </tr>
-  </tbody>
+        def safe_url(value, fallback=None):
+            raw = str(value or "").strip()
+            parsed = urlparse(raw)
+            if parsed.scheme in {"http", "https"} and parsed.netloc:
+                return escape(raw, quote=True)
+            if raw.startswith("/") and not raw.startswith("//"):
+                return escape(urljoin(cls._get_customer_app_url(), raw), quote=True)
+            fallback_url = cls._get_customer_app_url() if fallback is None else fallback
+            return escape(str(fallback_url), quote=True)
+
+        user = text(user_name or "there")
+        discount = text(discount_amount)
+        offer_description = text(description)
+        expiry = text(expiry_date)
+        title = text(hero_title or "A delicious deal is waiting")
+        subtitle = text(hero_subtitle or "A little something for your next meal")
+        cta = text(cta_text or "Order now")
+        action_url = safe_url(cta_link, cls._get_customer_app_url())
+
+        hero_image = ""
+        if hero_image_url:
+            hero_src = safe_url(hero_image_url, "")
+            if hero_src:
+                hero_image = f'''<tr><td style="padding:0 0 16px;">
+  <img src="{hero_src}" alt="Featured food from Fudgo" width="552" style="display:block;width:100%;max-width:552px;height:auto;border-radius:12px;" />
+</td></tr>'''
+
+        food_cards = []
+        for item in (food_items or [])[:4]:
+            name = text(item.get("name"))
+            price = text(item.get("price"))
+            original_price = text(item.get("original_price"))
+            image_url = safe_url(item.get("image_url"), "") if item.get("image_url") else ""
+            image = (
+                f'<img src="{image_url}" alt="{name}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;" />'
+                if image_url else
+                '<table role="presentation" width="72" height="72" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF3E8" style="width:72px;height:72px;background:#FFF3E8;border-radius:10px;"><tr><td align="center" valign="middle" style="font-size:28px;">🍲</td></tr></table>'
+            )
+            old_price = f'<span style="color:#766D66;font-size:12px;text-decoration:line-through;margin-right:6px;">{original_price}</span>' if original_price and original_price != price else ""
+            food_cards.append(f'''<td class="food-item-cell" width="50%" style="width:50%;vertical-align:top;padding:6px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #F0E4DA;border-radius:12px;">
+    <tr><td width="84" valign="top" style="width:84px;padding:12px 0 12px 12px;">{image}</td>
+      <td valign="middle" style="padding:12px;">
+        <p style="margin:0 0 6px;color:#29231F;font-size:14px;line-height:1.35;font-weight:700;">{name}</p>
+        <p style="margin:0;color:#3B1F6B;font-size:14px;line-height:1.4;font-weight:800;">{old_price}{price}</p>
+      </td>
+    </tr>
   </table>
-  <!--[if mso]></div><![endif]-->
-  <!--[if IE]></div><![endif]-->
-</body>
-</html>'''
-        
-        # Build plain text version
+</td>''')
+        food_rows = []
+        for index in range(0, len(food_cards), 2):
+            cells = food_cards[index:index + 2]
+            if len(cells) == 1:
+                cells.append('<td class="food-item-cell" width="50%" style="width:50%;padding:6px;">&nbsp;</td>')
+            food_rows.append(f'<tr>{"".join(cells)}</tr>')
+        food_section = ""
+        if food_rows:
+            food_section = f'''<tr><td style="padding:22px 0 8px;">
+  <p style="margin:0 0 8px;color:#24170D;font-size:18px;font-weight:800;">A few favourites</p>
+  <p style="margin:0 0 10px;color:#716861;font-size:13px;">A taste of what is waiting for you.</p>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(food_rows)}</table>
+</td></tr>'''
+
+        restaurant_rows = []
+        for restaurant in (restaurants or [])[:4]:
+            name = text(restaurant.get("name"))
+            cuisines = text(restaurant.get("cuisines"))
+            restaurant_url = safe_url(restaurant.get("link"))
+            image_url = safe_url(restaurant.get("image_url"), "") if restaurant.get("image_url") else ""
+            image = f'<img src="{image_url}" alt="{name}" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:10px;" />' if image_url else ""
+            restaurant_rows.append(f'''<tr><td style="padding:6px 0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #F0E4DA;border-radius:12px;">
+    <tr><td width="78" style="width:78px;padding:10px;">{image}</td>
+      <td valign="middle" style="padding:10px 8px;">
+        <p style="margin:0;color:#29231F;font-size:14px;line-height:1.35;font-weight:700;">{name}</p>
+        <p style="margin:4px 0 0;color:#716861;font-size:12px;line-height:1.4;">{cuisines}</p>
+      </td>
+      <td align="right" valign="middle" style="padding:10px 12px;"><a href="{restaurant_url}" style="color:#3B1F6B;text-decoration:none;font-size:12px;font-weight:700;">Explore&nbsp;›</a></td>
+    </tr>
+  </table>
+</td></tr>''')
+        restaurant_section = ""
+        if restaurant_rows:
+            restaurant_section = f'''<tr><td style="padding:22px 0 4px;">
+  <p style="margin:0 0 8px;color:#24170D;font-size:18px;font-weight:800;">Explore restaurants</p>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(restaurant_rows)}</table>
+</td></tr>'''
+
+        terms = []
+        if expiry:
+            terms.append(f'<span style="font-weight:700;color:#3B1F6B;">Offer ends {expiry}</span>')
+        if min_order:
+            terms.append(f'<span>Minimum order: {text(min_order)}</span>')
+        terms_html = "&nbsp;&nbsp;·&nbsp;&nbsp;".join(terms)
+        contact_lines = []
+        if contact_address:
+            contact_lines.append(f'<p style="margin:4px 0;color:#716861;font-size:12px;">📍 {text(contact_address)}</p>')
+        if contact_hours:
+            contact_lines.append(f'<p style="margin:4px 0;color:#716861;font-size:12px;">🕒 {text(contact_hours)}</p>')
+        if contact_phone:
+            safe_phone = text(contact_phone)
+            contact_lines.append(f'<p style="margin:4px 0;color:#716861;font-size:12px;">☎ {safe_phone}</p>')
+
+        header = cls._header(title, f"Hi <strong>{user}</strong> — {subtitle}", "🍔")
+        body = f'''<table style="max-width:600px;margin:0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td class="body__details body__background" bgcolor="#FFFFFF" style="padding:24px;background:#FFFFFF;border:1px solid #F0E4DA;border-radius:14px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      {hero_image}
+      <tr><td align="center" bgcolor="#FFF1E5" style="padding:24px 18px;background-color:#FFF1E5;border:1px solid #FFD8BA;border-radius:14px;">
+        <p style="margin:0;color:#3B1F6B;font-size:11px;line-height:1.3;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;">A treat for your next order</p>
+        <p class="motion-enter" style="margin:8px 0 3px;color:#24170D;font-size:42px;line-height:1.05;font-weight:900;letter-spacing:-1px;">{discount} OFF</p>
+        <p style="margin:0;color:#4E4037;font-size:14px;line-height:1.5;">{title}</p>
+      </td></tr>
+      <tr><td style="padding:18px 2px 4px;color:#4E4640;font-size:14px;line-height:1.7;">{offer_description}</td></tr>
+      <tr><td align="center" style="padding:14px 0 8px;">
+        <a class="btn-primary" href="{action_url}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#FF6B00;color:#24170D;border-radius:10px;font-weight:800;text-decoration:none;">{cta}</a>
+      </td></tr>
+      {f'<tr><td align="center" style="padding:4px 0 12px;color:#716861;font-size:12px;line-height:1.6;">{terms_html}</td></tr>' if terms_html else ''}
+      {food_section}
+      {restaurant_section}
+      {f'<tr><td style="padding:18px 0 0;border-top:1px solid #F0E4DA;">{"".join(contact_lines)}</td></tr>' if contact_lines else ''}
+    </table>
+  </td></tr>
+</table>'''
+        footer = cls._footer("A good meal is always a good idea.")
+        preheader = f"{discount_amount} off your next order. {description}"
+        html = cls._base_template(header + body + footer, preheader)
+
         items_text = ""
         if food_items:
-            items_text = "\n\n🍽️ FEATURED ITEMS:\n" + "\n".join([
-                f"  • {item.get('name', '')} - {item.get('price', '')}" 
-                for item in food_items[:4]
-            ])
-        
+            items_text = "\n\nFEATURED ITEMS:\n" + "\n".join(
+                f"  - {item.get('name', '')}: {item.get('price', '')}" for item in food_items[:4]
+            )
         restaurants_text = ""
         if restaurants:
-            restaurants_text = "\n\n🏪 TOP RESTAURANTS:\n" + "\n".join([
-                f"  • {r.get('name', '')} ({r.get('cuisines', '')})" 
-                for r in restaurants[:4]
-            ])
-        
-        min_text = f"\nMin. order: {min_order}" if min_order else ""
-        
-        plain = f"""🍔 FUDGO - {discount_amount} OFF!
+            restaurants_text = "\n\nRESTAURANTS:\n" + "\n".join(
+                f"  - {restaurant.get('name', '')} ({restaurant.get('cuisines', '')})"
+                for restaurant in restaurants[:4]
+            )
+        terms_text = f"\nOffer ends: {expiry_date}" if expiry_date else ""
+        if min_order:
+            terms_text += f"\nMinimum order: {min_order}"
+        contact_text = "\n".join(str(value) for value in (contact_address, contact_hours, contact_phone) if value)
+        contact_text = f"\n\nRestaurant details:\n{contact_text}" if contact_text else ""
+        plain = f'''Hi {user_name},
 
 {hero_title}
 {hero_subtitle}
 
-{description}{items_text}{restaurants_text}
+{discount_amount} OFF
+{description}{terms_text}{items_text}{restaurants_text}{contact_text}
 
-⏰ Offer expires: {expiry_date}{min_text}
+Order now: {cta_link}
 
-Order now at {cta_link}
-
-────────────────────
-📍 {address_display}
-🕐 {hours_display}
-📞 {phone_display}
-
-© {cls._get_year()} Fudgo. All rights reserved.
-To unsubscribe, visit our website."""
-        
-        return {
-            "subject": f"🍔 {discount_amount} OFF - {hero_title} Fudgo Has You Covered!",
-            "html": html,
-            "plain": plain
-        }
+© {cls._get_year()} {cls._get_company_name()}'''
+        return {"subject": f"🍽️ {discount_amount} off your next order", "html": html, "plain": plain}
 
     # ============================================================
     # WELCOME PROMO - Gift themed, first order discount
     # ============================================================
     @classmethod
     def welcome_promo(cls, user_name: str, promo_code: str, discount_amount: str) -> Dict[str, str]:
-        """Welcome promo - gift box themed with dark mode"""
+        """Welcome promo - gift box themed with responsive light styling"""
         
         header = cls._header(
             f"A Gift For You! 🎁",
@@ -1653,24 +1057,24 @@ To unsubscribe, visit our website."""
       <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr><td align="center">
           <!-- Discount Card -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 32px; margin-bottom: 24px; border: 2px solid #22c55e;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFE2CC 100%); border-radius: 12px; padding: 32px; margin-bottom: 24px; border: 2px solid #FF6B00;">
             <tr><td align="center">
-              <p style="font-size: 48px; font-weight: 900; color: #15803d; margin: 0;">{discount_amount}</p>
+              <p style="font-size: 48px; font-weight: 900; color: #3B1F6B; margin: 0;">{discount_amount}</p>
               <p style="color: #6b7280; font-size: 14px; margin: 8px 0 0;">off your first order</p>
             </td></tr>
           </table>
           
           <!-- Code Box -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #1f2937; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border: 1px solid #FFD8BA; border-radius: 12px; padding: 20px; margin: 24px 0;">
             <tr><td align="center">
-              <p style="color: #22c55e; font-size: 28px; font-weight: 800; letter-spacing: 4px; font-family: monospace; margin: 0;">{promo_code}</p>
+              <p style="color: #3B1F6B; font-size: 28px; font-weight: 800; letter-spacing: 4px; font-family: monospace; margin: 0;">{promo_code}</p>
               <p style="color: #9ca3af; font-size: 13px; margin: 12px 0 0;">Valid for first order only</p>
             </td></tr>
           </table>
           
           <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 24px 0;">Start your Fudgo journey with a treat on us! Thousands of restaurants are waiting.</p>
           
-          <a href="#" class="btn-primary" style="padding: 16px 40px; font-size: 16px;">Claim Your Gift 🎉</a>
+          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="padding: 16px 40px; font-size: 16px;">Claim Your Gift 🎉</a>
         </td></tr>
       </table>
     </td></tr>
@@ -1693,7 +1097,7 @@ Get {discount_amount} OFF your first order!
 PROMO CODE: {promo_code}
 Valid for first order only.
 
-Start ordering at fudgo.com!
+Start ordering at {cls._get_customer_app_url()}!
 
 © {cls._get_year()} Fudgo"""
 
@@ -1707,7 +1111,7 @@ Start ordering at fudgo.com!
         cls, user_name: str, order_id: str,
         driver_name: str, estimated_time: str
     ) -> Dict[str, str]:
-        """Driver assigned - tracking/map style with dark mode"""
+        """Driver assigned - tracking/map style with responsive light styling"""
         
         header = cls._header(
             f"Driver On The Way! 🛵",
@@ -1721,9 +1125,9 @@ Start ordering at fudgo.com!
       <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr><td align="center">
           <!-- Driver Card -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFE2CC 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
             <tr><td align="center">
-              <div style="width: 64px; height: 64px; background: #22c55e; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px;">👤</div>
+              <div style="width: 64px; height: 64px; background: #FF6B00; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px;">👤</div>
               <p style="color: #1f2937; font-size: 18px; font-weight: 700; margin: 12px 0 4px;">{driver_name}</p>
               <p style="color: #6b7280; font-size: 13px; margin: 0;">Your Delivery Partner</p>
             </td></tr>
@@ -1743,7 +1147,7 @@ Start ordering at fudgo.com!
             </tr>
           </table>
           
-          <a href="#" class="btn-primary">Track Live Location 📍</a>
+          <a href="{cls._get_customer_app_url()}" class="btn-primary">Open Fudgo App</a>
         </td></tr>
       </table>
     </td></tr>
@@ -1777,7 +1181,7 @@ Track in the Fudgo app.
     # ============================================================
     @classmethod
     def delivery_arriving_soon(cls, user_name: str, order_id: str, minutes_away: int = 5) -> Dict[str, str]:
-        """Arriving soon - countdown timer style with dark mode"""
+        """Arriving soon - countdown timer style with responsive light styling"""
         
         header = cls._header(
             f"Almost There! 🏃",
@@ -1846,7 +1250,7 @@ Please be ready to receive your order.
     # ============================================================
     @classmethod
     def account_deactivated(cls, user_name: str) -> Dict[str, str]:
-        """Account deactivated - gentle farewell design with dark mode"""
+        """Account deactivated - gentle farewell design with responsive light styling"""
         
         header = cls._header(
             f"We'll Miss You, {user_name} 👋",
@@ -1862,7 +1266,7 @@ Please be ready to receive your order.
           <p style="color: #4b5563; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">We're sad to see you go, but we understand.</p>
           
           <!-- Info Box -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border-radius: 12px; padding: 20px; margin: 24px 0;">
             <tr><td>
               <p style="color: #1f2937; font-size: 14px; font-weight: 600; margin: 0 0 8px;">💡 Changed Your Mind?</p>
               <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.5;">You can reactivate your account within 30 days by simply logging in. All your data will be restored.</p>
@@ -1874,8 +1278,8 @@ Please be ready to receive your order.
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0;">
             <tr>
               <td align="center">
-                <a href="#" class="btn-primary" style="margin-right: 12px;">Reactivate Account</a>
-                <a href="#" style="display: inline-block; border: 2px solid #e5e7eb; color: #6b7280; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">Give Feedback</a>
+                <a href="{cls._get_customer_app_url()}" class="btn-primary" style="margin-right: 12px;">Log in to Reactivate</a>
+                <a href="{cls._get_support_url()}" style="display: inline-block; border: 1px solid #E5D8CD; color: #3B1F6B; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">Give Feedback</a>
               </td>
             </tr>
           </table>

@@ -41,6 +41,11 @@ class PlunkEmailService:
                 logger.error("Missing required email fields")
                 return False
 
+            if getattr(settings, "EMAIL_PROVIDER", "plunk") == "resend":
+                return PlunkEmailService._send_via_resend(
+                    to_email, subject, html_body or body, body
+                )
+
             # Get Plunk API key from settings
             plunk_api_key = getattr(settings, "EMAIL_PLUNK_API_KEY", None)
             # In send_email method, after getting the key:
@@ -124,6 +129,43 @@ class PlunkEmailService:
             return False
 
     @staticmethod
+    def _send_via_resend(to_email, subject, html, text) -> bool:
+        api_key = getattr(settings, "RESEND_API_KEY", None)
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+        if not api_key or not from_email:
+            logger.error("RESEND_API_KEY or DEFAULT_FROM_EMAIL not configured")
+            return False
+    
+        sender_name = getattr(settings, "EMAIL_SENDER_NAME", None)
+        payload = {
+            "from": f"{sender_name} <{from_email}>" if sender_name else from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html,
+            "text": text,
+        }
+        reply_to = getattr(settings, "EMAIL_REPLY_TO", None)
+        if reply_to:
+            payload["reply_to"] = reply_to
+    
+        try:
+            r = requests.post(
+                "https://api.resend.com/emails",
+                json=payload,
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=10,
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Resend request error for {to_email}: {e}")
+            return False
+    
+        if r.status_code == 200:
+            logger.info(f"Email sent via Resend to {to_email}")
+            return True
+        logger.error(f"Resend failed for {to_email}: {r.status_code} {r.text}")
+        return False
+
+    @staticmethod
     def send_templated_email(to_email: str, template_data: dict) -> bool:
         """
         Send email using template data from email_templates.py
@@ -158,7 +200,6 @@ class PlunkEmailService:
             logger.error(f"Failed to send templated email to {to_email}: {str(e)}")
             return False
             
-
     @staticmethod
     def send_bulk_email(recipients: list, email_data: dict) -> dict:
         """

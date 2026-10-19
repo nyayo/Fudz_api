@@ -267,6 +267,8 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True)
 EMAIL_PORT = config("EMAIL_PORT", default=2525)
 EMAIL_PLUNK_API_KEY = config("EMAIL_PLUNK_API_KEY")
 
+CUSTOMER_APP_URL = config("CUSTOMER_APP_URL", default="https://fudgo.com")
+
 TEXTBEE_API_KEY = config("TEXTBEE_API_KEY")
 TEXTBEE_DEVICE_ID = config("TEXTBEE_DEVICE_ID")
 
