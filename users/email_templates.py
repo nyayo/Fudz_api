@@ -58,6 +58,7 @@ class EmailTemplates:
       .footer { padding: 20px 15px !important; }
       .food-item-cell { display: block !important; width: 100% !important; }
       .mobile-stack { display: block !important; width: 100% !important; }
+      .hero-image { height: 210px !important; }
     }
     """
 
@@ -114,7 +115,7 @@ class EmailTemplates:
         """Generate the shared food-delivery brand header."""
         safe_icon = escape(str(icon))
         safe_company = escape(str(cls._get_company_name()))
-        subtitle_html = f'<tr><td class="header__subtitle">{subtitle}</td></tr>' if subtitle else ""
+        subtitle_html = f'<tr><td colspan="2" class="header__subtitle" style="padding:0 0 4px;color:#625A54;font-size:14px;line-height:1.65;">{subtitle}</td></tr>' if subtitle else ""
         return f"""
 <table style="max-width:600px;margin:0 auto 16px;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr><td class="header" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:1px solid #F0E4DA;border-top:5px solid #FF6B00;border-radius:16px;">
@@ -913,7 +914,7 @@ Thanks for choosing Fudgo, {user_name}!
             hero_src = safe_url(hero_image_url, "")
             if hero_src:
                 hero_image = f'''<tr><td style="padding:0 0 16px;">
-  <img src="{hero_src}" alt="Featured food from Fudgo" width="552" style="display:block;width:100%;max-width:552px;height:auto;border-radius:12px;" />
+  <img class="hero-image" src="{hero_src}" alt="Featured food from Fudgo" width="552" height="240" style="display:block;width:100%;max-width:552px;height:240px;object-fit:cover;border-radius:12px;" />
 </td></tr>'''
 
         food_cards = []
