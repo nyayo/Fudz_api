@@ -133,8 +133,8 @@ class OrderDetailPage extends StatelessWidget {
     final steps = [
       _StepData('Placed', Icons.receipt_long, 'placed'),
       _StepData('Accepted', Icons.check_circle_outline, 'accepted'),
-      _StepData('Preparing', Icons.restaurant, 'preparing'),
       _StepData('Ready', Icons.takeout_dining, 'ready'),
+      _StepData('Picked up', Icons.delivery_dining, 'picked_up'),
       _StepData('Delivered', Icons.done_all, 'delivered'),
     ];
 
@@ -729,26 +729,15 @@ class OrderDetailPage extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending':
-      case 'placed':
-        return Colors.orange;
-      case 'accepted':
-        return Colors.blue;
-      case 'preparing':
-        return Colors.deepPurple;
-      case 'ready':
-      case 'out_for_delivery':
-        return Colors.indigo;
-      case 'delivered':
-      case 'completed':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'placed': return Colors.orange;
+      case 'accepted': return Colors.blue;
+      case 'ready': return Colors.deepPurple;
+      case 'picked_up': return Colors.indigo;
+      case 'delivered': return Colors.green;
+      case 'cancelled': return Colors.red;
+      default: return Colors.grey;
     }
   }
-
   Color _getPaymentColor(String status) {
     switch (status.toLowerCase()) {
       case 'paid':
@@ -764,74 +753,34 @@ class OrderDetailPage extends StatelessWidget {
 
   IconData _getStatusIcon(String status) {
     switch (status.toLowerCase()) {
-      case 'pending':
-      case 'placed':
-        return Icons.receipt_long;
-      case 'accepted':
-        return Icons.thumb_up;
-      case 'preparing':
-        return Icons.restaurant;
-      case 'ready':
-        return Icons.takeout_dining;
-      case 'out_for_delivery':
-        return Icons.delivery_dining;
-      case 'delivered':
-      case 'completed':
-        return Icons.done_all;
-      case 'cancelled':
-        return Icons.cancel;
-      default:
-        return Icons.info;
+      case 'placed': return Icons.receipt_long;
+      case 'accepted': return Icons.thumb_up;
+      case 'ready': return Icons.takeout_dining;
+      case 'picked_up': return Icons.delivery_dining;
+      case 'delivered': return Icons.done_all;
+      case 'cancelled': return Icons.cancel;
+      default: return Icons.info;
     }
   }
-
   String _getStatusDescription(String status) {
     switch (status.toLowerCase()) {
-      case 'pending':
-      case 'placed':
-        return 'Your order has been placed and is waiting for confirmation';
-      case 'accepted':
-        return 'The restaurant has accepted your order';
-      case 'preparing':
-        return 'Your food is being prepared with care';
-      case 'ready':
-        return 'Your order is ready and waiting for pickup';
-      case 'out_for_delivery':
-        return 'Your order is on the way to you';
-      case 'delivered':
-      case 'completed':
-        return 'Your order has been delivered. Enjoy your meal!';
-      case 'cancelled':
-        return 'This order has been cancelled';
-      default:
-        return 'Order status updated';
+      case 'placed': return 'Your order has been placed and is waiting for confirmation';
+      case 'accepted': return 'The restaurant has accepted your order';
+      case 'ready': return 'Your order is ready for pickup';
+      case 'picked_up': return 'Your order is on the way to you';
+      case 'delivered': return 'Your order has been delivered. Enjoy your meal!';
+      case 'cancelled': return 'This order has been cancelled';
+      default: return 'Order status updated';
     }
   }
-
   int _getStatusIndex(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-      case 'placed':
-        return 0;
-      case 'accepted':
-        return 1;
-      case 'preparing':
-        return 2;
-      case 'ready':
-      case 'out_for_delivery':
-        return 3;
-      case 'delivered':
-      case 'completed':
-        return 4;
-      default:
-        return 0;
-    }
+    const indexes = {'placed': 0, 'accepted': 1, 'ready': 2, 'picked_up': 3, 'delivered': 4};
+    return indexes[status.toLowerCase()] ?? 0;
   }
-
   String _formatStatus(String status) {
     switch (status.toLowerCase()) {
-      case 'out_for_delivery':
-        return 'Out for Delivery';
+      case 'picked_up':
+        return 'Picked Up';
       default:
         return status[0].toUpperCase() + status.substring(1);
     }

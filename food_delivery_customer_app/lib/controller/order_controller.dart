@@ -33,21 +33,20 @@ class OrderController extends GetxController {
 
   // Filter orders by status (uses local data first)
   List<Order> get pendingOrders =>
-      orders.where((order) => order.status.toLowerCase() == 'pending').toList();
+      orders.where((order) => order.status.toLowerCase() == 'placed').toList();
   List<Order> get activeOrders => orders
       .where(
         (order) => [
           'accepted',
-          'preparing',
           'ready',
-          'out_for_delivery',
+          'picked_up',
         ].contains(order.status.toLowerCase()),
       )
       .toList();
   List<Order> get completedOrders => orders
       .where(
         (order) =>
-            ['delivered', 'completed'].contains(order.status.toLowerCase()),
+            ['delivered'].contains(order.status.toLowerCase()),
       )
       .toList();
   List<Order> get cancelledOrders => orders
@@ -214,40 +213,26 @@ class OrderController extends GetxController {
 
   String? _getStatusMessage(String status) {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return 'Order #{orderId} is pending confirmation';
-      case 'accepted':
-        return 'Order #{orderId} has been accepted by the restaurant';
-      case 'preparing':
-        return 'Order #{orderId} is being prepared';
-      case 'ready':
-        return 'Order #{orderId} is ready for pickup';
-      case 'out_for_delivery':
-        return 'Order #{orderId} is out for delivery';
-      case 'delivered':
-        return 'Order #{orderId} has been delivered';
-      case 'cancelled':
-        return 'Order #{orderId} has been cancelled';
-      default:
-        return null;
+      case 'placed': return 'Order #{orderId} is pending confirmation';
+      case 'accepted': return 'Order #{orderId} has been accepted by the restaurant';
+      case 'ready': return 'Order #{orderId} is ready for pickup';
+      case 'picked_up': return 'Order #{orderId} is on the way';
+      case 'delivered': return 'Order #{orderId} has been delivered';
+      case 'cancelled': return 'Order #{orderId} has been cancelled';
+      default: return null;
     }
   }
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'delivered':
-      case 'accepted':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.orange;
-      case 'out_for_delivery':
-      case 'preparing':
-        return Colors.blue;
-      default:
-        return Colors.grey;
+      case 'delivered': return Colors.green;
+      case 'accepted': return Colors.green;
+      case 'cancelled': return Colors.orange;
+      case 'picked_up': return Colors.blue;
+      case 'ready': return Colors.blue;
+      default: return Colors.grey;
     }
   }
-
   // Clear all notifications (mark orders as seen)
   Future<void> clearNotifications() async {
     try {
@@ -256,12 +241,7 @@ class OrderController extends GetxController {
       // Get orders that currently have notifications
       final ordersToClear = orders.where((order) {
         final status = order.status.toLowerCase();
-        return status == 'placed' ||
-            status == 'pending' ||
-            status == 'accepted' ||
-            status == 'preparing' ||
-            status == 'ready' ||
-            status == 'out_for_delivery';
+        return ['placed', 'accepted', 'ready', 'picked_up'].contains(status);
       }).toList();
 
       print('🔔 Orders to clear notifications: ${ordersToClear.length}');
@@ -302,12 +282,7 @@ class OrderController extends GetxController {
     return orders.where((order) {
       final status = order.status.toLowerCase();
       final shouldNotify =
-          status == 'placed' ||
-          status == 'pending' ||
-          status == 'accepted' ||
-          status == 'preparing' ||
-          status == 'ready' ||
-          status == 'out_for_delivery';
+          ['placed', 'accepted', 'ready', 'picked_up'].contains(status);
 
       // Only notify if order should be notified AND hasn't been cleared
       return shouldNotify && !clearedOrders.contains(order.id);
@@ -422,7 +397,7 @@ class OrderController extends GetxController {
       // 1. FIRST: Create a local order immediately for UI feedback
       final localOrder = Order(
         id: localOrderId, // Temporary local ID
-        status: 'pending',
+        status: 'placed',
         paymentStatus: 'pending', // ADD THIS REQUIRED PARAMETER
         items: [],
         totalAmount: 0.0, // Will be updated from backend
@@ -750,7 +725,7 @@ class OrderController extends GetxController {
 
       // 2. THEN: Try to get from backend for latest data
       try {
-        final response = await _apiService.get('orders/$orderId/');
+        final response = await _apiService.get('orders/orders/$orderId/');
         final backendOrder = Order.fromJson(response);
         _selectedOrder.value = backendOrder;
 

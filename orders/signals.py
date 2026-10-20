@@ -1,6 +1,5 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from asgiref.sync import async_to_sync
@@ -15,6 +14,8 @@ from users.tasks import (
     send_order_delivered_email,
     notify_restaurant_new_order,
     notify_restaurant_order_status,
+    send_email_task,
+    send_templated_email_task,
 )
 
 # User = get_user_model()
@@ -45,13 +46,14 @@ def order_notification(sender, instance, created, **kwargs):
         order_id=instance.id
     )
 
-    send_mail(
-        subject,
-        body,
-        "no-reply@foodapp.com",
-        [a.email for a in admins],
-        fail_silently=True,
-    )
+    for admin in admins:
+        transaction.on_commit(lambda email=admin.email: send_email_task.delay({
+            "to_email": email,
+            "email_subject": subject,
+            "email_body": body,
+            "email_html": f"<p>{body}</p>",
+            "email_type": "html",
+        }))
 
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
@@ -128,10 +130,20 @@ def customer_order_notification(sender, instance, created, **kwargs):
 
     send_order_notification(customer, title, instance)
 
-    send_mail(
-        subject,
-        body,
-        "no-reply@foodapp.com",
-        [customer.email],
-        fail_silently=True,
-    )
+    if customer.email and status != "delivered":
+        status_messages = {
+            "accepted": "The restaurant accepted your order.",
+            "ready": "Your order is ready for pickup.",
+            "picked_up": "Your order is on the way.",
+        }
+        if status in status_messages:
+            transaction.on_commit(lambda: send_templated_email_task.delay(
+                customer.email,
+                "order_status_update",
+                {
+                    "user_name": customer.get_full_name() or customer.email,
+                    "order_id": str(order_id),
+                    "status": status,
+                    "status_message": status_messages[status],
+                },
+            ))

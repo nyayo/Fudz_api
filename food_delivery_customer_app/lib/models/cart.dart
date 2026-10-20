@@ -122,6 +122,19 @@ class CartItem {
 }
 
 class Order {
+  /// Backend is the source of truth. Keep aliases only at the parsing boundary.
+  static const Map<String, String> _statusAliases = {
+    'pending': 'placed',
+    'confirmed': 'accepted',
+    'preparing': 'ready',
+    'out_for_delivery': 'picked_up',
+    'completed': 'delivered',
+  };
+  static String normalizeStatus(Object? raw) {
+    final value = raw?.toString().trim().toLowerCase() ?? 'placed';
+    return _statusAliases[value] ?? value;
+  }
+
   final int id;
   final String status;
   final String paymentStatus;
@@ -255,7 +268,7 @@ class Order {
       id: json['id'] is int
           ? json['id']
           : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      status: json['status']?.toString() ?? 'pending',
+      status: normalizeStatus(json['status']),
       // Support both snake_case (API) and camelCase (local storage) for all fields
       paymentStatus:
           (json['payment_status'] ?? json['paymentStatus'])?.toString() ??
@@ -490,11 +503,10 @@ class Order {
 
   // Helper methods
   bool get canBeCancelled =>
-      ['pending', 'accepted'].contains(status.toLowerCase());
+      ['placed', 'accepted'].contains(status.toLowerCase());
 
   bool get isDelivered =>
-      status.toLowerCase() == 'delivered' ||
-      status.toLowerCase() == 'completed';
+      status.toLowerCase() == 'delivered';
 
   bool get canBeRated =>
       isDelivered &&
