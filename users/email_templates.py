@@ -19,41 +19,17 @@ class EmailTemplates:
     # ============================================================
 
     BASE_STYLES = """
-    * { box-sizing: border-box; }
     html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
     body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     table { border-collapse: collapse; border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
     img { border: 0; display: block; line-height: 100%; outline: none; text-decoration: none; }
-    .main { margin: 0; padding: 0; width: 100%; background-color: #FFF7F0; color: #29231F; font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.55; }
-    .email-shell { width: 100%; max-width: 600px; }
-    .header { max-width: 600px; background-color: #FFFFFF; border: 1px solid #F0E4DA; border-top: 5px solid #FF6B00; border-radius: 16px; }
-    .header__inner-container { padding: 26px 28px 22px; margin: 0; }
-    .header__title { padding: 18px 0 8px; color: #24170D; font-size: 27px; font-weight: 800; line-height: 1.2; letter-spacing: -0.45px; }
-    .header__subtitle { padding: 0 0 4px; color: #625A54; font-size: 14px; line-height: 1.65; }
-    .body__details { padding: 24px; }
-    .body__background { background-color: #FFFFFF; color: #29231F; border: 1px solid #F0E4DA; border-radius: 14px; }
-    .highlight { color: #3B1F6B; background-color: #F2EAF8; border: 1px solid #E8DCF2; padding: 4px 9px; border-radius: 7px; font-size: 12px; font-weight: 700; }
-    .table__padded td { padding: 10px; }
-    .table__padded td td { padding: 0; }
-    .indent { background-color: #FFFFFF; }
-    .label { color: inherit !important; text-decoration: none !important; }
-    .label-details { color: #736B65 !important; text-decoration: none !important; }
-    .product__promotion { background-color: #FF6B00; color: #24170D; font-size: 11px; padding: 3px 7px; border-radius: 5px; font-weight: 700; }
-    .btn-primary { color: #24170D !important; background-color: #FF6B00 !important; border: 1px solid #FF6B00; padding: 13px 25px; font-size: 14px; line-height: 1.2; border-radius: 10px; font-weight: 700; text-decoration: none !important; display: inline-block; box-shadow: 0 5px 14px rgba(112, 53, 14, 0.18); }
-    .footer { max-width: 600px; padding: 24px 20px; text-align: center; background-color: #302733; border-top: 4px solid #FF6B00; border-radius: 14px; }
-    .footer p { color: #E7DED8; font-size: 12px; line-height: 1.6; margin: 5px 0; }
-    .footer a { color: #FFD0A8 !important; }
-    .email-motion-icon { display: inline-block; animation: email-float 2.8s ease-in-out infinite; transform-origin: center; }
-    .email-step-active { animation: email-pulse 2s ease-in-out infinite; }
-    .motion-enter { animation: email-enter 480ms ease-out both; }
+    .email-motion-icon { display: inline-block; }
     .food-item-cell { vertical-align: top; padding: 6px; }
-    @keyframes email-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-    @keyframes email-pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(255,107,0,.15); } 50% { box-shadow: 0 0 0 7px rgba(255,107,0,.06); } }
-    @keyframes email-enter { from { opacity: .55; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { .email-motion-icon, .email-step-active, .motion-enter { animation: none !important; transform: none !important; } }
     @media only screen and (max-width: 620px) {
-      .header__inner-container { padding: 22px 18px 18px !important; }
-      .header__title { font-size: 23px !important; }
+      .email-gutter { padding: 12px 8px !important; }
+      .header-inner { padding: 22px 18px 20px !important; }
+      .email-title { font-size: 23px !important; line-height: 1.2 !important; }
       .body__details { padding: 18px !important; }
       .footer { padding: 20px 15px !important; }
       .food-item-cell { display: block !important; width: 100% !important; }
@@ -101,8 +77,8 @@ class EmailTemplates:
 <body class="main" style="margin:0;padding:0;background-color:#FFF7F0;color:#29231F;font-family:Arial,Helvetica,sans-serif;">
   <div style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;max-height:0;max-width:0;overflow:hidden;mso-hide:all;">{safe_preheader}</div>
   <table class="main" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF7F0" style="width:100%;background-color:#FFF7F0;">
-    <tr><td align="center" style="padding:24px 12px;">
-      <table class="email-shell" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+    <tr><td class="email-gutter" align="center" style="padding:24px 12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
         <tr><td>{content}</td></tr>
       </table>
     </td></tr>
@@ -117,25 +93,25 @@ class EmailTemplates:
         safe_company = escape(str(cls._get_company_name()))
         subtitle_html = f'<tr><td colspan="2" class="header__subtitle" style="padding:0 0 4px;color:#625A54;font-size:14px;line-height:1.65;">{subtitle}</td></tr>' if subtitle else ""
         return f"""
-<table style="max-width:600px;margin:0 auto 16px;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td class="header" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:1px solid #F0E4DA;border-top:5px solid #FF6B00;border-radius:16px;">
-    <table class="header__inner-container" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:26px 28px 22px;">
+<table style="max-width:600px;margin:0 auto 14px;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:1px solid #E9DED5;border-top:4px solid #FF6B00;border-radius:12px;">
+    <table class="header-inner" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:22px 24px 20px;">
       <tr>
         <td width="52" valign="middle" style="width:52px;">
-          <table role="presentation" width="40" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" width="40" height="40" bgcolor="#FF6B00" style="width:40px;height:40px;background-color:#FF6B00;border-radius:12px;font-size:21px;line-height:40px;">
+          <table role="presentation" width="40" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" width="40" height="40" bgcolor="#FF6B00" style="width:40px;height:40px;background-color:#FF6B00;border-radius:10px;font-size:20px;line-height:40px;">
             <span class="email-motion-icon">{safe_icon}</span>
           </td></tr></table>
         </td>
         <td valign="middle" style="padding-left:10px;">
-          <p style="margin:0;color:#3B1F6B;font-size:18px;line-height:1.2;font-weight:800;">{safe_company}</p>
-          <p style="margin:4px 0 0;color:#756B64;font-size:10px;line-height:1.2;letter-spacing:1.4px;text-transform:uppercase;">Food, made effortless</p>
+          <p style="margin:0;color:#33264B;font-size:18px;line-height:1.2;font-weight:800;">{safe_company}</p>
+          <p style="margin:4px 0 0;color:#756B64;font-size:10px;line-height:1.2;letter-spacing:1.2px;text-transform:uppercase;">Food, made effortless</p>
         </td>
       </tr>
-      <tr><td colspan="2" class="header__title" style="padding:18px 0 8px;color:#24170D;font-size:27px;font-weight:800;line-height:1.2;letter-spacing:-0.45px;">{title}</td></tr>
+      <tr><td colspan="2" class="email-title" style="padding:20px 0 8px;color:#24170D;font-size:24px;font-weight:800;line-height:1.2;letter-spacing:-0.25px;word-break:normal;">{title}</td></tr>
       {subtitle_html}
     </table>
   </td></tr>
-  <tr><td height="14" style="height:14px;font-size:0;line-height:0;">&nbsp;</td></tr>
+  <tr><td height="12" style="height:12px;font-size:0;line-height:0;">&nbsp;</td></tr>
 </table>"""
 
     @classmethod
@@ -145,8 +121,8 @@ class EmailTemplates:
         safe_company = escape(str(cls._get_company_name()))
         msg_html = f'<p style="color:#F4E8DF;margin:0 0 10px;">{safe_message}</p>' if safe_message else ""
         return f"""
-<table style="max-width:600px;margin:16px auto 0;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td class="footer" bgcolor="#302733" style="padding:24px 20px;text-align:center;background-color:#302733;border-top:4px solid #FF6B00;border-radius:14px;">
+<table style="max-width:600px;margin:14px auto 0;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td class="footer" bgcolor="#302733" style="padding:22px 20px;text-align:center;background-color:#302733;border-top:4px solid #FF6B00;border-radius:12px;">
     {msg_html}
     <p style="font-size:17px;line-height:1.3;font-weight:800;color:#FFFFFF;margin:0 0 8px;">{safe_company}</p>
     <p style="color:#E7DED8;font-size:12px;margin:0;">© {cls._get_year()} {safe_company}. All rights reserved.</p>
@@ -170,12 +146,12 @@ class EmailTemplates:
         safe_code = escape(str(code))
         safe_label = escape(str(label))
         return f"""
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0;">
   <tr><td align="center">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF3E8" style="background-color:#FFF3E8;border:2px solid #FF6B00;border-radius:14px;padding:20px 32px;">
-      <tr><td align="center">
-        <p style="color:#3B1F6B;font-size:11px;text-transform:uppercase;letter-spacing:1.8px;margin:0 0 10px;font-weight:700;">{safe_label}</p>
-        <p style="font-size:34px;font-weight:800;color:#24170D;letter-spacing:7px;font-family:'Courier New',monospace;margin:0;">{safe_code}</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF7ED" style="background-color:#FFF7ED;border:1px solid #FFB77A;border-radius:10px;">
+      <tr><td align="center" style="padding:18px 26px 16px;">
+        <p style="color:#6B4A2F;font-size:10px;line-height:1.2;text-transform:uppercase;letter-spacing:1.6px;margin:0 0 10px;font-weight:800;">{safe_label}</p>
+        <p style="font-size:30px;line-height:1;font-weight:800;color:#24170D;letter-spacing:6px;font-family:'Courier New',Courier,monospace;margin:0 0 0 6px;">{safe_code}</p>
       </td></tr>
     </table>
   </td></tr>
