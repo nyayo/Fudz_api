@@ -684,6 +684,14 @@ Thank you, {user_name}!
     ) -> Dict[str, str]:
         """Order status - progress tracker with semantic delivery-status colors"""
         
+        status_aliases = {
+            "placed": "confirmed",
+            "accepted": "confirmed",
+            "ready": "preparing",
+            "picked_up": "on_the_way",
+            "out_for_delivery": "on_the_way",
+        }
+        status = status_aliases.get(status.lower(), status.lower())
         statuses = {
             "confirmed": {"icon": "✓", "color": "#22c55e", "bg": "#dcfce7", "step": 1},
             "preparing": {"icon": "👨‍🍳", "color": "#f59e0b", "bg": "#fef3c7", "step": 2},

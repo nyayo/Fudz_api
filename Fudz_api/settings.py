@@ -259,13 +259,18 @@ SPECTACULAR_SETTINGS = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = config("EMAIL_HOST", default="smtp.mailtrap.io")
-EMAIL_HOST_USER = config("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:5173")
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True)
-EMAIL_PORT = config("EMAIL_PORT", default=2525)
-EMAIL_PLUNK_API_KEY = config("EMAIL_PLUNK_API_KEY")
+EMAIL_PORT = config("EMAIL_PORT", default=2525, cast=int)
+EMAIL_PROVIDER = config("EMAIL_PROVIDER", default="plunk").strip().lower()
+EMAIL_PLUNK_API_KEY = config("EMAIL_PLUNK_API_KEY", default=None)
+RESEND_API_KEY = config("RESEND_API_KEY", default=None)
+PLUNK_BASE_URL = config("PLUNK_BASE_URL", default="https://next-api.useplunk.com").rstrip("/")
+EMAIL_SENDER_NAME = config("EMAIL_SENDER_NAME", default="Fudgo")
+EMAIL_REPLY_TO = config("EMAIL_REPLY_TO", default=None)
 
 CUSTOMER_APP_URL = config("CUSTOMER_APP_URL", default="https://fudgo.com")
 

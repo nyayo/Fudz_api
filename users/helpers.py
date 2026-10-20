@@ -149,7 +149,12 @@ def send_order_notification(user, title, order):
         user.id,
         f"Order {title}",
         f"Your order #{order.id} has been {title.lower()}!",
-        {"order_id": order.id, "type": "order_update"},
+        {
+            "order_id": order.id,
+            "type": "order_update",
+            "status": order.status,
+            "payment_status": order.payment_status,
+        },
     )
 
 

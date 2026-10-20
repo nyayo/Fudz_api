@@ -47,7 +47,6 @@ from .serializers import (
     AdminLoginSerializer,
     InvitationActivationSerializer,
 )
-from .services import OTPService
 from .tasks import send_push_notification_to_user, send_sms_otp_task, send_templated_email_task
 
 logger = logging.getLogger(__name__)
@@ -83,7 +82,6 @@ class RequestOTPView(GenericAPIView):
                 {"user_name": email, "verification_code": plain_otp},
             )
 
-            OTPService.send_otp(email, plain_otp)
 
             return Response(
                 {"message": "OTP sent successfully to your email"},

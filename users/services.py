@@ -16,116 +16,50 @@ class PlunkEmailService:
 
     @staticmethod
     def send_email(data: dict) -> bool:
-        """
-        Send email using Plunk API
-
-        Args:
-            data: Dictionary containing:
-                - to_email: Recipient email address
-                - email_subject: Email subject line
-                - email_body: Plain text or HTML email body
-                - email_html: (Optional) HTML version if email_body is plain text
-                - email_type: (Optional) 'html' or 'text', defaults to 'html'
-
-        Returns:
-            bool: True if email sent successfully, False otherwise
-        """
+        """Send an HTML/plain transactional email using the configured provider."""
         try:
             to_email = data.get("to_email")
             subject = data.get("email_subject")
             body = data.get("email_body")
             html_body = data.get("email_html")
-            email_type = data.get("email_type", "html")
-
             if not all([to_email, subject, body]):
                 logger.error("Missing required email fields")
                 return False
-
-            if getattr(settings, "EMAIL_PROVIDER", "plunk") == "resend":
+            if getattr(settings, "EMAIL_PROVIDER", "plunk").lower() == "resend":
                 return PlunkEmailService._send_via_resend(
                     to_email, subject, html_body or body, body
                 )
-
-            # Get Plunk API key from settings
-            plunk_api_key = getattr(settings, "EMAIL_PLUNK_API_KEY", None)
-            # In send_email method, after getting the key:
-            print(
-                f"Using API key: {plunk_api_key[:10]}..."
-                if plunk_api_key
-                else "No API key found"
+            api_key = getattr(settings, "EMAIL_PLUNK_API_KEY", None)
+            if not api_key:
+                logger.error("EMAIL_PLUNK_API_KEY is not configured")
+                return False
+            url = f"{getattr(settings, 'PLUNK_BASE_URL', 'https://next-api.useplunk.com').rstrip('/')}/v1/send"
+            response = requests.post(
+                url,
+                json={"to": to_email, "subject": subject, "body": html_body or body},
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                timeout=10,
             )
-
-            if not plunk_api_key:
-                logger.error("EMAIL_PLUNK_API_KEY not configured in settings")
-                return False
-
-            # Plunk API endpoint
-            plunk_base_url = getattr(settings, "PLUNK_BASE_URL", "https://next-api.useplunk.com")
-            url = f"{plunk_base_url}/v1/send"
-
-
-            # Headers for Plunk API
-            headers = {
-                "Authorization": f"Bearer {plunk_api_key}",
-                "Content-Type": "application/json",
-            }
-
-            # Use HTML version if provided, otherwise use body
-            email_content = html_body if html_body else body
-
-            # Payload for Plunk API
-            payload = {
-                "to": to_email,
-                "subject": subject,
-                "body": email_content,
-                "type": email_type,
-            }
-
-            # Required: sender email address
-            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
-            if not from_email:
-                logger.error("DEFAULT_FROM_EMAIL not configured in settings")
-                return False
-            payload["from"] = from_email
-
-
-            # Optional: Add sender name if configured
-            sender_name = getattr(settings, "EMAIL_SENDER_NAME", None)
-            if sender_name:
-                payload["name"] = sender_name
-
-            # Optional: Add reply-to if configured
-            reply_to = getattr(settings, "EMAIL_REPLY_TO", None)
-            if reply_to:
-                payload["reply"] = reply_to
-
-            # Send the email via Plunk API
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-
-            if response.status_code == 200:
-                logger.info(f"Email sent successfully to {to_email}")
+            if 200 <= response.status_code < 300:
+                try:
+                    result = response.json()
+                    if result.get("success") is False:
+                        logger.error("Plunk rejected email to %s: %s", to_email, result)
+                        return False
+                except ValueError:
+                    pass
+                logger.info("Email sent via Plunk to %s", to_email)
                 return True
-            else:
-                logger.error(
-                    f"Failed to send email to {to_email}. "
-                    f"Status: {response.status_code}, Response: {response.text}"
-                )
-                return False
-
+            logger.error("Plunk failed for %s: %s %s", to_email, response.status_code, response.text)
+            return False
         except requests.exceptions.Timeout:
-            logger.error(f"Timeout sending email to {data.get('to_email')}")
+            logger.error("Timeout sending email to %s", data.get("to_email"))
             return False
-
-        except requests.exceptions.RequestException as e:
-            logger.error(
-                f"Request error sending email to {data.get('to_email')}: {str(e)}"
-            )
+        except requests.exceptions.RequestException as exc:
+            logger.error("Email request failed for %s: %s", data.get("to_email"), exc)
             return False
-
-        except Exception as e:
-            logger.error(
-                f"Unexpected error sending email to {data.get('to_email')}: {str(e)}"
-            )
+        except Exception:
+            logger.exception("Unexpected email error for %s", data.get("to_email"))
             return False
 
     @staticmethod
@@ -159,10 +93,10 @@ class PlunkEmailService:
             logger.error(f"Resend request error for {to_email}: {e}")
             return False
     
-        if r.status_code == 200:
-            logger.info(f"Email sent via Resend to {to_email}")
+        if 200 <= r.status_code < 300:
+            logger.info("Email sent via Resend to %s", to_email)
             return True
-        logger.error(f"Resend failed for {to_email}: {r.status_code} {r.text}")
+        logger.error("Resend failed for %s: %s %s", to_email, r.status_code, r.text)
         return False
 
     @staticmethod
@@ -251,7 +185,7 @@ class PlunkEmailService:
         Returns:
             dict: Success/failure statistics
         """
-        results = {"sent": 0, "failed": 0, "failed_addresses": []}
+        results = {"sent": 0, "failed": 0, "skipped": 0, "failed_addresses": []}
 
         try:
             email_data = {
@@ -301,29 +235,17 @@ class PlunkEmailService:
 
     @staticmethod
     def validate_plunk_config() -> bool:
-        """
-        Validate that Plunk API is properly configured
-
-        Returns:
-            bool: True if configuration is valid
-        """
-        try:
-            plunk_api_key = getattr(settings, "EMAIL_PLUNK_API_KEY", None)
-
-            if not plunk_api_key:
-                logger.error("EMAIL_PLUNK_API_KEY is not configured in settings")
-                return False
-
-            # Optional: Test API key with a simple request
-            # This could be implemented if Plunk has a test endpoint
-
-            logger.info("Plunk API configuration validated")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error validating Plunk configuration: {str(e)}")
-            return False
-
+        """Validate that the selected email provider has the required settings."""
+        provider = getattr(settings, "EMAIL_PROVIDER", "plunk").lower()
+        if provider == "resend":
+            valid = bool(getattr(settings, "RESEND_API_KEY", None) and getattr(settings, "DEFAULT_FROM_EMAIL", None))
+            if not valid:
+                logger.error("RESEND_API_KEY and DEFAULT_FROM_EMAIL are required")
+            return valid
+        valid = bool(getattr(settings, "EMAIL_PLUNK_API_KEY", None))
+        if not valid:
+            logger.error("EMAIL_PLUNK_API_KEY is not configured")
+        return valid
 
 class OTPService:
     @staticmethod
