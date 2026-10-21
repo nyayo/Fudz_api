@@ -1,51 +1,189 @@
 # users/email_templates.py
 """
-Modern Email Templates for Fudgo Food Delivery
-Responsive light theme with orange-led food branding, accessible status colors, and email-safe tables
+FoGo email templates (v2)
+==========================
+
+Built to survive real email clients (Gmail web/app, Outlook desktop/web, Apple Mail,
+Yahoo, Samsung Mail, Thunderbird) instead of looking right only in a browser.
+
+Rules this file follows (and why the v1 templates broke)
+--------------------------------------------------------
+* Layout is nested <table role="presentation"> only. Padding lives on <td>, never on
+  <table>/<div> (Outlook ignores it). Spacing between blocks uses spacer rows, not margins.
+* Every style that matters is INLINE. The <style> blocks only add progressive
+  enhancement (mobile layout, dark mode, motion). v1 used `class="btn-primary"` that was
+  never defined, so every button rendered as a bare link.
+* Anything a client may not support has a solid fallback:
+    - gradients / background images  -> bgcolor attribute + background-color
+    - rounded corners                -> square corners in Outlook (still fully usable)
+    - buttons                        -> "bulletproof" buttons (VML for Outlook desktop)
+    - CSS animation                  -> static layout that already looks finished
+* Patterns that work everywhere: a gingham ("tablecloth") strip built from table cells,
+  plus a subtle dot grid on hero blocks (progressive; plain tint where unsupported).
+* Motion is CSS-only, wrapped in `prefers-reduced-motion: no-preference`, and used
+  sparingly (one entrance, plus meaningful live-state motion such as the delivery
+  progress bar and the scooter). Gmail and Outlook ignore CSS animation; Apple Mail,
+  iOS Mail, Samsung Mail, Thunderbird and many others play it.
+* All dynamic values are HTML-escaped (v1 interpolated names/addresses/URLs raw).
+* Dark mode: `color-scheme` + `prefers-color-scheme` overrides (Apple Mail, Outlook.com/
+  Outlook apps). Gmail applies its own automatic inversion.
+* Output is kept compact because Gmail clips messages above ~102 KB.
+
+Convention for the private helpers: they accept HTML-safe strings. Escape every dynamic
+value with `cls._t(...)` before passing it in (`_code_box` is the one exception: it
+escapes its own `code`).
+
+Optional settings
+-----------------
+COMPANY_NAME, CUSTOMER_APP_URL, EMAIL_REPLY_TO, DEFAULT_FROM_EMAIL   (already used)
+EMAIL_LOGO_URL            absolute https URL of a square logo (PNG, ~132x132). Falls back to a
+                          built-in "F" mark.
+RESTAURANT_HUB_NAME       name of the restaurant workspace (default "Fudz Hub").
+EMAIL_UNSUBSCRIBE_URL     default unsubscribe link for promotional emails.
 """
 
+from __future__ import annotations
+
+import re
+from datetime import datetime
 from html import escape
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urljoin, urlparse
 
 from django.conf import settings
 
+__all__ = ["EmailTemplates", "get_email_template"]
+
+FONT = "'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif"
+MONO = "'SFMono-Regular',Menlo,Consolas,'Courier New',monospace"
+
 
 class EmailTemplates:
-    """Professional transactional and promotional email templates for food delivery."""
+    """Transactional and promotional email templates for FoGo food delivery."""
 
-    # ============================================================
-    # SHARED EMAIL DESIGN SYSTEM
-    # ============================================================
+    # ------------------------------------------------------------------
+    # Design tokens
+    # ------------------------------------------------------------------
+    ORANGE = "#FF6B00"
+    ORANGE_DEEP = "#C2410C"   # orange for text on light backgrounds (AA contrast)
+    PEACH = "#FFD2AD"
+    CREAM = "#FFF7F0"
+    SOFT = "#FFF1E5"
+    INK = "#24170D"
+    BODY = "#4A3F37"
+    MUTED = "#6F635B"
+    LINE = "#F0E1D4"
+    FOOTER = "#2B1D14"
 
+    TONES: Dict[str, Dict[str, str]] = {
+        "orange": {"bg": "#FFF1E5", "dot": "rgba(255,107,0,0.16)", "accent": "#C2410C", "soft": "#FFF1E5", "border": "#FFD2AD"},
+        "green": {"bg": "#ECFDF3", "dot": "rgba(21,128,61,0.13)", "accent": "#15803D", "soft": "#DCFCE7", "border": "#86EFAC"},
+        "amber": {"bg": "#FFF8E6", "dot": "rgba(180,83,9,0.13)", "accent": "#92400E", "soft": "#FEF3C7", "border": "#FCD34D"},
+        "violet": {"bg": "#F5F0FF", "dot": "rgba(109,40,217,0.11)", "accent": "#6D28D9", "soft": "#EDE9FE", "border": "#C4B5FD"},
+        "blue": {"bg": "#EFF6FF", "dot": "rgba(29,78,216,0.11)", "accent": "#1D4ED8", "soft": "#DBEAFE", "border": "#93C5FD"},
+        "red": {"bg": "#FEF2F2", "dot": "rgba(185,28,28,0.11)", "accent": "#B91C1C", "soft": "#FEE2E2", "border": "#FCA5A5"},
+    }
+
+    # Text styles: name -> (css class used for dark mode, colour)
+    TEXT = {
+        "ink": ("txt", "#24170D"),
+        "body": ("txt-body", "#4A3F37"),
+        "muted": ("txt-muted", "#6F635B"),
+        "accent": ("txt-accent", "#C2410C"),
+        "white": ("", "#FFFFFF"),
+    }
+
+    # ------------------------------------------------------------------
+    # Style blocks. Three separate <style> tags on purpose: if a client chokes
+    # on one (e.g. Gmail on unsupported at-rules) the others still apply.
+    # ------------------------------------------------------------------
     BASE_STYLES = """
-    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table { border-collapse: collapse; border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { border: 0; display: block; line-height: 100%; outline: none; text-decoration: none; }
-    .email-motion-icon { display: inline-block; }
-    .food-item-cell { vertical-align: top; padding: 6px; }
-    @media (prefers-reduced-motion: reduce) { .email-motion-icon, .email-step-active, .motion-enter { animation: none !important; transform: none !important; } }
-    @media only screen and (max-width: 620px) {
-      .email-gutter { padding: 12px 8px !important; }
-      .header-inner { padding: 22px 18px 20px !important; }
-      .email-title { font-size: 23px !important; line-height: 1.2 !important; }
-      .body__details { padding: 18px !important; }
-      .footer { padding: 20px 15px !important; }
-      .food-item-cell { display: block !important; width: 100% !important; }
-      .mobile-stack { display: block !important; width: 100% !important; }
-      .hero-image { height: 210px !important; }
+    html,body{margin:0!important;padding:0!important;width:100%!important;height:100%!important}
+    *{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}
+    table,td{mso-table-lspace:0pt!important;mso-table-rspace:0pt!important}
+    table{border-collapse:collapse;border-spacing:0}
+    img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;display:block}
+    a{text-decoration:none}
+    a[x-apple-data-detectors],.unstyle-auto-detected-links a,.aBn{border-bottom:0!important;cursor:default!important;color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}
+    u+#body a{color:inherit;text-decoration:none;font-size:inherit;font-family:inherit;font-weight:inherit;line-height:inherit}
+    #MessageViewBody a{color:inherit;text-decoration:none;font-size:inherit;font-family:inherit;font-weight:inherit;line-height:inherit}
+    @media only screen and (max-width:620px){
+      .gutter{padding:12px 8px!important}
+      .px{padding-left:20px!important;padding-right:20px!important}
+      .hero-title{font-size:25px!important;line-height:31px!important}
+      .stack{display:block!important;width:100%!important}
+      .code-text{font-size:28px!important;letter-spacing:5px!important}
+      .big-num{font-size:40px!important;line-height:44px!important}
+      .btn{display:block!important}
+      .hide-m{display:none!important}
     }
     """
 
+    MOTION_STYLES = """
+    @keyframes fg-pop{0%{transform:scale(.55);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
+    @keyframes fg-pulse{0%{box-shadow:0 0 0 0 currentColor}70%{box-shadow:0 0 0 14px transparent}100%{box-shadow:0 0 0 0 transparent}}
+    @keyframes fg-grow{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+    @keyframes fg-drive{0%{transform:translateX(-14px)}50%{transform:translateX(14px)}100%{transform:translateX(-14px)}}
+    @keyframes fg-shine{0%{background-position:160% 0}100%{background-position:-60% 0}}
+    @keyframes fg-blink{0%,100%{opacity:1}50%{opacity:.4}}
+    @media (prefers-reduced-motion:no-preference){
+      .m-pop{animation:fg-pop .7s cubic-bezier(.2,1.3,.4,1) both}
+      .m-pulse{animation:fg-pulse 2.2s ease-out infinite}
+      .m-grow{transform-origin:left center;animation:fg-grow .9s .4s ease-out both}
+      .m-late{animation-delay:1.3s}
+      .m-drive{animation:fg-drive 3.4s ease-in-out infinite}
+      .m-blink{animation:fg-blink 1.6s ease-in-out infinite}
+      .m-shine{background-image:linear-gradient(110deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 65%)!important;background-size:250% 100%;animation:fg-shine 3.6s 1s ease-in-out infinite}
+      .m-s1{animation-delay:.2s}.m-s2{animation-delay:.3s}.m-s3{animation-delay:.4s}.m-s4{animation-delay:.5s}.m-s5{animation-delay:.6s}
+    }
+    """
+
+    DARK_STYLES = """
+    @media (prefers-color-scheme:dark){
+      .bg-page{background-color:#17110D!important}
+      .bg-card{background-color:#221913!important}
+      .bg-soft{background-color:#2D2119!important}
+      .bg-hero{background-color:#2A1D14!important}
+      .txt{color:#FFF3E8!important}
+      .txt-body{color:#E3D6CC!important}
+      .txt-muted{color:#B9AA9E!important}
+      .txt-accent{color:#FFA057!important}
+      .bdr{border-color:#3D2D21!important}
+    }
+    [data-ogsb] .bg-page{background-color:#17110D!important}
+    [data-ogsb] .bg-card{background-color:#221913!important}
+    [data-ogsb] .bg-soft{background-color:#2D2119!important}
+    [data-ogsb] .bg-hero{background-color:#2A1D14!important}
+    [data-ogsc] .txt{color:#FFF3E8!important}
+    [data-ogsc] .txt-body{color:#E3D6CC!important}
+    [data-ogsc] .txt-muted{color:#B9AA9E!important}
+    [data-ogsc] .txt-accent{color:#FFA057!important}
+    """
+
+    # ------------------------------------------------------------------
+    # Small utilities
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _t(value: Any) -> str:
+        """HTML-escape any dynamic value."""
+        return escape("" if value is None else str(value), quote=True)
+
+    @staticmethod
+    def _oneline(value: Any) -> str:
+        """Strip line breaks so a value can never inject extra email headers via the subject."""
+        return re.sub(r"[\r\n]+", " ", str(value or "")).strip()
+
+    @classmethod
+    def _name(cls, user_name: Any) -> str:
+        return cls._t(str(user_name or "").strip() or "there")
+
     @staticmethod
     def _get_year() -> int:
-        from datetime import datetime
         return datetime.now().year
 
     @staticmethod
     def _get_company_name() -> str:
-        return getattr(settings, "COMPANY_NAME", "Fudgo")
+        return getattr(settings, "COMPANY_NAME", "FoGo")
 
     @classmethod
     def _get_customer_app_url(cls, *parts: str) -> str:
@@ -59,1275 +197,777 @@ class EmailTemplates:
         return f"mailto:{reply_to}" if reply_to else cls._get_customer_app_url()
 
     @classmethod
+    def _safe_url(cls, value: Any, fallback: Optional[str] = None) -> str:
+        """Return an attribute-safe URL. Only http(s), mailto and site-relative paths are allowed."""
+        raw = str(value or "").strip()
+        parsed = urlparse(raw)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            return escape(raw, quote=True)
+        if parsed.scheme == "mailto" and parsed.path:
+            return escape(raw, quote=True)
+        if raw.startswith("/") and not raw.startswith("//"):
+            return escape(urljoin(cls._get_customer_app_url() + "/", raw), quote=True)
+        return escape(str(cls._get_customer_app_url() if fallback is None else fallback), quote=True)
+
+    @classmethod
+    def _plain_footer(cls) -> str:
+        return f"© {cls._get_year()} {cls._get_company_name()}"
+
+    # ------------------------------------------------------------------
+    # Primitives
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _gap(h: int = 16) -> str:
+        """A spacer table row (margins are unreliable in email, spacer rows are not)."""
+        return f'<tr><td height="{h}" style="height:{h}px;font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr>'
+
+    @classmethod
+    def _p(cls, text: str, kind: Any = "body", size: int = 15, weight: int = 400, align: str = "left",
+           mb: int = 0, extra: str = "", lh: Optional[int] = None) -> str:
+        """Paragraph. `kind` is a TEXT key or a (css_class, colour) tuple. `text` must be HTML-safe."""
+        css_class, color = kind if isinstance(kind, tuple) else cls.TEXT.get(kind, ("", kind))
+        lh = lh or int(round(size * 1.55))
+        cls_attr = f' class="{css_class}"' if css_class else ""
+        return (f'<p{cls_attr} style="margin:0 0 {mb}px;padding:0;font-family:{FONT};font-size:{size}px;'
+                f'line-height:{lh}px;font-weight:{weight};color:{color};text-align:{align};{extra}">{text}</p>')
+
+    @classmethod
+    def _stack(cls, blocks: List[str], gap: int = 16, align: str = "left") -> str:
+        """Vertical stack of blocks separated by spacer rows."""
+        rows: List[str] = []
+        for block in blocks:
+            if not block:
+                continue
+            if rows:
+                rows.append(cls._gap(gap))
+            rows.append(f'<tr><td align="{align}">{block}</td></tr>')
+        return f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(rows)}</table>'
+
+    @classmethod
+    def _body(cls, inner: str, pad: str = "32px 32px 34px") -> str:
+        return f'<tr><td class="px" style="padding:{pad};">{inner}</td></tr>'
+
+    @classmethod
+    def _gingham(cls, cells: int = 25, h: int = 5, a: Optional[str] = None, b: Optional[str] = None) -> str:
+        """
+        Gingham 'tablecloth' strip built from table cells, so it renders in every client
+        (no background images needed). Two rows offset by one cell make a checkerboard.
+        """
+        a = a or cls.ORANGE
+        b = b or cls.PEACH
+        w = 100 // cells
+
+        def row(offset: int) -> str:
+            tds = "".join(
+                f'<td width="{w}%" height="{h}" bgcolor="{a if (i + offset) % 2 == 0 else b}" '
+                f'style="width:{w}%;height:{h}px;font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td>'
+                for i in range(cells)
+            )
+            return f"<tr>{tds}</tr>"
+
+        return ('<tr><td style="font-size:0;line-height:0;">'
+                '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;">'
+                f'{row(0)}{row(1)}</table></td></tr>')
+
+    @classmethod
+    def _dashed_separator(cls) -> str:
+        """Receipt-style dashed rule (works in every client; border on <td>)."""
+        return (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+                f'{cls._gap(10)}<tr><td class="bdr" style="border-top:1px dashed #E7D0BC;font-size:0;line-height:0;">&nbsp;</td></tr>{cls._gap(10)}</table>')
+
+    @classmethod
+    def _button(cls, label: str, url: Any, kind: str = "primary") -> str:
+        """Bulletproof button: VML roundrect for Outlook desktop, styled <a> everywhere else."""
+        href = cls._safe_url(url)
+        width = max(210, min(380, len(re.sub(r"<[^>]+>", "", label)) * 10 + 76))
+        if kind == "secondary":
+            bg, fg, border = "#FFFFFF", cls.INK, "#D9BFA8"
+            vml_line, shadow, shine = 'strokecolor="#D9BFA8" strokeweight="2px"', "", ""
+        else:
+            bg, fg, border = cls.ORANGE, cls.INK, cls.ORANGE
+            vml_line, shadow, shine = 'stroke="f"', "box-shadow:0 6px 16px rgba(255,107,0,0.30);", " m-shine"
+        return f"""<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr><td align="center">
+<!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{href}" style="height:50px;v-text-anchor:middle;width:{width}px;" arcsize="24%" {vml_line} fillcolor="{bg}"><w:anchorlock/><center style="font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:{fg};">{label}</center></v:roundrect>
+<![endif]-->
+<!--[if !mso]><!-->
+<a class="btn{shine}" href="{href}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 34px;background-color:{bg};border:2px solid {border};border-radius:12px;color:{fg};font-family:{FONT};font-size:16px;line-height:20px;font-weight:800;text-decoration:none;text-align:center;{shadow}">{label}</a>
+<!--<![endif]-->
+</td></tr></table>"""
+
+    @classmethod
+    def _chip(cls, html_text: str, tone: str = "amber", icon: str = "⏱️") -> str:
+        t = cls.TONES[tone]
+        return (f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr>'
+                f'<td align="center" bgcolor="{t["soft"]}" style="padding:8px 16px;background-color:{t["soft"]};border:1px solid {t["border"]};'
+                f'border-radius:999px;font-family:{FONT};font-size:13px;line-height:18px;font-weight:600;color:{t["accent"]};">{icon}&nbsp; {html_text}</td></tr></table>')
+
+    @classmethod
+    def _notice(cls, title: str, message: str, tone: str = "amber", icon: str = "⚠️") -> str:
+        """Callout with a coloured left edge. Title and message must be HTML-safe."""
+        t = cls.TONES[tone]
+        return (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+                f'<td width="4" bgcolor="{t["accent"]}" style="width:4px;background-color:{t["accent"]};font-size:0;line-height:0;">&nbsp;</td>'
+                f'<td bgcolor="{t["soft"]}" style="padding:14px 16px;background-color:{t["soft"]};">'
+                f'<p style="margin:0 0 4px;font-family:{FONT};font-size:14px;line-height:20px;font-weight:700;color:{t["accent"]};">{icon}&nbsp; {title}</p>'
+                f'<p style="margin:0;font-family:{FONT};font-size:13px;line-height:20px;color:#4A3F37;">{message}</p>'
+                f'</td></tr></table>')
+
+    @classmethod
+    def _icon_badge(cls, icon: str, size: int = 44) -> str:
+        return (f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                f'<td class="bg-soft bdr" align="center" valign="middle" width="{size}" height="{size}" bgcolor="{cls.SOFT}" '
+                f'style="width:{size}px;height:{size}px;background-color:{cls.SOFT};border:1px solid {cls.PEACH};border-radius:12px;'
+                f'font-size:{int(size * 0.5)}px;line-height:1;text-align:center;">{icon}</td></tr></table>')
+
+    @classmethod
+    def _feature_list(cls, items: List[tuple]) -> str:
+        """Rows of (icon, title, description). Strings must be HTML-safe."""
+        rows: List[str] = []
+        for icon, title, text in items:
+            if rows:
+                rows.append(cls._gap(10))
+            rows.append(
+                f'<tr><td class="bg-soft bdr" bgcolor="#FFF9F4" style="padding:14px 16px;background-color:#FFF9F4;border:1px solid {cls.LINE};border-radius:12px;">'
+                f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+                f'<td width="58" valign="top" style="width:58px;">{cls._icon_badge(icon)}</td>'
+                f'<td valign="middle">{cls._p(title, "ink", 15, 700, mb=2)}{cls._p(text, "muted", 13)}</td>'
+                f'</tr></table></td></tr>'
+            )
+        return f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">{"".join(rows)}</table>'
+
+    @classmethod
+    def _info_row(cls, label: str, value: str) -> str:
+        return (f'<tr><td class="bdr" style="padding:12px 0;border-bottom:1px solid {cls.LINE};">'
+                f'{cls._p(label, "muted", 14)}</td>'
+                f'<td class="bdr" align="right" style="padding:12px 0;border-bottom:1px solid {cls.LINE};">'
+                f'{cls._p(value, "ink", 14, 700, align="right")}</td></tr>')
+
+    @classmethod
+    def _code_box(cls, code: Any, label: str = "Your code") -> str:
+        """High-contrast verification code card. Escapes `code` itself."""
+        return (f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr>'
+                f'<td class="bg-soft" align="center" bgcolor="#FFF7ED" style="padding:20px 34px 22px;background-color:#FFF7ED;border:2px dashed #FF9A4D;border-radius:14px;">'
+                f'{cls._p(cls._t(label), "muted", 13, 600, "center", 8)}'
+                f'<p class="code-text txt" style="margin:0;padding:0 0 0 8px;font-family:{MONO};font-size:34px;line-height:40px;font-weight:800;'
+                f'letter-spacing:8px;color:{cls.INK};text-align:center;">{cls._t(code)}</p></td></tr></table>')
+
+    # ------------------------------------------------------------------
+    # Page sections
+    # ------------------------------------------------------------------
+    @classmethod
+    def _header(cls, tag: str = "") -> str:
+        """Brand bar: logo mark, wordmark and an optional context tag (e.g. 'Order #123')."""
+        company = cls._t(cls._get_company_name())
+        logo_url = getattr(settings, "EMAIL_LOGO_URL", "")
+        if logo_url:
+            mark = (f'<img src="{cls._safe_url(logo_url, "")}" width="44" height="44" alt="{company}" '
+                    f'style="display:block;width:44px;height:44px;border-radius:12px;">')
+        else:
+            initial = cls._t((cls._get_company_name() or "F")[:1].upper())
+            mark = (f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                    f'<td align="center" valign="middle" width="44" height="44" bgcolor="{cls.ORANGE}" '
+                    f'style="width:44px;height:44px;background-color:{cls.ORANGE};border-radius:12px;font-family:{FONT};font-size:24px;line-height:1;font-weight:900;color:{cls.INK};text-align:center;">{initial}</td></tr></table>')
+        tag_html = ""
+        if tag:
+            tag_html = (f'<td class="hide-m" align="right" valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>'
+                        f'<td class="bg-soft bdr" bgcolor="{cls.SOFT}" style="padding:6px 12px;background-color:{cls.SOFT};border:1px solid {cls.PEACH};border-radius:999px;'
+                        f'font-family:{FONT};font-size:12px;line-height:16px;font-weight:700;color:{cls.ORANGE_DEEP};">{tag}</td></tr></table></td>')
+        return (f'<tr><td class="px bg-card" bgcolor="#FFFFFF" style="padding:20px 32px 18px;background-color:#FFFFFF;">'
+                f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+                f'<td width="44" valign="middle" style="width:44px;">{mark}</td>'
+                f'<td valign="middle" style="padding-left:12px;">'
+                f'<p class="txt" style="margin:0;font-family:{FONT};font-size:19px;line-height:22px;font-weight:800;color:{cls.INK};">{company}</p>'
+                f'<p class="txt-muted" style="margin:2px 0 0;font-family:{FONT};font-size:12px;line-height:16px;color:{cls.MUTED};">Food, made effortless</p></td>'
+                f'{tag_html}</tr></table></td></tr>')
+
+    @classmethod
+    def _hero(cls, icon: str, title: str, subtitle: str = "", tone: str = "orange", live: bool = False) -> str:
+        """
+        Tinted hero with a dot-grid pattern and an icon badge.
+        `live=True` adds a pulsing ring (used for in-progress states such as 'on the way').
+        """
+        t = cls.TONES.get(tone, cls.TONES["orange"])
+        pulse = " m-pulse" if live else ""
+        badge = (f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" class="m-pop" style="margin:0 auto;"><tr><td align="center">'
+                 f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" class="{pulse.strip()}" style="border-collapse:separate;border-radius:50%;color:{t["accent"]};"><tr>'
+                 f'<td class="bg-card" align="center" valign="middle" width="76" height="76" bgcolor="#FFFFFF" '
+                 f'style="width:76px;height:76px;background-color:#FFFFFF;border:2px solid {t["accent"]};border-radius:50%;font-size:34px;line-height:1;text-align:center;">{icon}</td>'
+                 f'</tr></table></td></tr></table>')
+        heading = (f'<h1 class="hero-title txt" style="margin:0;padding:0;font-family:{FONT};font-size:28px;line-height:34px;'
+                   f'font-weight:800;letter-spacing:-0.3px;color:{cls.INK};text-align:center;">{title}</h1>')
+        sub = cls._p(subtitle, "body", 15, align="center", lh=23) if subtitle else ""
+        rows = f'<tr><td align="center">{badge}</td></tr>{cls._gap(18)}<tr><td align="center">{heading}</td></tr>'
+        if sub:
+            rows += f'{cls._gap(10)}<tr><td align="center">{sub}</td></tr>'
+        return (f'<tr><td class="px bg-hero" align="center" bgcolor="{t["bg"]}" '
+                f'style="padding:34px 32px 32px;background-color:{t["bg"]};'
+                f'background-image:radial-gradient(circle,{t["dot"]} 1.4px,transparent 1.8px);background-size:16px 16px;">'
+                f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{rows}</table></td></tr>')
+
+    @classmethod
+    def _footer(cls, message: str = "", note: str = "", unsubscribe_url: Optional[str] = None) -> str:
+        """Dark footer with a gingham edge. `message`/`note` must be HTML-safe."""
+        company = cls._t(cls._get_company_name())
+        app_url = cls._safe_url(cls._get_customer_app_url())
+        support_url = cls._safe_url(cls._get_support_url())
+        link = "color:#FFD2AD;text-decoration:underline;"
+        links = [f'<a href="{app_url}" style="{link}">Open {company}</a>', f'<a href="{support_url}" style="{link}">Help &amp; support</a>']
+        if unsubscribe_url:
+            links.append(f'<a href="{cls._safe_url(unsubscribe_url)}" style="{link}">Unsubscribe</a>')
+        msg = cls._p(message, "#F4E8DF", 14, 600, "center", 10) if message else ""
+        note_html = cls._p(note, "#CFC4BD", 12, align="center", mb=8) if note else ""
+        return (f'<tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{cls.FOOTER}" '
+                f'style="background-color:{cls.FOOTER};border-radius:16px;border-collapse:separate;overflow:hidden;">'
+                f'{cls._gingham(h=4, a=cls.ORANGE, b="#5A3A24")}'
+                f'<tr><td class="px" align="center" style="padding:24px 28px 26px;">{msg}'
+                f'{cls._p(company, "white", 17, 800, "center", 6)}'
+                f'{note_html}'
+                f'{cls._p(" &nbsp;·&nbsp; ".join(links), "#E7DED8", 12, align="center", mb=10)}'
+                f'{cls._p(f"© {cls._get_year()} {company}. All rights reserved.", "#CFC4BD", 11, align="center")}'
+                f'</td></tr></table></td></tr>')
+
+    @classmethod
     def _base_template(cls, content: str, preheader: str = "") -> str:
-        """Wrap email content in a responsive, light, email-client-safe shell."""
-        safe_company = escape(str(cls._get_company_name()))
-        safe_preheader = escape(str(preheader or ""))
+        """Document shell: head (meta, Outlook settings, styles), preheader and centred 600px column."""
+        company = cls._t(cls._get_company_name())
+        pre = cls._t(preheader)
+        filler = "&#847;&zwnj;&nbsp;" * 60  # stops mail clients pulling body text into the inbox preview
         return f"""<!doctype html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="x-apple-disable-message-reformatting" />
-  <meta name="color-scheme" content="light" />
-  <meta name="supported-color-schemes" content="light" />
-  <title>{safe_company}</title>
-  <style type="text/css">{cls.BASE_STYLES}</style>
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{company}</title>
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<style>table,td,div,p,a,h1{{font-family:Arial,Helvetica,sans-serif !important;}}</style>
+<![endif]-->
+<style type="text/css">{cls.BASE_STYLES}</style>
+<style type="text/css">{cls.MOTION_STYLES}</style>
+<style type="text/css">{cls.DARK_STYLES}</style>
 </head>
-<body class="main" style="margin:0;padding:0;background-color:#FFF7F0;color:#29231F;font-family:Arial,Helvetica,sans-serif;">
-  <div style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;max-height:0;max-width:0;overflow:hidden;mso-hide:all;">{safe_preheader}</div>
-  <table class="main" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF7F0" style="width:100%;background-color:#FFF7F0;">
-    <tr><td class="email-gutter" align="center" style="padding:24px 12px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
-        <tr><td>{content}</td></tr>
-      </table>
-    </td></tr>
-  </table>
+<body id="body" class="bg-page" bgcolor="{cls.CREAM}" style="margin:0;padding:0;width:100%;background-color:{cls.CREAM};word-spacing:normal;">
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">{pre}{filler}</div>
+<div role="article" aria-roledescription="email" aria-label="{company}" lang="en">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg-page" bgcolor="{cls.CREAM}" style="width:100%;background-color:{cls.CREAM};">
+<tr><td class="gutter" align="center" style="padding:24px 12px;">
+<!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table role="presentation" class="container" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+{content}
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr>
+</table>
+</div>
 </body>
 </html>"""
 
     @classmethod
-    def _header(cls, title: str, subtitle: str = "", icon: str = "🍔") -> str:
-        """Generate the shared food-delivery brand header."""
-        safe_icon = escape(str(icon))
-        safe_company = escape(str(cls._get_company_name()))
-        subtitle_html = f'<tr><td colspan="2" class="header__subtitle" style="padding:0 0 4px;color:#625A54;font-size:14px;line-height:1.65;">{subtitle}</td></tr>' if subtitle else ""
-        return f"""
-<table style="max-width:600px;margin:0 auto 14px;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:1px solid #E9DED5;border-top:4px solid #FF6B00;border-radius:12px;">
-    <table class="header-inner" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:22px 24px 20px;">
-      <tr>
-        <td width="52" valign="middle" style="width:52px;">
-          <table role="presentation" width="40" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" width="40" height="40" bgcolor="#FF6B00" style="width:40px;height:40px;background-color:#FF6B00;border-radius:10px;font-size:20px;line-height:40px;">
-            <span class="email-motion-icon">{safe_icon}</span>
-          </td></tr></table>
-        </td>
-        <td valign="middle" style="padding-left:10px;">
-          <p style="margin:0;color:#33264B;font-size:18px;line-height:1.2;font-weight:800;">{safe_company}</p>
-          <p style="margin:4px 0 0;color:#756B64;font-size:10px;line-height:1.2;letter-spacing:1.2px;text-transform:uppercase;">Food, made effortless</p>
-        </td>
-      </tr>
-      <tr><td colspan="2" class="email-title" style="padding:20px 0 8px;color:#24170D;font-size:24px;font-weight:800;line-height:1.2;letter-spacing:-0.25px;word-break:normal;">{title}</td></tr>
-      {subtitle_html}
-    </table>
-  </td></tr>
-  <tr><td height="12" style="height:12px;font-size:0;line-height:0;">&nbsp;</td></tr>
-</table>"""
-
-    @classmethod
-    def _footer(cls, message: str = "") -> str:
-        """Generate the quiet, consistent email footer."""
-        safe_message = escape(str(message or ""))
-        safe_company = escape(str(cls._get_company_name()))
-        msg_html = f'<p style="color:#F4E8DF;margin:0 0 10px;">{safe_message}</p>' if safe_message else ""
-        return f"""
-<table style="max-width:600px;margin:14px auto 0;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td class="footer" bgcolor="#302733" style="padding:22px 20px;text-align:center;background-color:#302733;border-top:4px solid #FF6B00;border-radius:12px;">
-    {msg_html}
-    <p style="font-size:17px;line-height:1.3;font-weight:800;color:#FFFFFF;margin:0 0 8px;">{safe_company}</p>
-    <p style="color:#E7DED8;font-size:12px;margin:0;">© {cls._get_year()} {safe_company}. All rights reserved.</p>
-    <p style="color:#CFC4BD;font-size:11px;margin:8px 0 0;">Thanks for choosing us for your next meal.</p>
-  </td></tr>
-</table>"""
-
-    @classmethod
-    def _dashed_separator(cls) -> str:
-        """Generate a light, unobtrusive receipt separator."""
-        return """
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td style="height:14px;font-size:0;line-height:0;">&nbsp;</td></tr>
-  <tr><td style="border-top:1px dashed #E7D9CE;font-size:0;line-height:0;">&nbsp;</td></tr>
-  <tr><td style="height:14px;font-size:0;line-height:0;">&nbsp;</td></tr>
-</table>"""
-
-    @classmethod
-    def _code_box(cls, code: str, label: str = "Your Code") -> str:
-        """Generate an accessible, high-contrast verification-code card."""
-        safe_code = escape(str(code))
-        safe_label = escape(str(label))
-        return f"""
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0;">
-  <tr><td align="center">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF7ED" style="background-color:#FFF7ED;border:1px solid #FFB77A;border-radius:10px;">
-      <tr><td align="center" style="padding:18px 26px 16px;">
-        <p style="color:#6B4A2F;font-size:10px;line-height:1.2;text-transform:uppercase;letter-spacing:1.6px;margin:0 0 10px;font-weight:800;">{safe_label}</p>
-        <p style="font-size:30px;line-height:1;font-weight:800;color:#24170D;letter-spacing:6px;font-family:'Courier New',Courier,monospace;margin:0 0 0 6px;">{safe_code}</p>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>"""
+    def _layout(cls, preheader: str, hero: str, body: str, footer_message: str = "", tag: str = "",
+                footer_note: str = "", unsubscribe_url: Optional[str] = None) -> str:
+        """Standard email: [gingham strip, brand bar, hero, body] card + footer."""
+        card = (f'<tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg-card bdr" bgcolor="#FFFFFF" '
+                f'style="background-color:#FFFFFF;border:1px solid {cls.LINE};border-radius:16px;border-collapse:separate;overflow:hidden;">'
+                f'{cls._gingham()}{cls._header(tag)}{hero}{body}</table></td></tr>')
+        return cls._base_template(card + cls._gap(14) + cls._footer(footer_message, footer_note, unsubscribe_url), preheader)
 
     # ============================================================
-    # VERIFICATION EMAIL - Clean, trustworthy, focus on the code
+    # VERIFICATION
     # ============================================================
     @classmethod
-    def email_verification(cls, user_name: str, verification_code: str) -> Dict[str, str]:
-        """Email verification - minimal, code-focused design with responsive light styling"""
-        
-        header = cls._header(
-            f"Hey {user_name}! 👋 Verify your email",
-            "Enter this code to verify your email and start ordering delicious food.",
-            "🔐"
-        )
-        
-        code_box = cls._code_box(verification_code, "Verification Code")
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          {code_box}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fef3c7; border-radius: 8px; padding: 12px 20px; margin: 16px 0;">
-            <tr><td>
-              <p style="color: #92400e; font-size: 13px; margin: 0;">⏱️ This code expires in <strong>30 minutes</strong></p>
-            </td></tr>
-          </table>
-          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">Didn't create an account? Just ignore this email.</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer()
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Your verification code is {verification_code}"
-        )
-        
-        plain = f"""Hey {user_name}!
+    def email_verification(cls, user_name: str, verification_code: str, expires_minutes: int = 30) -> Dict[str, str]:
+        name, company, minutes = cls._name(user_name), cls._t(cls._get_company_name()), int(expires_minutes)
+        hero = cls._hero("🔐", f"Hey {name}, verify your email",
+                         "Enter this code in the app to confirm your email address and start ordering.")
+        body = cls._body(cls._stack([
+            cls._code_box(verification_code, "Verification code"),
+            cls._chip(f"Expires in <strong>{minutes} minutes</strong>"),
+            cls._p("Didn't create an account? You can safely ignore this email.", "muted", 13, align="center"),
+        ], gap=20, align="center"))
+        html = cls._layout(f"Your verification code is {verification_code}", hero, body, tag="Email verification")
+        plain = (f"Hey {user_name},\n\nWelcome to {cls._get_company_name()}! Your verification code is: {verification_code}\n\n"
+                 f"This code expires in {minutes} minutes.\n\nDidn't create an account? You can safely ignore this email.\n\n{cls._plain_footer()}")
+        return {"subject": f"🔐 Verify your email – {cls._oneline(cls._get_company_name())}", "html": html, "plain": plain}
 
-Welcome to Fudgo! Your verification code is: {verification_code}
-
-This code expires in 30 minutes.
-
-Didn't create an account? Just ignore this email.
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": "🔐 Verify Your Email – Fudgo", "html": html, "plain": plain}
-
-    # ============================================================
-    # RESEND VERIFICATION - Simple refresh design
-    # ============================================================
     @classmethod
-    def resend_verification(cls, user_name: str, verification_code: str) -> Dict[str, str]:
-        """Resend verification - refresh/retry themed with responsive light styling"""
-        
-        header = cls._header(
-            f"New Verification Code 🔄",
-            f"No worries, <strong>{user_name}</strong>! Here's a fresh new code for you.",
-            "🔄"
-        )
-        
-        code_box = cls._code_box(verification_code, "✨ Fresh Code")
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          {code_box}
-          <p style="color: #6b7280; font-size: 13px; margin-top: 16px;">Valid for <strong style="color: #dc2626;">30 minutes</strong></p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer()
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Your new verification code is {verification_code}"
-        )
-        
-        plain = f"""New Verification Code for {user_name}
+    def resend_verification(cls, user_name: str, verification_code: str, expires_minutes: int = 30) -> Dict[str, str]:
+        name, minutes = cls._name(user_name), int(expires_minutes)
+        hero = cls._hero("🔄", "Here's your new code", f"No worries, <strong>{name}</strong>. Use this latest code to finish verifying.")
+        body = cls._body(cls._stack([
+            cls._code_box(verification_code, "New verification code"),
+            cls._chip(f"Valid for <strong>{minutes} minutes</strong>"),
+            cls._p("If you asked for more than one code, always use the most recent one.", "muted", 13, align="center"),
+        ], gap=20, align="center"))
+        html = cls._layout(f"Your new verification code is {verification_code}", hero, body, tag="Email verification")
+        plain = (f"Hi {user_name},\n\nYour new verification code: {verification_code}\n\nValid for {minutes} minutes. "
+                 f"If you asked for more than one code, use the most recent one.\n\n{cls._plain_footer()}")
+        return {"subject": f"🔄 New verification code – {cls._oneline(cls._get_company_name())}", "html": html, "plain": plain}
 
-Your fresh code: {verification_code}
-
-Valid for 30 minutes.
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": "🔄 New Verification Code – Fudgo", "html": html, "plain": plain}
-
-    # ============================================================
-    # PASSWORD RESET - Security focused, serious but friendly
-    # ============================================================
     @classmethod
-    def password_reset(cls, user_name: str, reset_code: str) -> Dict[str, str]:
-        """Password reset - security-themed with lock icon"""
-        
-        header = cls._header(
-            "Password Reset Request 🔐",
-            f"Hi <strong>{user_name}</strong>, we received a reset request for your account.",
-            "🔐"
-        )
-        
-        code_box = cls._code_box(reset_code, "Reset Code")
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          {code_box}
-          <p style="color: #dc2626; font-size: 14px; font-weight: 600; margin: 16px 0;">⏱️ Expires in 15 minutes</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px; margin: 24px 0; text-align: left;">
-            <tr><td>
-              <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
-                <strong>⚠️ Didn't request this?</strong><br>
-                If you didn't request a password reset, ignore this email. Your password won't change.
-              </p>
-            </td></tr>
-          </table>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer()
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Your password reset code is {reset_code}"
-        )
-        
-        plain = f"""Password Reset Request
+    def password_reset(cls, user_name: str, reset_code: str, expires_minutes: int = 15) -> Dict[str, str]:
+        name, company, minutes = cls._name(user_name), cls._t(cls._get_company_name()), int(expires_minutes)
+        hero = cls._hero("🔒", "Reset your password", f"Hi <strong>{name}</strong>, we received a request to reset your password.", tone="amber")
+        body = cls._body(cls._stack([
+            cls._code_box(reset_code, "Password reset code"),
+            cls._chip(f"Expires in <strong>{minutes} minutes</strong>"),
+            cls._notice("Didn't request this?",
+                        f"Ignore this email and your password stays the same. Never share this code: {company} will never ask you for it."),
+        ], gap=20, align="center"))
+        html = cls._layout(f"Your password reset code is {reset_code}", hero, body, tag="Security")
+        plain = (f"Hi {user_name},\n\nYour password reset code: {reset_code}\n\nThis code expires in {minutes} minutes.\n"
+                 f"If you didn't request this, ignore this email. Never share this code with anyone.\n\n{cls._plain_footer()}")
+        return {"subject": f"🔒 Password reset code – {cls._oneline(cls._get_company_name())}", "html": html, "plain": plain}
 
-Hi {user_name},
-
-Your reset code: {reset_code}
-
-This code expires in 15 minutes.
-
-If you didn't request this, ignore this email.
-
-© {cls._get_year()} Fudgo Security Team"""
-
-        return {"subject": "🔐 Password Reset Code – Fudgo", "html": html, "plain": plain}
-
-    # ============================================================
-    # PASSWORD RESET SUCCESS - Celebratory with checkmark
-    # ============================================================
     @classmethod
     def password_reset_success(cls, user_name: str) -> Dict[str, str]:
-        """Password reset success - confirmation with shield"""
-        
-        header = cls._header(
-            "Password Updated! ✅",
-            f"Great news, <strong>{user_name}</strong>! Your password has been successfully changed.",
-            "✅"
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border: 2px solid #FF6B00; border-radius: 12px; padding: 20px 40px; margin: 16px 0;">
-            <tr><td align="center">
-              <p style="color: #3B1F6B; font-size: 16px; margin: 0;">🎉 You can now log in with your new password</p>
-            </td></tr>
-          </table>
-          
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: left; width: 100%;">
-            <tr><td>
-              <p style="color: #1f2937; font-size: 14px; font-weight: 600; margin: 0 0 12px;">🛡️ Security Tips</p>
-              <p style="color: #4b5563; font-size: 13px; margin: 8px 0;">📱 Enable two-factor authentication</p>
-              <p style="color: #4b5563; font-size: 13px; margin: 8px 0;">🔑 Use a unique password</p>
-              <p style="color: #4b5563; font-size: 13px; margin: 8px 0;">👀 Check your recent activity</p>
-            </td></tr>
-          </table>
-          
-          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="margin-top: 16px;">Open Fudgo App</a>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer()
-        
-        html = cls._base_template(
-            header + body + footer,
-            "Your password has been successfully updated"
-        )
-        
-        plain = f"""Password Successfully Updated!
+        name = cls._name(user_name)
+        app = cls._get_customer_app_url()
+        hero = cls._hero("✅", "Password updated", f"<strong>{name}</strong>, your password was changed successfully.", tone="green")
+        body = cls._body(cls._stack([
+            cls._notice("You're all set", "You can now log in with your new password.", tone="green", icon="🎉"),
+            cls._p("A few ways to keep your account safe", "ink", 16, 700),
+            cls._feature_list([
+                ("📱", "Turn on two-factor authentication", "Adds a second check when you sign in."),
+                ("🔑", "Use a unique password", "Don't reuse it on other sites."),
+                ("👀", "Review recent activity", "Look for anything you don't recognise."),
+            ]),
+            cls._button("Open the app", app),
+            cls._p(f'Wasn\'t you? <a href="{cls._safe_url(cls._get_support_url())}" style="color:{cls.ORANGE_DEEP};font-weight:700;">Contact support</a> right away.',
+                   "muted", 13, align="center"),
+        ], gap=20))
+        html = cls._layout("Your password has been successfully updated", hero, body, tag="Security")
+        plain = (f"Hi {user_name},\n\nYour {cls._get_company_name()} password has been changed. You can now log in with your new password.\n\n"
+                 f"Stay safe:\n- Turn on two-factor authentication\n- Use a unique password\n- Review recent activity\n\n"
+                 f"Wasn't you? Contact support right away.\n\n{cls._plain_footer()}")
+        return {"subject": f"✅ Password updated – {cls._oneline(cls._get_company_name())}", "html": html, "plain": plain}
 
-Hi {user_name},
-
-Your Fudgo password has been changed. You can now log in with your new password.
-
-Security Tips:
-• Enable two-factor authentication
-• Use a unique password
-• Check your recent activity
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": "✅ Password Updated – Fudgo", "html": html, "plain": plain}
-
-    # ============================================================
-    # WELCOME VERIFIED - Celebratory, exciting, colorful
-    # ============================================================
     @classmethod
     def welcome_verified(cls, user_name: str, username: str) -> Dict[str, str]:
-        """Welcome email - party/celebration theme with responsive light styling"""
-        
-        header = cls._header(
-            f"Welcome to Fudgo! 🎉",
-            "Your email is verified – let's eat!",
-            "🎉"
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          <!-- User Card -->
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFF7F0 100%); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px; border: 2px solid #FF6B00; width: 100%;">
-            <tr><td align="center">
-              <div style="width: 64px; height: 64px; background: #FF6B00; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px; color: #24170D; font-weight: 700;">{(user_name[:1] or 'F').upper()}</div>
-              <p style="color: #C94F00; font-size: 18px; font-weight: 700; margin: 12px 0 4px;">@{username}</p>
-              <p style="color: #6b7280; font-size: 13px; margin: 0;">✓ Verified Account</p>
-            </td></tr>
-          </table>
-          
-          <!-- Features -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
-            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 8px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="width: 48px; font-size: 28px; vertical-align: top;">🍕</td>
-                  <td>
-                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Thousands of Restaurants</p>
-                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">From local gems to your favorites</p>
-                  </td>
-                </tr>
-              </table>
-            </td></tr>
-            <tr><td style="height: 8px;"></td></tr>
-            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="width: 48px; font-size: 28px; vertical-align: top;">⚡</td>
-                  <td>
-                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Lightning Fast Delivery</p>
-                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">Hot food at your door, quick</p>
-                  </td>
-                </tr>
-              </table>
-            </td></tr>
-            <tr><td style="height: 8px;"></td></tr>
-            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="width: 48px; font-size: 28px; vertical-align: top;">🎁</td>
-                  <td>
-                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Exclusive Deals</p>
-                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">Members-only discounts daily</p>
-                  </td>
-                </tr>
-              </table>
-            </td></tr>
-            <tr><td style="height: 8px;"></td></tr>
-            <tr><td style="background: #f9fafb; border-radius: 8px; padding: 16px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="width: 48px; font-size: 28px; vertical-align: top;">📍</td>
-                  <td>
-                    <p style="color: #1f2937; font-size: 15px; margin: 0; font-weight: 600;">Real-time Tracking</p>
-                    <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">Watch your food come to you</p>
-                  </td>
-                </tr>
-              </table>
-            </td></tr>
-          </table>
-          
-          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="margin-top: 16px; padding: 16px 40px; font-size: 16px;">Start Ordering Now 🚀</a>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer(f"Made with 💚 for food lovers")
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Welcome to Fudgo, {user_name}! Your email is verified."
-        )
-        
-        plain = f"""🎉 Welcome to Fudgo, {user_name}!
-
-Your email is verified! Username: @{username}
-
-What you can do now:
-🍕 Browse thousands of restaurants
-⚡ Get lightning fast delivery
-🎁 Access exclusive deals
-📍 Track your orders in real-time
-
-Start ordering at {cls._get_customer_app_url()}
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": f"🎉 Welcome to Fudgo, {user_name}!", "html": html, "plain": plain}
+        name, company = cls._name(user_name), cls._t(cls._get_company_name())
+        initial = cls._t((str(user_name or "")[:1] or "F").upper())
+        hero = cls._hero("🎉", f"Welcome to {company}, {name}", "Your email is verified. Let's get you fed.", tone="orange")
+        user_card = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                     f'<td class="bg-soft bdr" bgcolor="{cls.SOFT}" style="padding:16px 18px;background-color:{cls.SOFT};border:1px solid {cls.PEACH};border-radius:14px;">'
+                     f'<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>'
+                     f'<td width="52" valign="middle" style="width:52px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                     f'<td align="center" valign="middle" width="44" height="44" bgcolor="{cls.ORANGE}" style="width:44px;height:44px;background-color:{cls.ORANGE};border-radius:50%;'
+                     f'font-family:{FONT};font-size:20px;line-height:1;font-weight:800;color:{cls.INK};text-align:center;">{initial}</td></tr></table></td>'
+                     f'<td valign="middle" style="padding-left:12px;">{cls._p("@" + cls._t(username), "ink", 16, 700)}{cls._p("✓ Verified account", "muted", 13)}</td>'
+                     f'</tr></table></td></tr></table>')
+        body = cls._body(cls._stack([
+            user_card,
+            cls._feature_list([
+                ("🍕", "Thousands of restaurants", "From local gems to your favourites."),
+                ("⚡", "Fast delivery", "Hot food at your door, quickly."),
+                ("🎁", "Exclusive deals", "Members-only discounts."),
+                ("📍", "Real-time tracking", "Watch your food come to you."),
+            ]),
+            cls._button("Start ordering", cls._get_customer_app_url()),
+        ], gap=22))
+        html = cls._layout(f"Welcome to {cls._get_company_name()}, {user_name}! Your email is verified.", hero, body, "Made with care for food lovers.", tag="Welcome")
+        plain = (f"Welcome to {cls._get_company_name()}, {user_name}!\n\nYour email is verified. Username: @{username}\n\n"
+                 f"- Browse thousands of restaurants\n- Fast delivery\n- Exclusive deals\n- Real-time order tracking\n\n"
+                 f"Start ordering: {cls._get_customer_app_url()}\n\n{cls._plain_footer()}")
+        return {"subject": f"🎉 Welcome to {cls._oneline(cls._get_company_name())}, {cls._oneline(user_name)}!", "html": html, "plain": plain}
 
     # ============================================================
-    # ORDER CONFIRMATION - Receipt style, clean, professional
+    # ORDERS
     # ============================================================
     @classmethod
-    def order_confirmation(
-        cls, user_name: str, order_id: str, items: list,
-        subtotal: str, delivery_fee: str, total: str,
-        delivery_address: str, estimated_time: str = "30-45 mins",
-        restaurant_name: str = ""
-    ) -> Dict[str, str]:
-        """Order confirmation - responsive receipt with product images"""
-        
-        # Build items HTML
-        items_html = ""
-        items_text = ""
-        for item in items:
-            image_url = item.get('image_url', '')
-            name = item.get('name', '')
-            qty = item.get('quantity', 1)
-            price = item.get('price', '')
-            original_price = item.get('original_price', '')
-            
-            image_cell = f'<img src="{image_url}" alt="{name}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">' if image_url else '<div style="width: 60px; height: 60px; border-radius: 8px; background: #FFF3E8; text-align: center; line-height: 60px; font-size: 24px;">🍽️</div>'
-            
-            original_price_html = f'<tr><td align="right" style="text-decoration: line-through; color: #9ca3af; font-size: 0.875em; padding-top: 3px;">{original_price}</td></tr>' if original_price and original_price != price else ""
-            
-            items_html += f"""
-        <tr style="vertical-align: top">
-          <td style="padding: 12px 0; width: 30px;"><strong>{qty}x</strong></td>
-          <td style="padding: 12px 0;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="width: 72px; vertical-align: top;">{image_cell}</td>
-                <td style="padding-left: 12px; vertical-align: top;">
-                  <p style="margin: 0; font-weight: 600; color: #1f2937;">{name}</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-          <td align="right" style="padding: 12px 0; white-space: nowrap; vertical-align: top;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr><td align="right" style="font-weight: 600;">{price}</td></tr>
-              {original_price_html}
-            </table>
-          </td>
-        </tr>"""
-            items_text += f"  {name} × {qty} - {price}\n"
-        
-        restaurant_html = f'<p style="color: #6b7280; font-size: 14px; margin-top: 8px;">🏪 From <strong>{restaurant_name}</strong></p>' if restaurant_name else ""
-        
-        header = cls._header(
-            f"Order Confirmed! ✓",
-            f"Order #{order_id}{restaurant_html}",
-            "✓"
-        )
-        
-        separator = cls._dashed_separator()
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px 16px 0 0; padding: 16px;">
-      <!-- ETA Box -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFE2CC 100%); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-        <tr><td align="center">
-          <p style="color: #3B1F6B; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Estimated Delivery</p>
-          <p style="color: #3B1F6B; font-size: 28px; font-weight: 800; margin: 8px 0 0;">🕐 {estimated_time}</p>
-        </td></tr>
-      </table>
-      
-      <!-- Products Header -->
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><strong>Products</strong></td>
-          <td align="right" style="white-space: nowrap; vertical-align: top">
-            <span class="highlight">Order #{order_id}</span>
-          </td>
-        </tr>
-      </table>
-      
-      <!-- Items List -->
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        {items_html}
-      </table>
-      
-      {separator}
-      
-      <!-- Totals -->
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td style="padding: 8px 12px; color: #6b7280;">Subtotal</td>
-          <td align="right" style="padding: 8px 12px; color: #6b7280;">{subtotal}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 12px; color: #6b7280;">Delivery Fee</td>
-          <td align="right" style="padding: 8px 12px; color: #6b7280;">{delivery_fee}</td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-  
-  <!-- Total Row -->
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 0 0 16px 16px; padding: 0 16px 16px;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border-radius: 8px;">
-        <tr>
-          <td style="padding: 16px; font-size: 18px; font-weight: 700; color: #1f2937;">Total</td>
-          <td align="right" style="padding: 16px; font-size: 18px; font-weight: 700; color: #3B1F6B;">{total}</td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-  
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 16px;"></td></tr>
-  </table>
-  
-  <!-- Delivery Address -->
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 16px;">
-      <p style="font-weight: 600; margin: 0 0 8px; color: #1f2937;">📍 Delivery Address</p>
-      <p style="color: #6b7280; margin: 0; line-height: 1.5;">{delivery_address}</p>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 16px;">
-        <tr><td align="center">
-          <a href="{cls._get_customer_app_url()}" class="btn-primary">Open Fudgo App</a>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer(f"Thank you for ordering, {user_name}!")
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Order #{order_id} confirmed - arriving in {estimated_time}"
-        )
-        
-        plain = f"""Order Confirmed! ✓
+    def order_confirmation(cls, user_name: str, order_id: str, items: list, subtotal: str, delivery_fee: str, total: str,
+                           delivery_address: str, estimated_time: str = "30-45 mins", restaurant_name: str = "") -> Dict[str, str]:
+        oid, eta = cls._t(order_id), cls._t(estimated_time)
+        item_rows, items_text = [], ""
+        for item in items or []:
+            name, qty, price = cls._t(item.get("name", "")), cls._t(item.get("quantity", 1)), cls._t(item.get("price", ""))
+            original = cls._t(item.get("original_price", ""))
+            img_url = cls._safe_url(item.get("image_url"), "") if item.get("image_url") else ""
+            image = (f'<img src="{img_url}" width="56" height="56" alt="{name}" style="display:block;width:56px;height:56px;border-radius:10px;">'
+                     if img_url else cls._icon_badge("🍽️", 56))
+            old = (f'{cls._p(original, "muted", 12, align="right", extra="text-decoration:line-through;")}' if original and original != price else "")
+            item_rows.append(
+                f'<tr><td class="bdr" style="padding:12px 0;border-bottom:1px solid {cls.LINE};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+                f'<td width="68" valign="top" style="width:68px;">{image}</td>'
+                f'<td valign="top" style="padding:0 12px 0 0;">{cls._p(name, "ink", 15, 700, mb=2)}{cls._p(f"Qty {qty}", "muted", 13)}</td>'
+                f'<td valign="top" align="right" style="white-space:nowrap;">{cls._p(price, "ink", 15, 700, align="right")}{old}</td>'
+                f'</tr></table></td></tr>')
+            items_text += f"  {item.get('name', '')} x {item.get('quantity', 1)} - {item.get('price', '')}\n"
 
-Order #{order_id}
-{f"Restaurant: {restaurant_name}" if restaurant_name else ""}
-Estimated Delivery: {estimated_time}
+        eta_card = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                    f'<td class="bg-soft bdr" align="center" bgcolor="{cls.SOFT}" style="padding:18px;background-color:{cls.SOFT};border:1px solid {cls.PEACH};border-radius:14px;">'
+                    f'{cls._p("Estimated delivery", "muted", 13, 600, "center", 4)}{cls._p(f"🕐 {eta}", "ink", 28, 800, "center", lh=34, extra="letter-spacing:-0.3px;")}</td></tr></table>')
+        items_block = (f'{cls._p("Your order", "ink", 17, 700, mb=4)}'
+                       f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(item_rows)}</table>')
+        totals = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+                  f'<tr><td style="padding:4px 0;">{cls._p("Subtotal", "muted", 14)}</td><td align="right" style="padding:4px 0;">{cls._p(cls._t(subtotal), "body", 14, align="right")}</td></tr>'
+                  f'<tr><td style="padding:4px 0;">{cls._p("Delivery fee", "muted", 14)}</td><td align="right" style="padding:4px 0;">{cls._p(cls._t(delivery_fee), "body", 14, align="right")}</td></tr>'
+                  f'<tr><td colspan="2">{cls._dashed_separator()}</td></tr>'
+                  f'<tr><td style="padding:2px 0;">{cls._p("Total", "ink", 19, 800)}</td><td align="right" style="padding:2px 0;">{cls._p(cls._t(total), "accent", 22, 800, "right")}</td></tr></table>')
+        address = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                   f'<td class="bg-soft bdr" bgcolor="#FFF9F4" style="padding:16px 18px;background-color:#FFF9F4;border:1px solid {cls.LINE};border-radius:12px;">'
+                   f'{cls._p("📍 Delivering to", "ink", 14, 700, mb=4)}{cls._p(cls._t(delivery_address), "muted", 14)}</td></tr></table>')
+        sub = f"Order <strong>#{oid}</strong>" + (f" from <strong>{cls._t(restaurant_name)}</strong>" if restaurant_name else "")
+        hero = cls._hero("✅", "Order confirmed", sub, tone="green")
+        body = cls._body(cls._stack([eta_card, items_block, totals, address,
+                                     cls._button("Track your order", cls._get_customer_app_url())], gap=22))
+        html = cls._layout(f"Order #{order_id} confirmed. Arriving in {estimated_time}", hero, body,
+                           f"Thank you for ordering, {cls._t(user_name)}!", tag=f"Order #{oid}")
+        plain = (f"Order confirmed\n\nOrder #{order_id}\n{('Restaurant: ' + restaurant_name) if restaurant_name else ''}\n"
+                 f"Estimated delivery: {estimated_time}\n\nORDER DETAILS:\n{items_text}\nSubtotal: {subtotal}\nDelivery: {delivery_fee}\nTOTAL: {total}\n\n"
+                 f"DELIVERY ADDRESS:\n{delivery_address}\n\nThank you, {user_name}!\n{cls._plain_footer()}")
+        return {"subject": f"✅ Order confirmed #{cls._oneline(order_id)} – {cls._oneline(cls._get_company_name())}", "html": html, "plain": plain}
 
-ORDER DETAILS:
-{items_text}
-Subtotal: {subtotal}
-Delivery: {delivery_fee}
-TOTAL: {total}
+    # --- order status -------------------------------------------------
+    STATUS_ALIASES = {
+        "placed": "confirmed", "accepted": "confirmed", "ready": "preparing",
+        "picked_up": "on_the_way", "out_for_delivery": "on_the_way",
+        "completed": "delivered", "canceled": "cancelled",
+    }
+    STATUSES = {
+        "confirmed": {"icon": "✅", "tone": "green", "step": 1, "title": "Order confirmed"},
+        "preparing": {"icon": "👨‍🍳", "tone": "amber", "step": 2, "title": "Your food is being prepared"},
+        "on_the_way": {"icon": "🛵", "tone": "violet", "step": 3, "title": "Your order is on the way"},
+        "delivered": {"icon": "🎉", "tone": "green", "step": 5, "title": "Delivered"},
+        "cancelled": {"icon": "✖️", "tone": "red", "step": 0, "title": "Order cancelled"},
+    }
 
-DELIVERY ADDRESS:
-{delivery_address}
-
-Thank you, {user_name}!
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": f"✅ Order Confirmed #{order_id} – Fudgo", "html": html, "plain": plain}
-
-    # ============================================================
-    # ORDER STATUS UPDATE - Timeline/progress style
-    # ============================================================
     @classmethod
-    def order_status_update(
-        cls, user_name: str, order_id: str, status: str,
-        status_message: str, estimated_time: str = None
-    ) -> Dict[str, str]:
-        """Order status - progress tracker with semantic delivery-status colors"""
-        
-        status_aliases = {
-            "placed": "confirmed",
-            "accepted": "confirmed",
-            "ready": "preparing",
-            "picked_up": "on_the_way",
-            "out_for_delivery": "on_the_way",
-        }
-        status = status_aliases.get(status.lower(), status.lower())
-        statuses = {
-            "confirmed": {"icon": "✓", "color": "#22c55e", "bg": "#dcfce7", "step": 1},
-            "preparing": {"icon": "👨‍🍳", "color": "#f59e0b", "bg": "#fef3c7", "step": 2},
-            "picked_up": {"icon": "📦", "color": "#3b82f6", "bg": "#dbeafe", "step": 3},
-            "on_the_way": {"icon": "🚗", "color": "#8b5cf6", "bg": "#ede9fe", "step": 3},
-            "delivered": {"icon": "🎉", "color": "#22c55e", "bg": "#dcfce7", "step": 4},
-        }
-        s = statuses.get(status.lower(), statuses["confirmed"])
-        
-        def step_html(step_num, label):
-            if step_num < s["step"]:
-                return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: #22c55e; border-radius: 50%; color: white; line-height: 32px; font-weight: bold; margin: 0 auto;">✓</div><p style="font-size: 10px; color: #22c55e; margin: 4px 0 0;">{label}</p></td>'
-            elif step_num == s["step"]:
-                return f'<td align="center" style="width: 60px;"><div class="email-step-active" style="width: 32px; height: 32px; background: {s["color"]}; border-radius: 50%; color: white; line-height: 32px; font-weight: bold; margin: 0 auto; box-shadow: 0 0 0 4px {s["bg"]};">{step_num}</div><p style="font-size: 10px; color: {s["color"]}; margin: 4px 0 0; font-weight: bold;">{label}</p></td>'
+    def _seg(cls, color: Optional[str], animate: bool = False, late: bool = False) -> str:
+        """
+        One half of a tracker connector. It lives in its own nested table so the 4px bar stays 4px
+        and vertically centred even though the neighbouring dot cell is 36px tall (a bare bgcolor
+        <td> would stretch to the full row height).
+        """
+        if color is None:
+            return '<td width="40%" style="font-size:0;line-height:0;">&nbsp;</td>'
+        track = "#EADBCF"
+        if animate:
+            inner = (f'<div class="m-grow{" m-late" if late else ""}" style="height:4px;background-color:{color};font-size:0;line-height:0;">&nbsp;</div>')
+            bar_bg = track
+        else:
+            inner, bar_bg = "&nbsp;", color
+        return (f'<td width="40%" valign="middle" style="font-size:0;line-height:0;">'
+                f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+                f'<td height="4" bgcolor="{bar_bg}" style="height:4px;background-color:{bar_bg};font-size:0;line-height:0;">{inner}</td></tr></table></td>')
+
+    @classmethod
+    def _tracker(cls, step: int, accent: str, live: bool) -> str:
+        """Four-step progress tracker. Table-based, readable with no CSS, animated where supported."""
+        labels = ["Confirmed", "Preparing", "On the way", "Delivered"]
+        done, track = "#15803D", "#EADBCF"
+        cols = []
+        for i, label in enumerate(labels, start=1):
+            if i < step:
+                dot_bg, dot_fg, dot = done, "#FFFFFF", "✓"
+            elif i == step:
+                dot_bg, dot_fg, dot = accent, "#FFFFFF", str(i)
             else:
-                return f'<td align="center" style="width: 60px;"><div style="width: 32px; height: 32px; background: #e5e7eb; border-radius: 50%; color: #9ca3af; line-height: 32px; font-weight: bold; margin: 0 auto;">{step_num}</div><p style="font-size: 10px; color: #9ca3af; margin: 4px 0 0;">{label}</p></td>'
-        
-        def line_html(active):
-            color = "#22c55e" if active else "#e5e7eb"
-            return f'<td style="padding: 0 4px;"><div style="height: 3px; background: {color};"></div></td>'
-        
-        eta_html = f"""
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin-top: 24px;">
-        <tr><td align="center">
-          <p style="color: #166534; font-weight: 600; margin: 0;">⏱️ ETA: {estimated_time}</p>
-        </td></tr>
-      </table>""" if estimated_time else ""
-        
-        header = cls._header(
-            f"{status.replace('_', ' ').title()} {s['icon']}",
-            f"Order #{order_id}",
-            s['icon']
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">{status_message}</p>
-          
-          <!-- Progress Steps -->
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
-            <tr>
-              {step_html(1, "Confirmed")}
-              {line_html(s["step"] > 1)}
-              {step_html(2, "Preparing")}
-              {line_html(s["step"] > 2)}
-              {step_html(3, "On the way")}
-              {line_html(s["step"] > 3)}
-              {step_html(4, "Delivered")}
-            </tr>
-          </table>
-          
-          {eta_html}
-          
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;">
-            <tr><td align="center">
-              <a href="{cls._get_customer_app_url()}" class="btn-primary">Open Fudgo App</a>
-            </td></tr>
-          </table>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer()
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Order #{order_id} - {status.replace('_', ' ').title()}"
-        )
-        
+                dot_bg, dot_fg, dot = "#EFE4DA", cls.MUTED, str(i)
+            if i == 1:
+                left = cls._seg(None)
+            elif i < step:
+                left = cls._seg(done)
+            elif i == step:
+                left = cls._seg(done, animate=True, late=True)
+            else:
+                left = cls._seg(track)
+            if i == len(labels):
+                right = cls._seg(None)
+            elif i + 1 < step:
+                right = cls._seg(done)
+            elif i + 1 == step:
+                right = cls._seg(done, animate=True)
+            else:
+                right = cls._seg(track)
+            ring = "m-pulse" if (live and i == step) else ""
+            dot_html = (f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" class="{ring}" style="border-collapse:separate;border-radius:50%;color:{accent};"><tr>'
+                        f'<td align="center" valign="middle" width="36" height="36" bgcolor="{dot_bg}" style="width:36px;height:36px;background-color:{dot_bg};border-radius:50%;'
+                        f'font-family:{FONT};font-size:15px;line-height:1;font-weight:800;color:{dot_fg};text-align:center;">{dot}</td></tr></table>')
+            lbl_color = "#15803D" if i < step else (accent if i == step else cls.MUTED)
+            cols.append(f'<td width="25%" align="center" valign="top"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+                        f'<tr>{left}<td width="36" align="center" valign="middle" style="width:36px;">{dot_html}</td>{right}</tr></table>'
+                        f'{cls._p(label, lbl_color, 12, 700 if i == step else 600, "center", extra="padding-top:8px;")}</td>')
+        return f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>{"".join(cols)}</tr></table>'
+
+    @classmethod
+    def order_status_update(cls, user_name: str, order_id: str, status: str, status_message: str,
+                            estimated_time: Optional[str] = None) -> Dict[str, str]:
+        key = str(status or "").lower().strip()
+        key = cls.STATUS_ALIASES.get(key, key)
+        known = key in cls.STATUSES
+        s = cls.STATUSES.get(key, cls.STATUSES["confirmed"])
+        title = s["title"] if known else cls._t(key.replace("_", " ").title())
+        oid = cls._t(order_id)
+        live = key in {"preparing", "on_the_way"}
+        hero = cls._hero(s["icon"], title, f"Order <strong>#{oid}</strong>", tone=s["tone"], live=live)
+        blocks = [cls._p(cls._t(status_message), "body", 15, align="center", lh=24)]
+        if s["step"] > 0:
+            accent = cls.TONES[s["tone"]]["accent"]
+            blocks.append(cls._tracker(s["step"], accent, live))
+        if estimated_time and key != "delivered":
+            blocks.append(cls._chip(f"Estimated arrival: <strong>{cls._t(estimated_time)}</strong>", "green"))
+        blocks.append(cls._button("Open the app", cls._get_customer_app_url()))
+        html = cls._layout(f"Order #{order_id}: {re.sub('<[^>]+>', '', title)}", hero, cls._body(cls._stack(blocks, gap=26, align="center")), tag=f"Order #{oid}")
         eta_text = f"\nETA: {estimated_time}" if estimated_time else ""
-        plain = f"""{status.replace('_', ' ').title()} - Order #{order_id}
+        plain = (f"{re.sub('<[^>]+>', '', title)} - Order #{order_id}\n\n{status_message}{eta_text}\n\n"
+                 f"Track your order in the {cls._get_company_name()} app.\n\n{cls._plain_footer()}")
+        return {"subject": f"{s['icon']} {re.sub('<[^>]+>', '', title)} – Order #{cls._oneline(order_id)}", "html": html, "plain": plain}
 
-{status_message}{eta_text}
-
-Track your order in the Fudgo app.
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": f"{s['icon']} {status.replace('_', ' ').title()} – Order #{order_id}", "html": html, "plain": plain}
-
-    # ============================================================
-    # ORDER DELIVERED - Success celebration with review CTA
-    # ============================================================
     @classmethod
     def order_delivered(cls, user_name: str, order_id: str, restaurant_name: str, items: list = None) -> Dict[str, str]:
-        """Order delivered - celebration with a rating action and product images"""
-        
-        # Build items gallery if items provided
-        items_gallery = ""
-        if items:
-            items_html = ""
-            for item in items[:4]:  # Show max 4 items
-                image_url = item.get('image_url', '')
-                name = item.get('name', '')
-                if image_url:
-                    items_html += f'<td style="padding: 4px;"><img src="{image_url}" alt="{name}" style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></td>'
-                else:
-                    items_html += f'<td style="padding: 4px;"><div style="width: 70px; height: 70px; border-radius: 8px; background: #FFF3E8; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; line-height: 70px; font-size: 28px;">🍽️</div></td>'
-            
-            items_gallery = f"""
-          <p style="color: #6b7280; font-size: 13px; margin: 24px 0 12px;">Your order</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
-            <tr>{items_html}</tr>
-          </table>"""
-        
-        header = cls._header(
-            f"Enjoy Your Meal! 🍽️",
-            f"Order #{order_id} delivered",
-            "🍽️"
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          <!-- Restaurant Card -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-            <tr><td align="center">
-              <p style="color: #6b7280; font-size: 13px; margin: 0 0 4px;">Delivered from</p>
-              <p style="color: #1f2937; font-size: 18px; font-weight: 600; margin: 0;">🏪 {restaurant_name}</p>
-            </td></tr>
-          </table>
-          
-          {items_gallery}
-          
-          <!-- Rating Section -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0;">
-            <tr><td align="center">
-              <p style="color: #1f2937; font-size: 18px; font-weight: 600; margin: 0 0 16px;">How was your food?</p>
-              <p style="font-size: 36px; letter-spacing: 8px; margin: 0;">⭐⭐⭐⭐⭐</p>
-            </td></tr>
-          </table>
-          
-          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="padding: 16px 40px; font-size: 16px;">Open Fudgo to rate your order</a>
-          <p style="margin-top: 20px;"><a href="{cls._get_customer_app_url()}" style="color: #3B1F6B; font-weight: 600; font-size: 15px;">🔄 Order Again</a></p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer(f"Thanks for choosing Fudgo, {user_name}!")
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Your order from {restaurant_name} has been delivered!"
-        )
-        
-        items_text = ""
-        if items:
-            items_text = "\nYour order:\n" + "\n".join([f"  • {item.get('name', '')}" for item in items[:4]])
-        
-        plain = f"""🍽️ Enjoy Your Meal!
-
-Order #{order_id} has been delivered from {restaurant_name}.
-{items_text}
-
-How was your food? Rate your order in the Fudgo app!
-
-Thanks for choosing Fudgo, {user_name}!
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": f"🍽️ Delivered! Rate Your Order – #{order_id}", "html": html, "plain": plain}
+        oid, app = cls._t(order_id), cls._get_customer_app_url()
+        app_href = cls._safe_url(app)
+        shots = []
+        for item in (items or [])[:4]:
+            img_url = cls._safe_url(item.get("image_url"), "") if item.get("image_url") else ""
+            shot = (f'<img src="{img_url}" width="72" height="72" alt="{cls._t(item.get("name", ""))}" style="display:block;width:72px;height:72px;border-radius:12px;">'
+                    if img_url else cls._icon_badge("🍽️", 72))
+            shots.append(f'<td style="padding:0 5px;">{shot}</td>')
+        gallery = (f'{cls._p("What you ordered", "muted", 13, 600, "center", 10)}<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr>{"".join(shots)}</tr></table>'
+                   if shots else "")
+        restaurant = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                      f'<td class="bg-soft bdr" align="center" bgcolor="#FFF9F4" style="padding:16px;background-color:#FFF9F4;border:1px solid {cls.LINE};border-radius:12px;">'
+                      f'{cls._p("Delivered from", "muted", 13, align="center", mb=2)}{cls._p("🏪 " + cls._t(restaurant_name), "ink", 18, 700, "center")}</td></tr></table>')
+        stars = "".join(
+            f'<td style="padding:0 3px;"><a href="{app_href}" style="color:#F59E0B;text-decoration:none;font-family:Arial,sans-serif;font-size:36px;line-height:40px;">'
+            f'<span class="m-pop m-s{i}" style="display:inline-block;">★</span></a></td>' for i in range(1, 6))
+        rating = (f'{cls._p("How was your food?", "ink", 18, 700, "center", 8)}'
+                  f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr>{stars}</tr></table>')
+        hero = cls._hero("🍽️", "Enjoy your meal", f"Order <strong>#{oid}</strong> has been delivered.", tone="green")
+        body = cls._body(cls._stack([restaurant, gallery, rating,
+                                     cls._button("Rate your order", app),
+                                     f'<p style="margin:0;text-align:center;font-family:{FONT};font-size:14px;"><a href="{app_href}" style="color:{cls.ORANGE_DEEP};font-weight:700;">Order again</a></p>'],
+                                    gap=24, align="center"))
+        html = cls._layout(f"Your order from {restaurant_name} has been delivered!", hero, body,
+                           f"Thanks for choosing {cls._t(cls._get_company_name())}, {cls._t(user_name)}!", tag=f"Order #{oid}")
+        items_text = ("\nYour order:\n" + "\n".join(f"  - {i.get('name', '')}" for i in (items or [])[:4])) if items else ""
+        plain = (f"Enjoy your meal!\n\nOrder #{order_id} has been delivered from {restaurant_name}.\n{items_text}\n\n"
+                 f"How was your food? Rate your order in the app: {app}\n\nThanks for choosing {cls._get_company_name()}, {user_name}!\n{cls._plain_footer()}")
+        return {"subject": f"🍽️ Delivered! Rate your order – #{cls._oneline(order_id)}", "html": html, "plain": plain}
 
     # ============================================================
-    # PROMOTION DISCOUNT - Food-forward, responsive offer card
+    # PROMOTIONS
     # ============================================================
     @classmethod
-    def promotion_discount(
-        cls, user_name: str, discount_amount: str,
-        description: str, expiry_date: str,
-        hero_image_url: str = None,
-        hero_title: str = "HUNGRY?",
-        hero_subtitle: str = "Let us deliver the best food",
-        food_items: list = None,
-        restaurants: list = None,
-        min_order: str = None,
-        cta_text: str = "Order Now",
-        cta_link: str = None,
-        contact_phone: str = None,
-        contact_address: str = None,
-        contact_hours: str = None
-    ) -> Dict[str, str]:
-        '''Build a responsive restaurant offer email with optional food photography.'''
-        def text(value):
-            return escape(str(value or ""), quote=True)
+    def promotion_discount(cls, user_name: str, discount_amount: str, description: str, expiry_date: str,
+                           hero_image_url: str = None, hero_title: str = "HUNGRY?",
+                           hero_subtitle: str = "Let us deliver the best food",
+                           food_items: list = None, restaurants: list = None, min_order: str = None,
+                           cta_text: str = "Order Now", cta_link: str = None, contact_phone: str = None,
+                           contact_address: str = None, contact_hours: str = None,
+                           unsubscribe_url: str = None) -> Dict[str, str]:
+        t = cls._t
+        user, discount, desc, expiry = t(user_name or "there"), t(discount_amount), t(description), t(expiry_date)
+        title = t(hero_title or "A delicious deal is waiting")
+        subtitle = t(hero_subtitle or "A little something for your next meal")
+        action_url = cls._get_customer_app_url() if not cta_link else cta_link
+        unsub = unsubscribe_url or getattr(settings, "EMAIL_UNSUBSCRIBE_URL", None)
 
-        def safe_url(value, fallback=None):
-            raw = str(value or "").strip()
-            parsed = urlparse(raw)
-            if parsed.scheme in {"http", "https"} and parsed.netloc:
-                return escape(raw, quote=True)
-            if raw.startswith("/") and not raw.startswith("//"):
-                return escape(urljoin(cls._get_customer_app_url(), raw), quote=True)
-            fallback_url = cls._get_customer_app_url() if fallback is None else fallback
-            return escape(str(fallback_url), quote=True)
-
-        user = text(user_name or "there")
-        discount = text(discount_amount)
-        offer_description = text(description)
-        expiry = text(expiry_date)
-        title = text(hero_title or "A delicious deal is waiting")
-        subtitle = text(hero_subtitle or "A little something for your next meal")
-        cta = text(cta_text or "Order now")
-        action_url = safe_url(cta_link, cls._get_customer_app_url())
-
-        hero_image = ""
+        image_row = ""
         if hero_image_url:
-            hero_src = safe_url(hero_image_url, "")
-            if hero_src:
-                hero_image = f'''<tr><td style="padding:0 0 16px;">
-  <img class="hero-image" src="{hero_src}" alt="Featured food from Fudgo" width="552" height="240" style="display:block;width:100%;max-width:552px;height:240px;object-fit:cover;border-radius:12px;" />
-</td></tr>'''
+            src = cls._safe_url(hero_image_url, "")
+            if src:
+                image_row = (f'<tr><td style="font-size:0;line-height:0;"><img src="{src}" width="600" alt="Featured food from {t(cls._get_company_name())}" '
+                             f'style="display:block;width:100%;max-width:600px;height:auto;"></td></tr>')
+        hero = image_row + cls._hero("🍔", title, f"Hi <strong>{user}</strong>. {subtitle}")
 
-        food_cards = []
-        for item in (food_items or [])[:4]:
-            name = text(item.get("name"))
-            price = text(item.get("price"))
-            original_price = text(item.get("original_price"))
-            image_url = safe_url(item.get("image_url"), "") if item.get("image_url") else ""
-            image = (
-                f'<img src="{image_url}" alt="{name}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:10px;" />'
-                if image_url else
-                '<table role="presentation" width="72" height="72" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFF3E8" style="width:72px;height:72px;background:#FFF3E8;border-radius:10px;"><tr><td align="center" valign="middle" style="font-size:28px;">🍲</td></tr></table>'
-            )
-            old_price = f'<span style="color:#766D66;font-size:12px;text-decoration:line-through;margin-right:6px;">{original_price}</span>' if original_price and original_price != price else ""
-            food_cards.append(f'''<td class="food-item-cell" width="50%" style="width:50%;vertical-align:top;padding:6px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #F0E4DA;border-radius:12px;">
-    <tr><td width="84" valign="top" style="width:84px;padding:12px 0 12px 12px;">{image}</td>
-      <td valign="middle" style="padding:12px;">
-        <p style="margin:0 0 6px;color:#29231F;font-size:14px;line-height:1.35;font-weight:700;">{name}</p>
-        <p style="margin:0;color:#3B1F6B;font-size:14px;line-height:1.4;font-weight:800;">{old_price}{price}</p>
-      </td>
-    </tr>
-  </table>
-</td>''')
-        food_rows = []
-        for index in range(0, len(food_cards), 2):
-            cells = food_cards[index:index + 2]
-            if len(cells) == 1:
-                cells.append('<td class="food-item-cell" width="50%" style="width:50%;padding:6px;">&nbsp;</td>')
-            food_rows.append(f'<tr>{"".join(cells)}</tr>')
-        food_section = ""
-        if food_rows:
-            food_section = f'''<tr><td style="padding:22px 0 8px;">
-  <p style="margin:0 0 8px;color:#24170D;font-size:18px;font-weight:800;">A few favourites</p>
-  <p style="margin:0 0 10px;color:#716861;font-size:13px;">A taste of what is waiting for you.</p>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(food_rows)}</table>
-</td></tr>'''
-
-        restaurant_rows = []
-        for restaurant in (restaurants or [])[:4]:
-            name = text(restaurant.get("name"))
-            cuisines = text(restaurant.get("cuisines"))
-            restaurant_url = safe_url(restaurant.get("link"))
-            image_url = safe_url(restaurant.get("image_url"), "") if restaurant.get("image_url") else ""
-            image = f'<img src="{image_url}" alt="{name}" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:10px;" />' if image_url else ""
-            restaurant_rows.append(f'''<tr><td style="padding:6px 0;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #F0E4DA;border-radius:12px;">
-    <tr><td width="78" style="width:78px;padding:10px;">{image}</td>
-      <td valign="middle" style="padding:10px 8px;">
-        <p style="margin:0;color:#29231F;font-size:14px;line-height:1.35;font-weight:700;">{name}</p>
-        <p style="margin:4px 0 0;color:#716861;font-size:12px;line-height:1.4;">{cuisines}</p>
-      </td>
-      <td align="right" valign="middle" style="padding:10px 12px;"><a href="{restaurant_url}" style="color:#3B1F6B;text-decoration:none;font-size:12px;font-weight:700;">Explore&nbsp;›</a></td>
-    </tr>
-  </table>
-</td></tr>''')
-        restaurant_section = ""
-        if restaurant_rows:
-            restaurant_section = f'''<tr><td style="padding:22px 0 4px;">
-  <p style="margin:0 0 8px;color:#24170D;font-size:18px;font-weight:800;">Explore restaurants</p>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(restaurant_rows)}</table>
-</td></tr>'''
-
+        offer = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                 f'<td class="bg-soft" align="center" bgcolor="{cls.SOFT}" style="padding:26px 18px;background-color:{cls.SOFT};border:2px dashed {cls.ORANGE};border-radius:16px;">'
+                 f'<p class="big-num txt" style="margin:0;font-family:{FONT};font-size:48px;line-height:52px;font-weight:900;letter-spacing:-1px;color:{cls.INK};text-align:center;">{discount} off</p>'
+                 f'{cls._p(desc, "body", 15, align="center", extra="padding-top:8px;", lh=24)}</td></tr></table>')
         terms = []
         if expiry:
-            terms.append(f'<span style="font-weight:700;color:#3B1F6B;">Offer ends {expiry}</span>')
+            terms.append(f"<strong>Offer ends {expiry}</strong>")
         if min_order:
-            terms.append(f'<span>Minimum order: {text(min_order)}</span>')
-        terms_html = "&nbsp;&nbsp;·&nbsp;&nbsp;".join(terms)
-        contact_lines = []
-        if contact_address:
-            contact_lines.append(f'<p style="margin:4px 0;color:#716861;font-size:12px;">📍 {text(contact_address)}</p>')
-        if contact_hours:
-            contact_lines.append(f'<p style="margin:4px 0;color:#716861;font-size:12px;">🕒 {text(contact_hours)}</p>')
-        if contact_phone:
-            safe_phone = text(contact_phone)
-            contact_lines.append(f'<p style="margin:4px 0;color:#716861;font-size:12px;">☎ {safe_phone}</p>')
+            terms.append(f"Minimum order {t(min_order)}")
+        terms_html = cls._p(" &nbsp;·&nbsp; ".join(terms), "muted", 13, align="center") if terms else ""
 
-        header = cls._header(title, f"Hi <strong>{user}</strong> — {subtitle}", "🍔")
-        body = f'''<table style="max-width:600px;margin:0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td class="body__details body__background" bgcolor="#FFFFFF" style="padding:24px;background:#FFFFFF;border:1px solid #F0E4DA;border-radius:14px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-      {hero_image}
-      <tr><td align="center" bgcolor="#FFF1E5" style="padding:24px 18px;background-color:#FFF1E5;border:1px solid #FFD8BA;border-radius:14px;">
-        <p style="margin:0;color:#3B1F6B;font-size:11px;line-height:1.3;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;">A treat for your next order</p>
-        <p class="motion-enter" style="margin:8px 0 3px;color:#24170D;font-size:42px;line-height:1.05;font-weight:900;letter-spacing:-1px;">{discount} OFF</p>
-        <p style="margin:0;color:#4E4037;font-size:14px;line-height:1.5;">{title}</p>
-      </td></tr>
-      <tr><td style="padding:18px 2px 4px;color:#4E4640;font-size:14px;line-height:1.7;">{offer_description}</td></tr>
-      <tr><td align="center" style="padding:14px 0 8px;">
-        <a class="btn-primary" href="{action_url}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#FF6B00;color:#24170D;border-radius:10px;font-weight:800;text-decoration:none;">{cta}</a>
-      </td></tr>
-      {f'<tr><td align="center" style="padding:4px 0 12px;color:#716861;font-size:12px;line-height:1.6;">{terms_html}</td></tr>' if terms_html else ''}
-      {food_section}
-      {restaurant_section}
-      {f'<tr><td style="padding:18px 0 0;border-top:1px solid #F0E4DA;">{"".join(contact_lines)}</td></tr>' if contact_lines else ''}
-    </table>
-  </td></tr>
-</table>'''
-        footer = cls._footer("A good meal is always a good idea.")
-        preheader = f"{discount_amount} off your next order. {description}"
-        html = cls._base_template(header + body + footer, preheader)
+        food_html = ""
+        cards = []
+        for item in (food_items or [])[:4]:
+            name, price, orig = t(item.get("name")), t(item.get("price")), t(item.get("original_price"))
+            img_url = cls._safe_url(item.get("image_url"), "") if item.get("image_url") else ""
+            image = (f'<img src="{img_url}" width="72" height="72" alt="{name}" style="display:block;width:72px;height:72px;border-radius:10px;">'
+                     if img_url else cls._icon_badge("🍲", 72))
+            old = f'<span style="text-decoration:line-through;color:{cls.MUTED};font-weight:400;">{orig}</span>&nbsp; ' if orig and orig != price else ""
+            cards.append(
+                f'<td class="stack" width="50%" valign="top" style="width:50%;padding:6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+                f'class="bg-card bdr" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:1px solid {cls.LINE};border-radius:12px;border-collapse:separate;"><tr>'
+                f'<td width="84" valign="top" style="width:84px;padding:12px 0 12px 12px;">{image}</td>'
+                f'<td valign="middle" style="padding:12px;">{cls._p(name, "ink", 14, 700, mb=4, lh=19)}{cls._p(old + price, "accent", 14, 800)}</td></tr></table></td>')
+        if cards:
+            rows = ""
+            for i in range(0, len(cards), 2):
+                pair = cards[i:i + 2]
+                if len(pair) == 1:
+                    pair.append('<td class="stack" width="50%" style="width:50%;padding:6px;">&nbsp;</td>')
+                rows += f'<tr>{"".join(pair)}</tr>'
+            food_html = (f'{cls._p("A few favourites", "ink", 18, 700, mb=6)}'
+                         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-left:-6px;">{rows}</table>')
 
-        items_text = ""
-        if food_items:
-            items_text = "\n\nFEATURED ITEMS:\n" + "\n".join(
-                f"  - {item.get('name', '')}: {item.get('price', '')}" for item in food_items[:4]
-            )
-        restaurants_text = ""
-        if restaurants:
-            restaurants_text = "\n\nRESTAURANTS:\n" + "\n".join(
-                f"  - {restaurant.get('name', '')} ({restaurant.get('cuisines', '')})"
-                for restaurant in restaurants[:4]
-            )
-        terms_text = f"\nOffer ends: {expiry_date}" if expiry_date else ""
-        if min_order:
-            terms_text += f"\nMinimum order: {min_order}"
-        contact_text = "\n".join(str(value) for value in (contact_address, contact_hours, contact_phone) if value)
+        rest_rows = []
+        for r in (restaurants or [])[:4]:
+            name, cuisines = t(r.get("name")), t(r.get("cuisines"))
+            link = cls._safe_url(r.get("link"))
+            img_url = cls._safe_url(r.get("image_url"), "") if r.get("image_url") else ""
+            image = (f'<img src="{img_url}" width="64" height="64" alt="{name}" style="display:block;width:64px;height:64px;border-radius:10px;">'
+                     if img_url else cls._icon_badge("🍽️", 64))
+            rest_rows.append(
+                f'<tr><td style="padding:5px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg-card bdr" bgcolor="#FFFFFF" '
+                f'style="background-color:#FFFFFF;border:1px solid {cls.LINE};border-radius:12px;border-collapse:separate;"><tr>'
+                f'<td width="78" style="width:78px;padding:10px;">{image}</td>'
+                f'<td valign="middle" style="padding:10px 8px 10px 0;">{cls._p(name, "ink", 14, 700, mb=2, lh=19)}{cls._p(cuisines, "muted", 12)}</td>'
+                f'<td align="right" valign="middle" style="padding:10px 14px;white-space:nowrap;"><a href="{link}" style="color:{cls.ORANGE_DEEP};font-family:{FONT};font-size:13px;font-weight:700;">Explore &rsaquo;</a></td>'
+                f'</tr></table></td></tr>')
+        rest_html = (f'{cls._p("Explore restaurants", "ink", 18, 700, mb=6)}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(rest_rows)}</table>'
+                     if rest_rows else "")
+
+        contact = [cls._p(f"{icon} {t(val)}", "muted", 12, mb=3) for icon, val in (("📍", contact_address), ("🕒", contact_hours), ("☎", contact_phone)) if val]
+        contact_html = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="bdr" style="padding-top:16px;border-top:1px solid {cls.LINE};">'
+                        f'{"".join(contact)}</td></tr></table>') if contact else ""
+
+        body = cls._body(cls._stack([offer, cls._button(t(cta_text or "Order now"), action_url), terms_html, food_html, rest_html, contact_html], gap=22, align="center"))
+        html = cls._layout(f"{discount_amount} off your next order. {description}", hero, body, "A good meal is always a good idea.", tag="Offer",
+                           footer_note="You are receiving this because you have an account with us." if unsub else "", unsubscribe_url=unsub)
+
+        items_text = ("\n\nFEATURED ITEMS:\n" + "\n".join(f"  - {i.get('name', '')}: {i.get('price', '')}" for i in food_items[:4])) if food_items else ""
+        rest_text = ("\n\nRESTAURANTS:\n" + "\n".join(f"  - {r.get('name', '')} ({r.get('cuisines', '')})" for r in restaurants[:4])) if restaurants else ""
+        terms_text = (f"\nOffer ends: {expiry_date}" if expiry_date else "") + (f"\nMinimum order: {min_order}" if min_order else "")
+        contact_text = "\n".join(str(v) for v in (contact_address, contact_hours, contact_phone) if v)
         contact_text = f"\n\nRestaurant details:\n{contact_text}" if contact_text else ""
-        plain = f'''Hi {user_name},
+        unsub_text = f"\n\nUnsubscribe: {unsub}" if unsub else ""
+        plain = (f"Hi {user_name},\n\n{hero_title}\n{hero_subtitle}\n\n{discount_amount} OFF\n{description}{terms_text}{items_text}{rest_text}{contact_text}\n\n"
+                 f"{cta_text or 'Order now'}: {action_url}{unsub_text}\n\n{cls._plain_footer()}")
+        return {"subject": f"🍽️ {cls._oneline(discount_amount)} off your next order", "html": html, "plain": plain}
 
-{hero_title}
-{hero_subtitle}
-
-{discount_amount} OFF
-{description}{terms_text}{items_text}{restaurants_text}{contact_text}
-
-Order now: {cta_link}
-
-© {cls._get_year()} {cls._get_company_name()}'''
-        return {"subject": f"🍽️ {discount_amount} off your next order", "html": html, "plain": plain}
+    @classmethod
+    def welcome_promo(cls, user_name: str, promo_code: str, discount_amount: str,
+                      terms: str = "Valid on your first order only.", unsubscribe_url: str = None) -> Dict[str, str]:
+        discount = cls._t(discount_amount)
+        unsub = unsubscribe_url or getattr(settings, "EMAIL_UNSUBSCRIBE_URL", None)
+        hero = cls._hero("🎁", "A gift for you", f"Welcome to the {cls._t(cls._get_company_name())} family.")
+        ticket = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                  f'<td class="bg-soft" align="center" bgcolor="{cls.SOFT}" style="padding:26px 18px;background-color:{cls.SOFT};border:2px dashed {cls.ORANGE};border-radius:16px;">'
+                  f'<p class="big-num txt" style="margin:0;font-family:{FONT};font-size:52px;line-height:56px;font-weight:900;letter-spacing:-1px;color:{cls.INK};text-align:center;">{discount}</p>'
+                  f'{cls._p("off your first order", "body", 15, align="center", mb=16)}'
+                  f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr>'
+                  f'<td class="bg-card" align="center" bgcolor="#FFFFFF" style="padding:10px 24px;background-color:#FFFFFF;border:1px solid {cls.PEACH};border-radius:10px;">'
+                  f'<p class="code-text txt" style="margin:0;padding:0 0 0 4px;font-family:{MONO};font-size:26px;line-height:32px;font-weight:800;letter-spacing:4px;color:{cls.INK};text-align:center;">{cls._t(promo_code)}</p></td></tr></table>'
+                  f'{cls._p(cls._t(terms), "muted", 13, align="center", extra="padding-top:12px;")}</td></tr></table>')
+        steps = cls._feature_list([
+            ("🛒", "Add your favourites", "Pick a restaurant and fill your basket."),
+            ("🏷️", "Enter the code at checkout", "The discount is applied automatically."),
+            ("😋", "Enjoy", "Sit back while we bring it to you."),
+        ])
+        body = cls._body(cls._stack([ticket, cls._p("How to use it", "ink", 17, 700), steps,
+                                     cls._button("Claim your gift", cls._get_customer_app_url())], gap=22))
+        html = cls._layout(f"Get {discount_amount} off your first order with code {promo_code}", hero, body,
+                           f"Welcome aboard, {cls._t(user_name)}!", tag="Welcome gift", unsubscribe_url=unsub)
+        plain = (f"A gift for you, {user_name}!\n\nGet {discount_amount} off your first order.\n\nPROMO CODE: {promo_code}\n{terms}\n\n"
+                 f"Start ordering: {cls._get_customer_app_url()}\n\n{cls._plain_footer()}")
+        return {"subject": f"🎁 Your welcome gift: {cls._oneline(discount_amount)} off", "html": html, "plain": plain}
 
     # ============================================================
-    # WELCOME PROMO - Gift themed, first order discount
+    # DELIVERY
     # ============================================================
     @classmethod
-    def welcome_promo(cls, user_name: str, promo_code: str, discount_amount: str) -> Dict[str, str]:
-        """Welcome promo - gift box themed with responsive light styling"""
-        
-        header = cls._header(
-            f"A Gift For You! 🎁",
-            "Welcome to the Fudgo family",
-            "🎁"
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          <!-- Discount Card -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFE2CC 100%); border-radius: 12px; padding: 32px; margin-bottom: 24px; border: 2px solid #FF6B00;">
-            <tr><td align="center">
-              <p style="font-size: 48px; font-weight: 900; color: #3B1F6B; margin: 0;">{discount_amount}</p>
-              <p style="color: #6b7280; font-size: 14px; margin: 8px 0 0;">off your first order</p>
-            </td></tr>
-          </table>
-          
-          <!-- Code Box -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border: 1px solid #FFD8BA; border-radius: 12px; padding: 20px; margin: 24px 0;">
-            <tr><td align="center">
-              <p style="color: #3B1F6B; font-size: 28px; font-weight: 800; letter-spacing: 4px; font-family: monospace; margin: 0;">{promo_code}</p>
-              <p style="color: #9ca3af; font-size: 13px; margin: 12px 0 0;">Valid for first order only</p>
-            </td></tr>
-          </table>
-          
-          <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 24px 0;">Start your Fudgo journey with a treat on us! Thousands of restaurants are waiting.</p>
-          
-          <a href="{cls._get_customer_app_url()}" class="btn-primary" style="padding: 16px 40px; font-size: 16px;">Claim Your Gift 🎉</a>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer(f"Welcome aboard, {user_name}! 💚")
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Get {discount_amount} OFF your first order with code {promo_code}"
-        )
-        
-        plain = f"""🎁 Welcome Gift for {user_name}!
+    def delivery_driver_assigned(cls, user_name: str, order_id: str, driver_name: str, estimated_time: str) -> Dict[str, str]:
+        oid, driver, eta = cls._t(order_id), cls._t(driver_name), cls._t(estimated_time)
+        initial = cls._t((str(driver_name or "")[:1] or "D").upper())
+        route = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+                 f'<td width="64" align="center" valign="bottom" style="width:64px;"><p style="margin:0;font-size:28px;line-height:32px;">🍳</p>{cls._p("Restaurant", "muted", 11, 600, "center")}</td>'
+                 f'<td valign="middle" style="padding:0 6px 14px;"><div class="m-drive" style="text-align:center;font-size:28px;line-height:32px;">🛵</div>'
+                 f'<div style="border-top:2px dashed #FFB27A;font-size:0;line-height:0;height:0;">&nbsp;</div></td>'
+                 f'<td width="64" align="center" valign="bottom" style="width:64px;"><p style="margin:0;font-size:28px;line-height:32px;">🏠</p>{cls._p("You", "muted", 11, 600, "center")}</td>'
+                 f'</tr></table>')
+        driver_card = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                       f'<td class="bg-soft bdr" bgcolor="{cls.SOFT}" style="padding:16px 18px;background-color:{cls.SOFT};border:1px solid {cls.PEACH};border-radius:14px;">'
+                       f'<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="56" valign="middle" style="width:56px;">'
+                       f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>'
+                       f'<td align="center" valign="middle" width="46" height="46" bgcolor="{cls.ORANGE}" style="width:46px;height:46px;background-color:{cls.ORANGE};border-radius:50%;'
+                       f'font-family:{FONT};font-size:20px;line-height:1;font-weight:800;color:{cls.INK};text-align:center;">{initial}</td></tr></table></td>'
+                       f'<td valign="middle">{cls._p(driver, "ink", 17, 700)}{cls._p("Your delivery partner", "muted", 13)}</td></tr></table></td></tr></table>')
+        info = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+                f'{cls._info_row("📦 Order", "#" + oid)}{cls._info_row("⏱️ Arriving in", eta)}</table>')
+        hero = cls._hero("🛵", "Your driver is on the way", f"Order <strong>#{oid}</strong>", tone="violet", live=True)
+        body = cls._body(cls._stack([route, driver_card, info, cls._button("Track delivery", cls._get_customer_app_url())], gap=22, align="center"))
+        html = cls._layout(f"{driver_name} is delivering your order. Arriving in {estimated_time}", hero, body, tag=f"Order #{oid}")
+        plain = (f"Your driver is on the way!\n\nOrder #{order_id}\n\n{driver_name} has picked up your order.\nArriving in: {estimated_time}\n\n"
+                 f"Track it in the {cls._get_company_name()} app.\n\n{cls._plain_footer()}")
+        return {"subject": f"🛵 {cls._oneline(driver_name)} is delivering your order", "html": html, "plain": plain}
 
-Get {discount_amount} OFF your first order!
-
-PROMO CODE: {promo_code}
-Valid for first order only.
-
-Start ordering at {cls._get_customer_app_url()}!
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": f"🎁 Your Welcome Gift: {discount_amount} OFF!", "html": html, "plain": plain}
-
-    # ============================================================
-    # DRIVER ASSIGNED - Map/tracking themed
-    # ============================================================
-    @classmethod
-    def delivery_driver_assigned(
-        cls, user_name: str, order_id: str,
-        driver_name: str, estimated_time: str
-    ) -> Dict[str, str]:
-        """Driver assigned - tracking/map style with responsive light styling"""
-        
-        header = cls._header(
-            f"Driver On The Way! 🛵",
-            f"Order #{order_id}",
-            "🛵"
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          <!-- Driver Card -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #FFF3E8 0%, #FFE2CC 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-            <tr><td align="center">
-              <div style="width: 64px; height: 64px; background: #FF6B00; border-radius: 50%; display: inline-block; line-height: 64px; font-size: 28px;">👤</div>
-              <p style="color: #1f2937; font-size: 18px; font-weight: 700; margin: 12px 0 4px;">{driver_name}</p>
-              <p style="color: #6b7280; font-size: 13px; margin: 0;">Your Delivery Partner</p>
-            </td></tr>
-          </table>
-          
-          <!-- Info Rows -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-            <tr>
-              <td style="color: #6b7280; font-size: 14px;">📦 Order ID</td>
-              <td align="right" style="color: #1f2937; font-size: 14px; font-weight: 600;">#{order_id}</td>
-            </tr>
-          </table>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-            <tr>
-              <td style="color: #6b7280; font-size: 14px;">⏱️ Arriving In</td>
-              <td align="right" style="color: #1f2937; font-size: 14px; font-weight: 600;">{estimated_time}</td>
-            </tr>
-          </table>
-          
-          <a href="{cls._get_customer_app_url()}" class="btn-primary">Open Fudgo App</a>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer()
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"{driver_name} is delivering your order - arriving in {estimated_time}"
-        )
-        
-        plain = f"""🛵 Driver On The Way!
-
-Order #{order_id}
-
-Your driver {driver_name} has picked up your order!
-Arriving in: {estimated_time}
-
-Track in the Fudgo app.
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": f"🛵 {driver_name} is Delivering Your Order!", "html": html, "plain": plain}
-
-    # ============================================================
-    # ARRIVING SOON - Countdown/urgent style
-    # ============================================================
     @classmethod
     def delivery_arriving_soon(cls, user_name: str, order_id: str, minutes_away: int = 5) -> Dict[str, str]:
-        """Arriving soon - countdown timer style with responsive light styling"""
-        
-        header = cls._header(
-            f"Almost There! 🏃",
-            "Your order is just around the corner!",
-            "🏃"
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td align="center">
-          <!-- Countdown Box -->
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 16px; padding: 32px 48px; margin: 16px 0; border: 3px solid #f59e0b;">
-            <tr><td align="center">
-              <p style="font-size: 72px; font-weight: 900; color: #d97706; margin: 0; line-height: 1;">{minutes_away}<span style="font-size: 24px;">min</span></p>
-            </td></tr>
-          </table>
-          
-          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 24px 0;">Please be ready to receive your order!</p>
-          
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 24px;">
-            <tr><td align="center">
-              <p style="color: #6b7280; font-size: 14px; margin: 0;">Order #{order_id}</p>
-            </td></tr>
-          </table>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>
-  
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="background: #fef3c7; border-radius: 12px; padding: 16px; text-align: center;">
-      <p style="color: #92400e; font-size: 13px; font-weight: 500; margin: 0;">📱 Keep your phone nearby!</p>
-    </td></tr>
-  </table>
-  
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer()
-        
-        html = cls._base_template(
-            header + body + footer,
-            f"Your order arrives in {minutes_away} minutes!"
-        )
-        
-        plain = f"""🏃 Almost There!
-
-Your order will arrive in {minutes_away} minutes!
-
-Order #{order_id}
-
-Please be ready to receive your order.
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": f"🏃 {minutes_away} Min Away – Get Ready!", "html": html, "plain": plain}
+        mins, oid = int(minutes_away), cls._t(order_id)
+        ring = (f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" class="m-pulse" style="margin:0 auto;border-collapse:separate;border-radius:50%;color:{cls.ORANGE};"><tr>'
+                f'<td class="bg-soft" align="center" valign="middle" width="150" height="150" bgcolor="{cls.SOFT}" '
+                f'style="width:150px;height:150px;background-color:{cls.SOFT};border:6px solid {cls.ORANGE};border-radius:50%;">'
+                f'<p class="big-num txt" style="margin:0;font-family:{FONT};font-size:56px;line-height:58px;font-weight:900;color:{cls.INK};text-align:center;">{mins}</p>'
+                f'{cls._p("minutes", "muted", 14, 700, "center")}</td></tr></table>')
+        hero = cls._hero("🏃", "Almost there", "Your order is just around the corner.", tone="orange")
+        body = cls._body(cls._stack([
+            ring,
+            cls._p("Please be ready to receive your order.", "body", 16, 600, "center"),
+            cls._notice("Keep your phone nearby", "Your driver may call if they can't find you.", tone="blue", icon="📱"),
+            cls._p(f"Order #{oid}", "muted", 13, align="center"),
+        ], gap=22, align="center"))
+        html = cls._layout(f"Your order arrives in {mins} minutes!", hero, body, tag=f"Order #{oid}")
+        plain = f"Almost there!\n\nYour order will arrive in {mins} minutes.\n\nOrder #{order_id}\n\nPlease be ready to receive it.\n\n{cls._plain_footer()}"
+        return {"subject": f"🏃 {mins} min away – get ready!", "html": html, "plain": plain}
 
     # ============================================================
-    # ACCOUNT DEACTIVATED - Subtle, respectful goodbye
+    # ACCOUNT
     # ============================================================
     @classmethod
-    def account_deactivated(cls, user_name: str) -> Dict[str, str]:
-        """Account deactivated - gentle farewell design with responsive light styling"""
-        
-        header = cls._header(
-            f"We'll Miss You, {user_name} 👋",
-            "Your Fudgo account has been deactivated as requested.",
-            "👋"
-        )
-        
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 24px;">
-      <table class="table__padded" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td>
-          <p style="color: #4b5563; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">We're sad to see you go, but we understand.</p>
-          
-          <!-- Info Box -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #FFF3E8; border-radius: 12px; padding: 20px; margin: 24px 0;">
-            <tr><td>
-              <p style="color: #1f2937; font-size: 14px; font-weight: 600; margin: 0 0 8px;">💡 Changed Your Mind?</p>
-              <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.5;">You can reactivate your account within 30 days by simply logging in. All your data will be restored.</p>
-            </td></tr>
-          </table>
-          
-          <p style="color: #4b5563; font-size: 15px; line-height: 1.7; margin: 24px 0;">If there's anything we could have done better, we'd love to hear from you.</p>
-          
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0;">
-            <tr>
-              <td align="center">
-                <a href="{cls._get_customer_app_url()}" class="btn-primary" style="margin-right: 12px;">Log in to Reactivate</a>
-                <a href="{cls._get_support_url()}" style="display: inline-block; border: 1px solid #E5D8CD; color: #3B1F6B; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">Give Feedback</a>
-              </td>
-            </tr>
-          </table>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td style="height: 24px;"></td></tr>
-  </table>"""
-        
-        footer = cls._footer("Thank you for being part of Fudgo 💚")
-        
-        html = cls._base_template(
-            header + body + footer,
-            "Your Fudgo account has been deactivated"
-        )
-        
-        plain = f"""We'll Miss You, {user_name}
-
-Your Fudgo account has been deactivated.
-
-Changed your mind? Log in within 30 days to reactivate.
-
-Thank you for being part of Fudgo!
-
-© {cls._get_year()} Fudgo"""
-
-        return {"subject": "👋 Account Deactivated – Fudgo", "html": html, "plain": plain}
-
+    def account_deactivated(cls, user_name: str, reactivation_days: int = 30) -> Dict[str, str]:
+        name, company, days = cls._name(user_name), cls._t(cls._get_company_name()), int(reactivation_days)
+        hero = cls._hero("👋", f"We'll miss you, {name}", f"Your {company} account has been deactivated, as you requested.")
+        body = cls._body(cls._stack([
+            cls._notice("Changed your mind?",
+                        f"Log in within {days} days to reactivate your account. All your data will be restored.", tone="blue", icon="💡"),
+            cls._p("If there is anything we could have done better, we'd love to hear from you.", "body", 15, align="center", lh=24),
+            cls._button("Log in to reactivate", cls._get_customer_app_url()),
+            cls._button("Share feedback", cls._get_support_url(), kind="secondary"),
+        ], gap=22, align="center"))
+        html = cls._layout(f"Your {cls._get_company_name()} account has been deactivated", hero, body,
+                           f"Thank you for being part of {company}.", tag="Account")
+        plain = (f"We'll miss you, {user_name}.\n\nYour {cls._get_company_name()} account has been deactivated.\n\n"
+                 f"Changed your mind? Log in within {days} days to reactivate it: {cls._get_customer_app_url()}\n\n{cls._plain_footer()}")
+        return {"subject": f"👋 Account deactivated – {cls._oneline(cls._get_company_name())}", "html": html, "plain": plain}
 
     @classmethod
-    def restaurant_invitation(cls, user_name: str, restaurant_name: str, activation_url: str, role: str = "restaurant owner") -> Dict[str, str]:
-        """Invitation for a restaurant owner or staff member to activate access."""
-        header = cls._header(
-            "Your restaurant workspace is ready",
-            f"{restaurant_name} invited you to join its Fudz Hub workspace as a {role}.",
-            "🍽️",
-        )
-        body = f"""
-  <table style="max-width:600px; margin: 0 auto;" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr><td class="body__details body__background" style="border-radius: 16px; padding: 32px; text-align: center;">
-      <p style="color: #4b5563; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">Hi <strong>{user_name}</strong>, you have been invited to join <strong>{restaurant_name}</strong> as a <strong>{role}</strong>.</p>
-      <a href="{activation_url}" class="btn-primary">Activate your account</a>
-      <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 24px 0 0;">Choose a password from the secure activation page. This invitation link expires after 30 minutes.</p>
-      <p style="color: #9ca3af; font-size: 11px; margin-top: 18px;">If you were not expecting this invitation, you can safely ignore it.</p>
-    </td></tr>
-  </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="height: 24px;"></td></tr></table>"""
-        html = cls._base_template(header + body + cls._footer("Welcome to your restaurant workspace."), "Activate your Fudz Hub restaurant workspace")
-        plain = f"""Hi {user_name},
+    def restaurant_invitation(cls, user_name: str, restaurant_name: str, activation_url: str,
+                              role: str = "restaurant owner", expires_minutes: int = 30) -> Dict[str, str]:
+        name, rest, role_h, minutes = cls._name(user_name), cls._t(restaurant_name), cls._t(role), int(expires_minutes)
+        hub = cls._t(getattr(settings, "RESTAURANT_HUB_NAME", "Fudz Hub"))
+        href = cls._safe_url(activation_url)
+        hero = cls._hero("🍽️", "Your restaurant workspace is ready", f"<strong>{rest}</strong> invited you to join its {hub} workspace.")
+        body = cls._body(cls._stack([
+            cls._p(f"Hi <strong>{name}</strong>, you have been invited to join <strong>{rest}</strong> as <strong>{role_h}</strong>. "
+                   "Choose a password on the secure activation page to get started.", "body", 15, align="center", lh=24),
+            cls._button("Activate your account", activation_url),
+            cls._chip(f"Link expires in <strong>{minutes} minutes</strong>"),
+            cls._p(f'Button not working? Copy and paste this link into your browser:<br><a href="{href}" style="color:{cls.ORANGE_DEEP};word-break:break-all;">{href}</a>',
+                   "muted", 12, align="center"),
+            cls._p("If you were not expecting this invitation, you can safely ignore it.", "muted", 12, align="center"),
+        ], gap=22, align="center"))
+        html = cls._layout(f"Activate your {cls._get_company_name()} restaurant workspace", hero, body,
+                           "Welcome to your restaurant workspace.", tag="Invitation")
+        plain = (f"Hi {user_name},\n\nYou have been invited to join {restaurant_name} as {role}. Activate your account and choose a password here:\n"
+                 f"{activation_url}\n\nThis invitation link expires after {minutes} minutes.\n\n"
+                 f"If you were not expecting this invitation, you can safely ignore it.\n\n{cls._plain_footer()}")
+        return {"subject": f"🍽️ Activate your {cls._oneline(getattr(settings, 'RESTAURANT_HUB_NAME', 'Fudz Hub'))} restaurant workspace", "html": html, "plain": plain}
 
-You have been invited to join {restaurant_name} as a {role}. Activate your account and choose a password here:
-{activation_url}
-
-This invitation link expires after 30 minutes.
-
-If you were not expecting this invitation, you can safely ignore it.
-"""
-        return {"subject": "🍽️ Activate your Fudz Hub restaurant workspace", "html": html, "plain": plain}
 
 # ============================================================
-# CONVENIENCE FUNCTION
+# CONVENIENCE FUNCTION (unchanged public API)
 # ============================================================
 def get_email_template(template_type: str, **kwargs) -> Dict[str, Any]:
     """Get email template by type"""
