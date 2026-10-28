@@ -680,7 +680,7 @@ class UserController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      print('📝 Registration data: $userData');
+
       final response = await _apiService.post('users/auth/register/', userData);
 
       print('✅ Registration response: $response');
@@ -738,7 +738,7 @@ class UserController extends GetxController {
 
         Get.offAllNamed('/home');
       } else {
-        Get.toNamed('/register', arguments: {'email': email});
+        Get.toNamed('/register', arguments: {'email': email, 'registration_token': response['registration_token']});
       }
     } catch (e) {
       error.value = e.toString();

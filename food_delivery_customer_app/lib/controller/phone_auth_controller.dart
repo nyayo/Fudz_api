@@ -249,7 +249,7 @@ class PhoneAuthController extends GetxController {
         } else if (response['requires_registration'] == true) {
           Get.offAllNamed(
             '/register',
-            arguments: {'phone': phone, 'from_phone': true},
+            arguments: {'phone': phone, 'from_phone': true, 'registration_token': response['registration_token']},
           );
         } else {
           throw Exception('Unexpected response from server');

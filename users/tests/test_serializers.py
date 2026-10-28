@@ -5,6 +5,7 @@ from rest_framework import serializers as drf_errors
 
 from factories import UserFactory
 from users.models import EmailVerification, PhoneVerification, RestaurantProfile
+from users.registration_proofs import issue_registration_proof
 from users.serializers import (
     LoginSerializer,
     RegistrationSerializer,
@@ -51,7 +52,10 @@ class TestRequestPhoneOTPSerializer:
 
 class TestRegistrationSerializer:
     def base_payload(self, email="newuser@test.ug"):
+        record = EmailVerification.objects.filter(email=email).first() if email else PhoneVerification.objects.filter(phone="+256772999888").first()
+        proof = issue_registration_proof(record, "email" if email else "phone") if record else "unverified"
         return {
+            "registration_token": proof,
             "email": email,
             "first_name": "Jane",
             "last_name": "Doe",
@@ -77,7 +81,7 @@ class TestRegistrationSerializer:
     def test_unverified_email_rejected(self):
         s = RegistrationSerializer(data=self.base_payload())
         assert not s.is_valid()
-        assert "Email not verified." in str(s.errors)
+        assert "invalid or expired" in str(s.errors)
 
     def test_expired_verified_email_rejected(self):
         email = "expired@test.ug"
@@ -87,13 +91,13 @@ class TestRegistrationSerializer:
         record.save(update_fields=["expires_at"])
         s = RegistrationSerializer(data=self.base_payload(email=email))
         assert not s.is_valid()
-        assert "Email not verified." in str(s.errors)
+        assert "invalid or expired" in str(s.errors)
 
     def test_registration_requires_a_verified_contact(self):
         payload = self.base_payload(email="")
         s = RegistrationSerializer(data=payload)
         assert not s.is_valid()
-        assert "verified email or phone" in str(s.errors).lower()
+        assert "invalid or expired" in str(s.errors).lower()
 
     def test_registration_accepts_active_phone_verification(self):
         phone = "+256772999888"

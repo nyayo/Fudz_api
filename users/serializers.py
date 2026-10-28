@@ -19,6 +19,7 @@ from .models import (CourierProfile, CustomerProfile, EmailVerification,
                      NotificationPreference, PhoneVerification,
                      RestaurantProfile, RestaurantStaffProfile, User)
 from .services import send_normal_email
+from .registration_proofs import issue_registration_proof, read_registration_proof
 
 REGISTRATION_PROOF_TTL = timezone.timedelta(minutes=30)
 
@@ -42,6 +43,7 @@ class RequestPhoneOTPSerializer(serializers.Serializer):
 
 
 class VerifyPhoneOTPSerializer(serializers.Serializer):
+    registration_token = serializers.CharField(read_only=True, allow_null=True)
     phone = serializers.CharField(max_length=17)
     otp = serializers.CharField(max_length=6, write_only=True)
     user_exists = serializers.BooleanField(read_only=True)
@@ -82,6 +84,7 @@ class VerifyPhoneOTPSerializer(serializers.Serializer):
             record.save(update_fields=["expires_at"])
 
         return {
+            "registration_token": issue_registration_proof(record, "phone") if not user_exists else None,
             "phone": validated_data["phone"],
             "verified": True,
             "user_exists": user_exists,
@@ -90,6 +93,7 @@ class VerifyPhoneOTPSerializer(serializers.Serializer):
 
 
 class VerifyOTPSerializer(serializers.Serializer):
+    registration_token = serializers.CharField(read_only=True, allow_null=True)
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6, write_only=True)
     user_exists = serializers.BooleanField(read_only=True)
@@ -130,6 +134,7 @@ class VerifyOTPSerializer(serializers.Serializer):
             record.save(update_fields=["expires_at"])
 
         return {
+            "registration_token": issue_registration_proof(record, "email") if not user_exists else None,
             "email": validated_data["email"],
             "verified": True,
             "user_exists": user_exists,
@@ -138,6 +143,7 @@ class VerifyOTPSerializer(serializers.Serializer):
 
 
 class RegistrationSerializer(serializers.Serializer):
+    registration_token = serializers.CharField(write_only=True)
     email = serializers.EmailField(required=False, allow_blank=True)
     first_name = serializers.CharField(max_length=30)
     last_name = serializers.CharField(max_length=30)
@@ -172,29 +178,13 @@ class RegistrationSerializer(serializers.Serializer):
                 "An account with this phone number already exists. Please login instead."
             )
 
-        verification_time = timezone.now()
-        email_verified = bool(
-            email
-            and EmailVerification.objects.filter(
-                email=email,
-                is_verified=True,
-                expires_at__gt=verification_time,
-            ).exists()
-        )
-        phone_verified = bool(
-            phone
-            and PhoneVerification.objects.filter(
-                phone=phone,
-                is_verified=True,
-                expires_at__gt=verification_time,
-            ).exists()
-        )
-        if email and not email_verified:
-            raise serializers.ValidationError("Email not verified.")
-        if not email_verified and not phone_verified:
-            raise serializers.ValidationError(
-                "A verified email or phone number is required to register."
-            )
+        channel, record = read_registration_proof(attrs["registration_token"])
+        contact = email if channel == "email" else phone
+        if not contact or getattr(record, channel) != contact:
+            raise serializers.ValidationError({"registration_token": "Verification does not match this contact."})
+        # An email used as a login identity must itself be proven.
+        if email and channel != "email":
+            raise serializers.ValidationError("Verify the email before registering with it.")
 
         user_type = attrs["user_type"]
         if user_type == "customer" and not attrs.get("phone"):
@@ -234,9 +224,14 @@ class RegistrationSerializer(serializers.Serializer):
 
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         from .tasks import send_templated_email_task
 
+        token = validated_data.pop("registration_token")
+        _, proof = read_registration_proof(token, lock=True)
+        proof.is_verified = False
+        proof.save(update_fields=["is_verified"])
         profile_data = {}
         profile_fields = {
             "customer": [],
@@ -665,10 +660,13 @@ class RestaurantStaffSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {"restaurant": {"required": False}}
 
-    # def validate(self, attrs):
-    #     if User.objects.filter(email=attrs['email']).exists():
-    #         raise serializers.ValidationError("Email already registered.")
-    #     return attrs
+    def validate_restaurant(self, restaurant):
+        request = self.context.get("request")
+        if request and not request.user.is_staff:
+            owner = getattr(request.user, "restaurant_profile", None)
+            if not owner or restaurant.pk != owner.pk:
+                raise serializers.ValidationError("You can only manage staff for your restaurant.")
+        return restaurant
 
     def create(self, validated_data):
         email = validated_data.pop("email", "")

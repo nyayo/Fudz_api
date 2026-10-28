@@ -10,7 +10,7 @@ from rest_framework.mixins import (
     DestroyModelMixin,
     RetrieveModelMixin,
 )
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import BasePermission, AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
@@ -169,6 +169,23 @@ class CartItemViewSet(ModelViewSet):
         )
 
 
+class CanOperateOrders(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        staff = getattr(user, "restaurant_staff_profile", None)
+        return bool(user.is_authenticated and (
+            user.is_staff or getattr(user, "restaurant_profile", None)
+            or (staff and staff.is_active)
+        ))
+
+    def has_object_permission(self, request, view, order):
+        user = request.user
+        owner = getattr(user, "restaurant_profile", None)
+        staff = getattr(user, "restaurant_staff_profile", None)
+        return bool(user.is_staff or (owner and owner.pk == order.restaurant_id)
+                    or (staff and staff.is_active and staff.restaurant_id == order.restaurant_id))
+
+
 class OrderViewSet(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -182,8 +199,8 @@ class OrderViewSet(ModelViewSet):
             return [IsAuthenticated()]
         if self.request.method in ["DELETE"]:
             return [IsAdminUser()]
-        if self.request.method in ["PATCH"]:
-            return [IsAuthenticated()]
+        if self.request.method == "PATCH" or self.action == "accept":
+            return [CanOperateOrders()]
         return [IsAuthenticated()]
 
     @transaction.atomic
@@ -245,7 +262,15 @@ class OrderViewSet(ModelViewSet):
     @transaction.atomic
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
-        order = self.get_object()
+        visible_order = self.get_object()
+        order = Order.objects.select_for_update().get(pk=visible_order.pk)
+        user = request.user
+        owner = getattr(user, "restaurant_profile", None)
+        staff = getattr(user, "restaurant_staff_profile", None)
+        if not (user.is_staff or (owner and owner.pk == order.restaurant_id)
+                or (staff and staff.is_active and staff.restaurant_id == order.restaurant_id)):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only the restaurant can accept this order.")
 
         # Validate status transition
         if order.status != OrderStatus.PLACED:

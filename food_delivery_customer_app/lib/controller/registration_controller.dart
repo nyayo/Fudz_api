@@ -39,12 +39,14 @@ class RegistrationController extends GetxController {
   String? email;
   // Phone from phone-first flow
   String? phone;
+  String? registrationToken;
 
   @override
   void onInit() {
     super.onInit();
     final arguments = Get.arguments;
     if (arguments != null) {
+      registrationToken = arguments['registration_token'];
       if (arguments['email'] != null) {
         email = arguments['email'];
         emailController.text = email!;
@@ -122,6 +124,7 @@ class RegistrationController extends GetxController {
 
       if (response != null && response['verified'] == true) {
         isEmailVerified.value = true;
+        registrationToken = response['registration_token'];
         email = emailText;
         showOtpFields.value = false;
         Get.snackbar(
@@ -188,7 +191,11 @@ class RegistrationController extends GetxController {
         throw Exception('Passwords do not match');
       }
 
+      if (registrationToken == null || registrationToken!.isEmpty) {
+        throw Exception('Verify your email or phone again before registering.');
+      }
       final registrationData = {
+        'registration_token': registrationToken!,
         'email': effectiveEmail,
         'first_name': firstNameController.text.trim(),
         'last_name': lastNameController.text.trim(),
@@ -198,7 +205,7 @@ class RegistrationController extends GetxController {
         'password2': confirmPasswordController.text,
       };
 
-      print('📝 Registration data: $registrationData');
+
 
       final response = await _apiService.postPublic(
         'users/auth/register/',

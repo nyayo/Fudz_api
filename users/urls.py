@@ -2,6 +2,8 @@ from django.urls import path
 from rest_framework_nested import routers
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from .browser_sessions import BrowserSessionView, BrowserRefreshView, BrowserLogoutView
+
 from .views import (
     GoogleOauthSignInview,
     LinkGoogleAccountView,
@@ -32,6 +34,9 @@ routers.register("auth/admin/users", AdminUserViewSet, basename="admin-users")
 app_name = "users"
 
 urlpatterns = [
+    path("auth/browser/session/", BrowserSessionView.as_view(), name="browser-session"),
+    path("auth/browser/refresh/", BrowserRefreshView.as_view(), name="browser-refresh"),
+    path("auth/browser/logout/", BrowserLogoutView.as_view(), name="browser-logout"),
     path("auth/request-otp/", RequestOTPView.as_view(), name="request-otp"),
     path("auth/verify-otp/", VerifyOTPView.as_view(), name="verify-otp"),
     path(

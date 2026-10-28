@@ -1,5 +1,5 @@
 import hashlib
-import random
+import secrets
 import string
 
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
@@ -164,7 +164,7 @@ class EmailVerification(models.Model):
 
     def generate_otp(self):
         """Generate a new OTP and return the plain text version"""
-        plain_otp = "".join(random.choices(string.digits, k=6))
+        plain_otp = "".join([secrets.choice(string.digits) for _ in range(6)])
         self.set_otp(plain_otp)
         return plain_otp
 
@@ -218,7 +218,7 @@ class PhoneVerification(models.Model):
 
     def generate_otp(self):
         """Generate a new OTP and return the plain text version"""
-        plain_otp = "".join(random.choices(string.digits, k=6))
+        plain_otp = "".join([secrets.choice(string.digits) for _ in range(6)])
         self.set_otp(plain_otp)
         return plain_otp
 

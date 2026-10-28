@@ -11,6 +11,7 @@ from factories import (
     UserFactory,
 )
 from users.models import EmailVerification, User
+from users.registration_proofs import issue_registration_proof
 
 pytestmark = [pytest.mark.django_db, pytest.mark.views]
 
@@ -90,6 +91,7 @@ class TestRegisterView:
         resp = client.post(
             f"{USERS}/auth/register/",
             {
+                "registration_token": issue_registration_proof(EmailVerification.objects.get(email="api-reg@test.ug"), "email"),
                 "email": "api-reg@test.ug",
                 "first_name": "Api",
                 "last_name": "Test",
@@ -120,7 +122,7 @@ class TestRegisterView:
             format="json",
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Email not verified" in str(resp.data)
+        assert "registration_token" in str(resp.data)
 
     def test_register_invalid_payload_400(self):
         client = APIClient()

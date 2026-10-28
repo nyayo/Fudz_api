@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY")
 
-DEBUG = config("DEBUG", default=True, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 DJANGO_APPS = [
     "daphne",
@@ -71,11 +71,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "Fudz_api.urls"
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=Csv())
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 
-CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=True, cast=bool)
+CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bool)
 
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -98,16 +98,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "Fudz_api.wsgi.application"
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.contrib.gis.db.backends.postgis",
-#         "NAME": "food_delivery",
-#         "USER": "neondb_owner",
-#         "PASSWORD": "npg_5Ok1uzovVgbZ",
-#         "HOST": "ep-withered-surf-a4thi8j0-pooler.us-east-1.aws.neon.tech",
-#         "PORT": 5432,
-#     }
-# }
 
 DATABASES = {
     "default": {
@@ -349,3 +339,10 @@ LOGGING = {
         },
     },
 }
+
+# Cookie-based dashboard sessions require explicit origins, never a wildcard.
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default=FRONTEND_URL, cast=Csv())
+CORS_ALLOW_CREDENTIALS = True
+BROWSER_SESSION_ORIGINS = config("BROWSER_SESSION_ORIGINS", default=FRONTEND_URL, cast=Csv())
+BROWSER_REFRESH_COOKIE = "fudz_refresh"
+BROWSER_REFRESH_COOKIE_PATH = "/api/v1/users/auth/browser/"

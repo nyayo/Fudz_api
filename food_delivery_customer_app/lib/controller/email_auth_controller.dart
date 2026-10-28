@@ -183,6 +183,7 @@ class EmailAuthController extends GetxController {
             '/register',
             arguments: {
               'email': email,
+              'registration_token': response['registration_token'],
               'userType': 'customer', // Force customer type for new users
             },
           );

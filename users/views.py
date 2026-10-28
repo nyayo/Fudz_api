@@ -169,6 +169,7 @@ class VerifyPhoneOTPView(generics.CreateAPIView):
                 "user_exists": False,
                 "requires_registration": True,
                 "phone": result["phone"],
+                "registration_token": result["registration_token"],
             },
             status=status.HTTP_200_OK,
         )
@@ -207,6 +208,7 @@ class VerifyOTPView(generics.CreateAPIView):
                 "user_exists": False,
                 "requires_registration": True,
                 "email": result["email"],
+                "registration_token": result["registration_token"],
             },
             status=status.HTTP_200_OK,
         )
@@ -428,19 +430,31 @@ class UserProfileView(GenericAPIView):
                 )
             data["email"] = new_email
 
+        # Validate nested profile data before saving either model. Never assign
+        # arbitrary model fields from the request (approval, rating, user, pk).
+        profile_serializer = None
+        if "profile" in data:
+            if user.user_type != "restaurant":
+                return Response({"profile": "Profile updates are unavailable for this account."}, status=400)
+            from restaurants.serializers import RestaurantProfileSerializer
+            profile_data = data["profile"]
+            allowed = {"restaurant_name", "business_license", "address", "image", "logo", "opening_hours", "is_active"}
+            if not isinstance(profile_data, dict) or set(profile_data) - allowed:
+                return Response({"profile": "Contains unsupported or protected fields."}, status=400)
+            profile_serializer = RestaurantProfileSerializer(
+                user.restaurant_profile, data=profile_data, partial=True,
+                context={"request": request},
+            )
+            profile_serializer.is_valid(raise_exception=True)
         serializer = UserProfileSerializer(user, data=data, partial=True)
-        if serializer.is_valid():
+        serializer.is_valid(raise_exception=True)
+        from django.db import transaction
+        with transaction.atomic():
             serializer.save()
+            if profile_serializer:
+                profile_serializer.save()
+        return Response(serializer.data)
 
-            if user.user_type == "restaurant" and "profile" in request.data:
-                profile_data = request.data.get("profile", {})
-                restaurant_profile = user.restaurant_profile
-                for key, value in profile_data.items():
-                    setattr(restaurant_profile, key, value)
-                restaurant_profile.save()
-
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RestaurantStaffViewSet(viewsets.ModelViewSet):
