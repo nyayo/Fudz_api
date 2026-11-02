@@ -8,6 +8,7 @@ import 'package:food_delivery_customer_app/controller/wishlist_controller.dart';
 import 'package:food_delivery_customer_app/models/menu_item.dart';
 import 'package:food_delivery_customer_app/models/restaurant.dart';
 import 'package:food_delivery_customer_app/views/screens/item_detail.dart';
+import 'package:food_delivery_customer_app/views/screens/restaurant_reviews.dart';
 import 'package:food_delivery_customer_app/views/screens/Home_view/promo.dart';
 import 'package:food_delivery_customer_app/views/widgets/connectivity_widgets.dart';
 import 'package:food_delivery_customer_app/views/widgets/quantity_counter_widget.dart';
@@ -59,7 +60,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         ? ' at ${restaurant.address}'
         : '';
     final message =
-        'Check out ${restaurant.restaurantName}$addressText on Fudz.';
+        'Check out ${restaurant.restaurantName}$addressText on FoGo.';
     Share.share(message, subject: restaurant.restaurantName);
   }
 
@@ -239,10 +240,13 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
             _buildAppBar(restaurant),
             _buildRestaurantInfo(restaurant),
             _buildPromotionSection(restaurant),
-            _buildRatingSection(restaurant),
             _buildCategoryList(),
             _buildMenuItemsHeader(),
             _buildMenuItems(),
+            SliverSafeArea(
+              top: false,
+              sliver: SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ),
           ],
         );
       }),
@@ -871,32 +875,54 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                GestureDetector(
+                  onTap: () => Get.to(
+                    () => RestaurantReviewsPage(
+                      restaurantId: widget.restaurantId,
+                      restaurantName: restaurant.restaurantName,
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
-                  ),
-                  child: Obx(() {
-                    final displayRating = _reviewController.averageRating;
-                    return Row(
-                      children: [
-                        Icon(Icons.star, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          displayRating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                    ),
+                    child: Obx(() {
+                      final displayRating = _reviewController.averageRating;
+                      final count = _reviewController.reviewCount;
+                      return Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            displayRating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  }),
+                          const SizedBox(width: 4),
+                          Text(
+                            '($count)',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ],
+                      );
+                    }),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Container(
@@ -974,490 +1000,6 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
         ],
       ),
     );
-  }
-
-  SliverToBoxAdapter _buildRatingSection(RestaurantProfile restaurant) {
-    return SliverToBoxAdapter(
-      child: Obx(() {
-        final reviews = _reviewController.reviews;
-        final isLoading = _reviewController.isLoading.value;
-        final avg = _reviewController.averageRating;
-        final userController = Get.find<UserController>();
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Review',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: TColor.primaryText,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Row(
-                    children: [
-                      ...List.generate(5, (i) {
-                        return Icon(
-                          i < avg.floor()
-                              ? Icons.star_rounded
-                              : (i < avg.ceil() && avg % 1 >= 0.5)
-                                  ? Icons.star_half_rounded
-                                  : Icons.star_outline_rounded,
-                          color: Colors.amber,
-                          size: 16,
-                        );
-                      }),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${avg.toStringAsFixed(1)}/5',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: () => _showAllReviewsSheet(restaurant.id),
-                    child: Text(
-                      'See All',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () {
-                    if (!userController.isLoggedIn) {
-                      Get.snackbar(
-                        'Login required',
-                        'Please login to add a review',
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
-                      return;
-                    }
-                    _showRatingDialog(restaurant.id);
-                  },
-                  icon: Icon(Icons.rate_review, color: TColor.primary),
-                  label: Text(
-                    'Write a review',
-                    style: TextStyle(
-                      color: TColor.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ),
-
-              if (isLoading)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: SizedBox(height: 2, child: LinearProgressIndicator()),
-                ),
-
-              if (reviews.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 110,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    clipBehavior: Clip.none,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    itemCount: reviews.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (_, i) => _buildReviewCard(reviews[i]),
-                  ),
-                ),
-              ],
-
-              if (reviews.isEmpty && !isLoading)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    'No reviews yet — be the first!',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                  ),
-                ),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-
-  void _showAllReviewsSheet(int restaurantId) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.75,
-          minChildSize: 0.5,
-          maxChildSize: 0.92,
-          builder: (context, scrollController) {
-            return Obx(() {
-              final reviews = _reviewController.reviews;
-              final isLoading = _reviewController.isLoading.value;
-              return Column(
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        Text(
-                          'All reviews',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: TColor.primaryText,
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () => _showRatingDialog(restaurantId),
-                          child: Text(
-                            'Write review',
-                            style: TextStyle(
-                              color: TColor.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isLoading)
-                    const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: LinearProgressIndicator(),
-                    ),
-                  Expanded(
-                    child: reviews.isEmpty && !isLoading
-                        ? Center(
-                            child: Text(
-                              'No reviews yet.',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          )
-                        : ListView.separated(
-                            controller: scrollController,
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                            itemCount: reviews.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (_, i) {
-                              final review = reviews[i];
-                              return _buildReviewCard(review);
-                            },
-                          ),
-                  ),
-                ],
-              );
-            });
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildReviewCard(dynamic review) {
-    final initial = (review.customerName ?? 'A')[0].toUpperCase();
-    return Container(
-      width: 260,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: TColor.primary.withOpacity(0.15),
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: TColor.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      review.customerName ?? 'Anonymous',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: TColor.primaryText,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: List.generate(
-                        5,
-                        (j) => Icon(
-                          j < review.rating
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
-                          color: Colors.amber,
-                          size: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                _formatDate(review.createdAt),
-                style: TextStyle(fontSize: 10, color: Colors.grey[400]),
-              ),
-            ],
-          ),
-          if (review.comment != null && review.comment.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              review.comment,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                height: 1.35,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inDays == 0) return 'Today';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays} days ago';
-    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()} weeks ago';
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  void _showRatingDialog(int restaurantId) {
-    int selectedRating = 0;
-    final commentController = TextEditingController();
-
-    Get.dialog(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Text(
-              'Rate this Restaurant',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'How was your experience?',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                  const SizedBox(height: 16),
-                  // Star rating selector
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      return GestureDetector(
-                        onTap: () => setState(() => selectedRating = index + 1),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Icon(
-                            index < selectedRating
-                                ? Icons.star
-                                : Icons.star_border,
-                            color: Colors.amber,
-                            size: 36,
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                  if (selectedRating > 0) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _getRatingLabel(selectedRating),
-                      style: TextStyle(
-                        color: Colors.amber[800],
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  // Comment field
-                  TextField(
-                    controller: commentController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Share your experience (optional)',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: TColor.primary),
-                      ),
-                      contentPadding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ),
-              Obx(() {
-                final isSubmitting = _reviewController.isSubmitting.value;
-                return ElevatedButton(
-                  onPressed: (selectedRating == 0 || isSubmitting)
-                      ? null
-                      : () async {
-                          final success = await _reviewController.submitReview(
-                            restaurantId: restaurantId,
-                            rating: selectedRating,
-                            comment: commentController.text.trim(),
-                          );
-                          if (success) {
-                            Get.back();
-                            Get.snackbar(
-                              'Thank you!',
-                              'Your review has been submitted',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: Colors.green.withOpacity(0.9),
-                              colorText: Colors.white,
-                            );
-                          } else {
-                            Get.snackbar(
-                              'Error',
-                              _reviewController.error.value.contains('unique')
-                                  ? 'You have already reviewed this restaurant'
-                                  : 'Failed to submit review',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: Colors.red.withOpacity(0.9),
-                              colorText: Colors.white,
-                            );
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: TColor.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          'Submit',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                );
-              }),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  String _getRatingLabel(int rating) {
-    switch (rating) {
-      case 1:
-        return 'Poor';
-      case 2:
-        return 'Fair';
-      case 3:
-        return 'Good';
-      case 4:
-        return 'Very Good';
-      case 5:
-        return 'Excellent';
-      default:
-        return '';
-    }
   }
 
   /// Get menu items from this restaurant that have active promotions.

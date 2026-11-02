@@ -24,7 +24,7 @@ class LoginScreen extends StatelessWidget {
           // App Logo
           Hero(
             tag: 'app_logo',
-            child: Image.asset("assets/logo.png", height: 100, width: 100),
+            child: Image.asset("assets/logo.png", height: 90),
           ),
 
           const SizedBox(height: 30),
@@ -36,7 +36,7 @@ class LoginScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "WELCOME TO FUDGO",
+                  "WELCOME TO FOGO",
                   style: ResponsiveText.heading2(
                     context,
                     color: TColor.primary,

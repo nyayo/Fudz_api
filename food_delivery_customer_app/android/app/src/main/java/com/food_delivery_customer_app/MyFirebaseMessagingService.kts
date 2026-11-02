@@ -12,7 +12,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     
     companion object {
         private const val CHANNEL_ID = "food_delivery_channel"
-        private const val CHANNEL_NAME = "Fudgo Notifications"
+        private const val CHANNEL_NAME = "FoGo Notifications"
     }
     
     override fun onNewToken(token: String) {
@@ -30,7 +30,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Fudgo notifications"
+                description = "FoGo notifications"
                 enableLights(true)
                 enableVibration(true)
             }

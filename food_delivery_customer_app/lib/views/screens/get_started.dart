@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/views/auth/login.dart';
 import 'package:food_delivery_customer_app/views/widgets/auth_layout_wrapper.dart';
 import 'package:food_delivery_customer_app/views/widgets/animation_helpers.dart';
@@ -42,7 +43,7 @@ class _GetStartedState extends State<GetStarted> {
                   ),
                 ],
               ),
-              child: Image.asset("assets/logo.png", height: 120, width: 120),
+              child: Image.asset("assets/logo.png", height: 110),
             ),
           ),
 
@@ -81,7 +82,7 @@ class _GetStartedState extends State<GetStarted> {
                     height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: TColor.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(

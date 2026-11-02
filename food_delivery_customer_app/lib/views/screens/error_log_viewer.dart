@@ -515,7 +515,7 @@ ${log.stackTrace != null ? 'Stack Trace:\n${log.stackTrace}\n' : ''}
       await Share.shareXFiles(
         [XFile(filePath)],
         subject: 'Error Logs - $timestamp',
-        text: 'Error logs exported from Fudgo',
+        text: 'Error logs exported from FoGo',
       );
 
       Get.snackbar(

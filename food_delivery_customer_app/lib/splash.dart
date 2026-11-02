@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:food_delivery_customer_app/constants/colors.dart';
 import 'package:food_delivery_customer_app/controller/cart_controller.dart';
 import 'package:food_delivery_customer_app/controller/user_controller.dart';
@@ -151,50 +152,42 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: TColor.primary,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: ScaleTransition(
-            scale: _scaleAnim,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  "assets/logo.png",
-                  height: 120,
-                  width: 120,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
-                      Icons.restaurant_menu,
-                      size: 80,
-                      color: Colors.white,
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'FUDGO',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: TColor.cream,
+        body: Center(
+          child: FadeTransition(
+            opacity: _fadeAnim,
+            child: ScaleTransition(
+              scale: _scaleAnim,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    "assets/logo.png",
+                    height: 150,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.restaurant_menu,
+                        size: 80,
+                        color: TColor.primary,
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Powered by Innoverse Technologies',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.5,
+                  const SizedBox(height: 24),
+                  Text(
+                    'Product of Innoverse Technologies',
+                    style: TextStyle(
+                      color: TColor.secondaryText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

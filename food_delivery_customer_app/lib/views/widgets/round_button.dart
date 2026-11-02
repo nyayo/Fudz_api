@@ -1,10 +1,11 @@
 // views/widgets/round_button.dart
 import 'package:flutter/material.dart';
+import 'package:food_delivery_customer_app/constants/colors.dart';
 
 class RoundButton extends StatelessWidget {
   final String title;
   final VoidCallback? onPressed;
-  final Color bgcolor;
+  final Color? bgcolor;
   final Color color1;
   final IconData? icon;
   final bool isLoading;
@@ -13,7 +14,7 @@ class RoundButton extends StatelessWidget {
     super.key,
     required this.title,
     this.onPressed,
-    this.bgcolor = Colors.green,
+    this.bgcolor,
     this.color1 = Colors.white,
     this.icon,
     this.isLoading = false,
@@ -21,15 +22,16 @@ class RoundButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color bg = bgcolor ?? TColor.primary;
     return Container(
       width: double.infinity,
       height: 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        color: bgcolor,
+        color: bg,
         boxShadow: [
           BoxShadow(
-            color: bgcolor.withOpacity(0.5),
+            color: bg.withOpacity(0.5),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),

@@ -22,8 +22,7 @@ class EmailLoginScreen extends StatelessWidget {
             tag: 'app_logo',
             child: Image.asset(
               "assets/logo.png",
-              height: 100,
-              width: 100,
+              height: 90,
             ),
           ),
           
